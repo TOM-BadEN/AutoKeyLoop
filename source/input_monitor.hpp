@@ -18,6 +18,7 @@ enum class ButtonEventType {
 struct ButtonEvent {
     ButtonEventType type;     // 事件类型
     const char* button_name;  // 按键名称
+    u64 button_mask;          // 按键掩码
 };
 
 // 按键状态结构体
