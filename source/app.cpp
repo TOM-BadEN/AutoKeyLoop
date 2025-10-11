@@ -13,9 +13,19 @@ namespace MP {
         input_monitor->SetEventCallback([this](const ButtonEvent& event) {
             HandleButtonEvent(event);
         });
+        
+        // 创建并初始化AutoKeyManager进行线程测试
+        autokey_manager = new AutoKeyManager();
+        if (autokey_manager) log_info("AutoKeyManager初始化完成");
     }
 
     App::~App() {
+        // 析构函数 - 清理AutoKeyManager
+        if (autokey_manager) {
+            delete autokey_manager;
+            autokey_manager = nullptr;
+        }
+        
         // 析构函数 - 清理输入监控器
         if (input_monitor) {
             delete input_monitor;
