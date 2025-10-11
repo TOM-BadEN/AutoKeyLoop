@@ -18,7 +18,7 @@ include $(DEVKITPRO)/libnx/switch_rules
 # EXEFS_SRC is the optional input directory containing data copied into exefs, if anything this normally should only contain "main.npdm".
 #---------------------------------------------------------------------------------
 APP_TITLEID   := 4100000002025924
-TARGET		:=	sys-autokeyfire
+TARGET		:=	sys-autokeyloop
 BUILD		:=	build
 OUTDIR := out
 SOURCES		:=	source log
@@ -96,9 +96,9 @@ export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib)
 export BUILD_EXEFS_SRC := $(TOPDIR)/$(EXEFS_SRC)
 
 ifeq ($(strip $(CONFIG_JSON)),)
-	jsons := $(wildcard *.json)
+	jsons := $(wildcard *.json) $(wildcard sys-json/*.json)
 	ifneq (,$(findstring $(TARGET).json,$(jsons)))
-		export APP_JSON := $(TOPDIR)/$(TARGET).json
+		export APP_JSON := $(TOPDIR)/sys-json/$(TARGET).json
 	else
 		ifneq (,$(findstring config.json,$(jsons)))
 			export APP_JSON := $(TOPDIR)/config.json
