@@ -119,7 +119,7 @@ $(BUILD):
 	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 	@mkdir -p $(OUTDIR)/$(APP_TITLEID)/flags
 	@cp $(BUILD)/output/$(TARGET).nsp $(OUTDIR)/$(APP_TITLEID)/exefs.nsp
-	@cp toolbox.json $(OUTDIR)/$(APP_TITLEID)/toolbox.json
+	@cp sys-json/toolbox.json $(OUTDIR)/$(APP_TITLEID)/toolbox.json
 	@touch $(OUTDIR)/$(APP_TITLEID)/flags/boot2.flag
 
 #---------------------------------------------------------------------------------
