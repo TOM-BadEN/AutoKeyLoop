@@ -8,8 +8,9 @@
 
 // 日志系统全局变量
 static Mutex log_mutex = 0;                                    // 日志互斥锁，确保多线程安全
-#define LOG_FILE_PATH "/atmosphere/logs/sys-autokeyloop.log"         // 日志文件路径
+#define LOG_FILE_PATH "/config/AutoKeyLoop/AutoKeyLoop.log"         // 日志文件路径
 static FILE *log_file = NULL;                                  // 日志文件句柄
+static bool g_log_enabled = false;                                  // 日志全局开关（默认关闭）
 
 // 获取计时器时间字符串（从程序启动开始计时）
 static char *cur_time() {
@@ -40,8 +41,16 @@ static char *cur_time() {
     return timebuf;
 }
 
+// 设置日志开关（0=关闭，1=开启）
+void log_set_enabled(bool enabled) {
+    g_log_enabled = enabled;
+}
+
 // 日志写入核心函数
 static void log_write(const char *level, const char *file, int line, const char *fmt, va_list args) {
+    // 检查日志是否启用
+    if (!g_log_enabled) return;
+    
     mutexLock(&log_mutex);                                      // 加锁，确保线程安全
     if (!log_file) {
         log_file = fopen(LOG_FILE_PATH, "w");                   // 以写入模式打开日志文件，程序重启时重置内容

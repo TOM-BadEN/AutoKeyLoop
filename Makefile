@@ -21,9 +21,9 @@ APP_TITLEID   := 4100000002025924
 TARGET		:=	sys-autokeyloop
 BUILD		:=	build
 OUTDIR := out
-SOURCES		:=	source log
+SOURCES		:=	source log lib/minIni-nx/source
 DATA		:=	data
-INCLUDES	:=	include log
+INCLUDES	:=	include log lib/minIni-nx/include
 EXEFS_SRC	:=	exefs_src
 
 #---------------------------------------------------------------------------------
@@ -34,7 +34,10 @@ ARCH	:=	-march=armv8-a -mtune=cortex-a57 -mtp=soft -fPIE
 CFLAGS	:=	-g -Wall -O2 -ffunction-sections \
 			$(ARCH) $(DEFINES)
 
-CFLAGS	+=	$(INCLUDE) -D__SWITCH__
+CFLAGS	+=	$(INCLUDE) -D__SWITCH__ \
+			-DMININI_USE_NX=1 \
+			-DMININI_USE_STDIO=0 \
+			-DMININI_USE_FLOAT=0
 
 CXXFLAGS	:= $(CFLAGS) -DCPPHTTPLIB_THREAD_POOL_COUNT=0 -fno-rtti -fno-exceptions -std=gnu++17
 
