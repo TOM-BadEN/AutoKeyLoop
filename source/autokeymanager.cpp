@@ -30,6 +30,7 @@ AutoKeyManager::AutoKeyManager() {
     should_exit = false;
     autokey_is_pressed = false;
     autokey_last_switch_time = 0;
+    autokey_release_start_time = 0;
     memset(&shared_physical_state, 0, sizeof(shared_physical_state));
     
     // 初始化连发按键池（白名单）- 默认允许 ABXY + LR + ZLZR
@@ -183,9 +184,7 @@ void AutoKeyManager::ProcessAutoKey() {
         // 劫持并修改控制器状态
         HijackAndModifyState();
 
-        // 动态调整休眠：有连发时1ms（高精度），无连发时10ms（省电）
-        u64 sleep_time = (autokey_last_switch_time != 0) ? 1_000_000 : 10_000_000;
-        svcSleepThread(sleep_time);
+        svcSleepThread(UPDATE_INTERVAL_NS);
 
     }
     
@@ -243,61 +242,80 @@ void AutoKeyManager::HijackAndModifyState() {
     // 其他按键（不连发，直接透传）
     u64 normal_buttons = physical_buttons & ~autokey_whitelist_mask;
 
-    // 没有白名单按键被按住，重置连发状态
-    if (autokey_buttons == 0) {
-        autokey_last_switch_time = 0;
-        autokey_is_pressed = false;
-        log_info("连发结束");
-        return;
-    }
+    if (autokey_buttons != 0) {
+        // 有白名单按键被按住
+        u64 current_time = armGetSystemTick();
+        
+        // 重置松开计时器（因为有按键，不是松开状态）
+        autokey_release_start_time = 0;
+        
+        // 初始化：第一次获取设备列表
+        if (autokey_last_switch_time == 0) {
+            Result rc = hiddbgDumpHdlsStates(hdls_session_id, &state_list);
+            if (R_FAILED(rc) || state_list.total_entries == 0) {
+                log_error("获取HDLS设备列表失败: 0x%x", rc);
+                return;
+            }
+            autokey_last_switch_time = current_time;
+            autokey_is_pressed = true;
+            log_info("连发开始: 连发键=0x%llx, 普通键=0x%llx", autokey_buttons, normal_buttons);
+        }
 
-    // 获取当前时间
-    u64 current_time = armGetSystemTick();
-    
-    // 初始化设备列表
-    if (autokey_last_switch_time == 0) {
-        Result rc = hiddbgDumpHdlsStates(hdls_session_id, &state_list);
-        if (R_FAILED(rc) || state_list.total_entries == 0) {
-            log_error("获取HDLS设备列表失败: 0x%x", rc);
-            return;
-        }
-        // 更新时间
-        autokey_last_switch_time = current_time;
-        // 设置连发状态为按下
-        autokey_is_pressed = true;
-        log_info("连发开始: 连发键=0x%llx, 普通键=0x%llx", autokey_buttons, normal_buttons);
-    }
-    
-    // 计算经过的时间
-    u64 elapsed_ns = armTicksToNs(current_time - autokey_last_switch_time);
-    
-    // 检查是否到达切换时间（100ms）
-    if (elapsed_ns >= FIRE_INTERVAL_NS) {
-        // 切换连发状态
-        autokey_is_pressed = !autokey_is_pressed;
-        autokey_last_switch_time = current_time;
-    }
-    
-    // 构建最终状态：其他按键直接透传 + 白名单按键连发 + 摇杆数据
-    for (int i = 0; i < state_list.total_entries; i++) {
-        memset(&state_list.entries[i].state, 0, sizeof(HiddbgHdlsState));
+        // 计算经过的时间
+        u64 elapsed_ns = armTicksToNs(current_time - autokey_last_switch_time);
         
-        // 复制摇杆数据（保留摇杆输入）
-        state_list.entries[i].state.analog_stick_l = physical_state.analog_stick_l;
-        state_list.entries[i].state.analog_stick_r = physical_state.analog_stick_r;
-        
-        // 合并：普通按键（直接透传）+ 连发按键（按状态）
-        if (autokey_is_pressed) {
-            state_list.entries[i].state.buttons = normal_buttons | autokey_buttons;
-        } else {
-            state_list.entries[i].state.buttons = normal_buttons;
+        // 检查是否到达切换时间（100ms）
+        if (elapsed_ns >= FIRE_INTERVAL_NS) {
+            // 切换连发状态
+            autokey_is_pressed = !autokey_is_pressed;
+            autokey_last_switch_time = current_time;
         }
-    }
-    
-    // 应用状态列表（实际输出到设备上了）
-    Result rc = hiddbgApplyHdlsStateList(hdls_session_id, &state_list);
-    if (R_FAILED(rc)) {
-        log_error("[连发] ApplyHdlsStateList失败: 0x%x", rc);
+        
+        // 构建最终状态：其他按键直接透传 + 白名单按键连发 + 摇杆数据
+        for (int i = 0; i < state_list.total_entries; i++) {
+            memset(&state_list.entries[i].state, 0, sizeof(HiddbgHdlsState));
+            
+            // ★ 复制摇杆数据（保留摇杆输入）
+            state_list.entries[i].state.analog_stick_l = physical_state.analog_stick_l;
+            state_list.entries[i].state.analog_stick_r = physical_state.analog_stick_r;
+            
+            // 合并：普通按键（直接透传）+ 连发按键（按状态）
+            if (autokey_is_pressed) {
+                state_list.entries[i].state.buttons = normal_buttons | autokey_buttons;
+            } else {
+                state_list.entries[i].state.buttons = normal_buttons;
+            }
+        }
+        
+        // 应用状态列表
+        Result rc = hiddbgApplyHdlsStateList(hdls_session_id, &state_list);
+        if (R_FAILED(rc)) {
+            log_error("[连发] ApplyHdlsStateList失败: 0x%x", rc);
+        }
+    } else {
+        // 没有白名单按键被按住，进入松开防抖动流程
+        if (autokey_last_switch_time != 0) {
+            // 之前在连发中
+            u64 current_time = armGetSystemTick();
+            
+            if (autokey_release_start_time == 0) {
+                // 第一次检测到没按键，开始计时
+                autokey_release_start_time = current_time;
+                // 不输出日志，不结束连发，继续观察
+            } else {
+                // 持续没按键，检查持续了多久
+                u64 release_duration_ns = armTicksToNs(current_time - autokey_release_start_time);
+                
+                if (release_duration_ns >= RELEASE_DEBOUNCE_NS) {
+                    // 持续松开超过15ms，确认是真松开
+                    log_info("连发结束 (松开持续%llums)", release_duration_ns / 1000000ULL);
+                    autokey_last_switch_time = 0;
+                    autokey_is_pressed = false;
+                    autokey_release_start_time = 0;
+                }
+                // else: 还在15ms内，可能是抖动，保持连发状态，继续观察
+            }
+        }
     }
 
 }
