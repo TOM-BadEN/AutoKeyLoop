@@ -30,13 +30,24 @@ void __libnx_initheap(void) {
 void __appInit(void) {
   smInitialize();
   hidInitialize();
+  hiddbgInitialize(); // 添加hiddbg初始化
+  hidsysInitialize(); // 添加hidsys初始化，HDLS功能的必要依赖
+  setsysInitialize(); // 添加setsys初始化，用于获取系统版本信息
   fsInitialize();
   fsdevMountSdmc();
+  
+  // 设置系统版本信息（HDLS功能需要）
+  SetSysFirmwareVersion fw;
+  if (R_SUCCEEDED(setsysGetFirmwareVersion(&fw)))
+      hosversionSet(MAKEHOSVERSION(fw.major, fw.minor, fw.micro));
+  setsysExit(); // 获取版本信息后立即退出setsys服务
 }
 
 void __appExit(void) {
   fsdevUnmountAll();
   fsExit();
+  hidsysExit(); // 添加hidsys清理
+  hiddbgExit(); // 添加hiddbg清理
   hidExit();
   smExit();
 }

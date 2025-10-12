@@ -36,7 +36,7 @@ CFLAGS	:=	-g -Wall -O2 -ffunction-sections \
 
 CFLAGS	+=	$(INCLUDE) -D__SWITCH__
 
-CXXFLAGS	:= $(CFLAGS) -DCPPHTTPLIB_THREAD_POOL_COUNT=0 -fno-rtti -fexceptions -std=gnu++17
+CXXFLAGS	:= $(CFLAGS) -DCPPHTTPLIB_THREAD_POOL_COUNT=0 -fno-rtti -fno-exceptions -std=gnu++17
 
 ASFLAGS	:=	-g $(ARCH)
 LDFLAGS	=	-specs=$(DEVKITPRO)/libnx/switch.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)
