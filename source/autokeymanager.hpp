@@ -8,15 +8,15 @@ private:
     // 连发线程相关变量
     Thread autokey_thread;
     alignas(0x1000) static char autokey_thread_stack[4 * 1024];
-    bool thread_created;
-    bool thread_running;
-    bool should_exit;
+    bool thread_created = false;
+    bool thread_running = false;
+    bool should_exit = false;
     
     // 物理输入读取线程
     Thread input_reader_thread;
     alignas(0x1000) static char input_reader_thread_stack[4 * 1024];
-    bool input_thread_created;
-    bool input_thread_running;
+    bool input_thread_created = false;
+    bool input_thread_running = false;
     
     // 共享的物理输入状态（完整状态，包括摇杆）
     HidNpadHandheldState shared_physical_state;
