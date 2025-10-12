@@ -1,0 +1,12 @@
+# Editor files
+*.swp
+*~
+
+# Objects
+*.o
+*.a
+*.so
+
+lib
+release
+build

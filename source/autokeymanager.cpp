@@ -247,6 +247,7 @@ void AutoKeyManager::HijackAndModifyState() {
     if (autokey_buttons == 0) {
         autokey_last_switch_time = 0;
         autokey_is_pressed = false;
+        log_info("连发结束");
         return;
     }
 
@@ -264,6 +265,7 @@ void AutoKeyManager::HijackAndModifyState() {
         autokey_last_switch_time = current_time;
         // 设置连发状态为按下
         autokey_is_pressed = true;
+        log_info("连发开始: 连发键=0x%llx, 普通键=0x%llx", autokey_buttons, normal_buttons);
     }
     
     // 计算经过的时间

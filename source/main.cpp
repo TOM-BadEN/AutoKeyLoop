@@ -55,7 +55,7 @@ void __appExit(void) {
 }
 
 int main() {
-  MP::App app;
+  App app;
   app.Loop();
   return 0;
 }
