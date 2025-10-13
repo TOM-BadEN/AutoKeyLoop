@@ -1,5 +1,6 @@
 #include "main_menu.hpp"
 #include "game_monitor.hpp"
+#include "sysmodule_manager.hpp"
 
 // Tesla插件界面尺寸常量定义
 #define TESLA_VIEW_HEIGHT 720      // Tesla插件总高度
@@ -122,8 +123,9 @@ tsl::elm::Element* MainMenu::createUI()
     mainList->addItem(textArea, TextAreaHeight);
 
     // ============= 下半部分：列表区域 =============
-    // 创建开启连发列表项
-    auto listItemEnable = new tsl::elm::ListItem("开启连发", "已关闭");
+    // 创建开启连发列表项 - 检测系统模块运行状态
+    bool isModuleRunning = SysModuleManager::isRunning();
+    auto listItemEnable = new tsl::elm::ListItem("开启连发", isModuleRunning ? "已开启" : "已关闭");
     mainList->addItem(listItemEnable);
 
     // 创建游戏设置列表项

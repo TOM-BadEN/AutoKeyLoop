@@ -12,8 +12,14 @@ private:
     // 控制住循环是否结束的
     bool loop_error = false;
     
+    // 上一次检测到的游戏 Title ID
+    u64 last_game_tid = 0;
+    
     // 初始化配置路径（确保目录存在）
     bool InitializeConfigPath();
+    
+    // 获取当前游戏 Title ID（仅游戏，非游戏返回0）
+    u64 GetCurrentGameTitleId();
     
 public:
     // 构造函数
@@ -24,4 +30,10 @@ public:
     
     // 主循环函数
     void Loop();
+    
+    // 开启连发模块
+    bool StartAutoKey();
+    
+    // 退出连发模块
+    void StopAutoKey();
 };

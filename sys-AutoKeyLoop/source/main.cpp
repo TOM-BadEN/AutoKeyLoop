@@ -35,6 +35,7 @@ void __appInit(void) {
   setsysInitialize(); // 添加setsys初始化，用于获取系统版本信息
   fsInitialize();
   fsdevMountSdmc();
+  pmdmntInitialize();   // 进程管理服务
   
   // 设置系统版本信息（HDLS功能需要）
   SetSysFirmwareVersion fw;
@@ -44,12 +45,13 @@ void __appInit(void) {
 }
 
 void __appExit(void) {
-  fsdevUnmountAll();
-  fsExit();
-  hidsysExit(); // 添加hidsys清理
-  hiddbgExit(); // 添加hiddbg清理
-  hidExit();
-  smExit();
+  pmdmntExit();     // 8. 进程管理服务（最后初始化的，最先退出）
+  fsdevUnmountAll(); // 7. 卸载文件系统
+  fsExit();         // 6. 文件系统服务
+  hidsysExit();     // 4. hidsys清理
+  hiddbgExit();     // 3. hiddbg清理
+  hidExit();        // 2. hid清理
+  smExit();         // 1. sm服务（最先初始化的，最后退出）
 }
 
 }

@@ -19,6 +19,8 @@ AutoKeyManager::AutoKeyManager() {
         log_error("HDLS工作缓冲区初始化失败: 0x%x", rc);
         return;
     }
+
+    log_info("HDLS工作缓冲区初始化成功，会话_id: 0x%x", hdls_session_id);
     
     // 初始化状态列表
     memset(&state_list, 0, sizeof(state_list));

@@ -54,15 +54,13 @@ App::App() {
         loop_error = true;
         return;
     }
+
     // 设置IPC退出回调：当收到退出命令时，标记主循环退出
     ipc_server->SetExitCallback([this]() {
         log_info("IPC请求退出连发系统模块！");
         loop_error = true;
     });
     
-    // 测试代码，暂时不初始化连发模块，避免影响测试（AI请勿修改）
-    // 创建并初始化连发模块
-    // autokey_manager = new AutoKeyManager();
 }
 
 App::~App() {
@@ -81,9 +79,87 @@ App::~App() {
 }
 
 void App::Loop() {
-    // 主程序循环 - AutoKeyManager的线程已经在后台运行
+    // 主程序循环 - 监控游戏状态，自动启动/停止连发模块
     while (!loop_error) {
-        // 保持主线程运行
-        svcSleepThread(1000000000ULL);  // 1秒
+        // 获取当前游戏 Title ID
+        u64 current_tid = GetCurrentGameTitleId();
+        
+        // 检测 Title ID 是否发生变化
+        if (current_tid != last_game_tid) {
+            log_info("检测到游戏状态变化: 0x%016lX -> 0x%016lX", last_game_tid, current_tid);
+            
+            if (current_tid != 0) {
+                // 检测到游戏启动
+                log_info("检测到游戏启动，自动开启连发模块");
+                StartAutoKey();
+            } else {
+                // 检测到游戏退出
+                log_info("检测到游戏退出，自动关闭连发模块");
+                StopAutoKey();
+            }
+            
+            // 更新上次检测的 Title ID
+            last_game_tid = current_tid;
+        }
+        
+        // 每1秒检测一次
+        svcSleepThread(1000000000ULL);
     }
+}
+
+
+// 获取当前游戏 Title ID（仅游戏，非游戏返回0）
+u64 App::GetCurrentGameTitleId() {
+    u64 pid = 0, tid = 0;
+    
+    // 1. 获取当前应用的进程ID
+    if (R_FAILED(pmdmntGetApplicationProcessId(&pid))) {
+        return 0;
+    }
+    
+    // 2. 根据进程ID获取程序ID (Title ID)
+    if (R_FAILED(pmdmntGetProgramId(&tid, pid))) {
+        return 0;
+    }
+    
+    // 3. 过滤非游戏ID - 检查Title ID是否为游戏格式（高32位以0x01开头）
+    u32 high_part = (u32)(tid >> 32);
+    if ((high_part & 0xFF000000) != 0x01000000) {
+        return 0;  // 不是游戏ID，返回0
+    }
+    
+    return tid;
+}
+
+// 开启连发模块
+bool App::StartAutoKey() {
+    // 如果已经创建，则不重复创建
+    if (autokey_manager != nullptr) {
+        log_warning("请勿重复创建连发模块！");
+        return true;
+    }
+    
+    // 创建并初始化连发模块
+    autokey_manager = new AutoKeyManager();
+    
+    if (autokey_manager == nullptr) {
+        log_error("连发模块创建失败！");
+        return false;
+    }
+    
+    return true;
+}
+
+// 退出连发模块
+void App::StopAutoKey() {
+    // 如果没有创建，则无需清理
+    if (autokey_manager == nullptr) {
+        log_warning("连发模块未运行，无需停止！");
+        return;
+    }
+    
+    // 清理连发模块
+    delete autokey_manager;
+    autokey_manager = nullptr;
+    log_info("连发模块已停止！");
 }
