@@ -33,7 +33,7 @@ bool App::InitializeConfigPath() {
 App::App() {
 
     // 读取日志配置并设置日志开关
-    bool log_enabled = ini_getbool("LOG", "log", 0, CONFIG_PATH);
+    bool log_enabled = ini_getbool("LOG", "log", 1, CONFIG_PATH);
     log_set_enabled(log_enabled);
     
     // 初始化配置路径
@@ -43,12 +43,37 @@ App::App() {
         return;
     }
     
+    // 创建并启动IPC服务
+    ipc_server = new IPCServer();
+    
+    if (!ipc_server->Start("keyLoop")) {
+        log_error("IPC服务启动失败！");
+        delete ipc_server;
+        ipc_server = nullptr;
+        loop_error = true;
+        return;
+    }
+    
+    // 设置IPC退出回调：当收到退出命令时，标记主循环退出
+    ipc_server->SetExitCallback([this]() {
+        log_info("IPC请求退出连发系统模块！");
+        loop_error = true;
+    });
+    
+    
     // 测试代码，暂时不初始化连发模块，避免影响测试（AI请勿修改）
     // 创建并初始化连发模块
     // autokey_manager = new AutoKeyManager();
 }
 
 App::~App() {
+    // 清理IPC服务器
+    if (ipc_server) {
+        ipc_server->Stop();
+        delete ipc_server;
+        ipc_server = nullptr;
+    }
+    
     // 清理AutoKeyManager
     if (autokey_manager) {
         delete autokey_manager;
