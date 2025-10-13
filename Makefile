@@ -22,6 +22,11 @@ SYS_OUTPUT_DIR := $(SYS_DIR)/out/4100000002025924
 # 状态文件
 BUILD_STATUS := .build_status
 
+# 颜色定义
+COLOR_GREEN := \033[0;32m
+COLOR_RED := \033[0;31m
+COLOR_RESET := \033[0m
+
 #---------------------------------------------------------------------------------
 # 默认目标：编译所有模块并复制到 out 目录
 #---------------------------------------------------------------------------------
@@ -37,21 +42,26 @@ show-result:
 	@echo "========================================"
 	@if [ -f $(BUILD_STATUS) ]; then \
 		echo "编译结果："; \
-		cat $(BUILD_STATUS); \
-		echo "========================================"; \
+		while IFS= read -r line; do \
+			if echo "$$line" | grep -q "编译失败"; then \
+				printf "$(COLOR_RED)%s$(COLOR_RESET)\n" "$$line"; \
+			elif echo "$$line" | grep -q "编译完成"; then \
+				printf "$(COLOR_GREEN)%s$(COLOR_RESET)\n" "$$line"; \
+			else \
+				echo "$$line"; \
+			fi; \
+		done < $(BUILD_STATUS); \
 		if grep -q "编译失败" $(BUILD_STATUS); then \
 			rm -f $(BUILD_STATUS); \
 			exit 1; \
 		else \
-			echo "复制编译产物到 out 目录..."; \
 			mkdir -p $(OUT_OVERLAYS); \
 			mkdir -p $(OUT_ATMOSPHERE); \
 			mkdir -p $(OUT_SWITCH); \
 			cp -f $(OVL_OUTPUT) $(OUT_OVERLAYS)/; \
 			cp -rf $(SYS_OUTPUT_DIR)/* $(OUT_ATMOSPHERE)/; \
 			echo "========================================"; \
-			echo "所有模块编译完成！"; \
-			echo "输出目录: $(OUT_DIR)/"; \
+			echo "  输出目录: $(OUT_DIR)/"; \
 			echo "========================================"; \
 			rm -f $(BUILD_STATUS); \
 		fi; \
@@ -110,10 +120,8 @@ clean:
 	@rm -f $(BUILD_STATUS)
 	@echo "========================================"
 	@echo "清理结果："
-	@echo "  模块 ovl-AutoKeyLoop，已清理"
-	@echo "  模块 sys-AutoKeyLoop，已清理"
-	@echo "  输出目录 out/，已删除"
-	@echo "========================================"
-	@echo "清理完成！"
+	@printf "$(COLOR_GREEN)  模块 ovl-AutoKeyLoop，已清理$(COLOR_RESET)\n"
+	@printf "$(COLOR_GREEN)  模块 sys-AutoKeyLoop，已清理$(COLOR_RESET)\n"
+	@printf "$(COLOR_GREEN)  输出目录 out/，已删除$(COLOR_RESET)\n"
 	@echo "========================================"
 
