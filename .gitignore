@@ -8,3 +8,10 @@ AutoKeyLoop.log
 /sys-AutoKeyLoop/pad-macro-参考连发项目
 /ovl-AutoKeyLoop/参考项目-EdiZon-Overlay
 /ovl-AutoKeyLoop/参考项目-NX-Mod-Manager
+/sys-AutoKeyLoop/AutoKeyLoop.log
+/ovl-AutoKeyLoop/build
+/sys-AutoKeyLoop/build
+/sys-AutoKeyLoop/out
+ovl-AutoKeyLoop/ovl-AutoKeyLoop.elf
+ovl-AutoKeyLoop/ovl-AutoKeyLoop.nacp
+ovl-AutoKeyLoop/ovl-AutoKeyLoop.ovl
