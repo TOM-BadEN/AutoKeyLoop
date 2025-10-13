@@ -8,6 +8,7 @@
 #define CONFIG_DIR "/config/AutoKeyLoop"
 #define CONFIG_PATH "/config/AutoKeyLoop/config.ini"
 
+
 // 初始化配置路径（确保配置目录存在）
 bool App::InitializeConfigPath() {
 
