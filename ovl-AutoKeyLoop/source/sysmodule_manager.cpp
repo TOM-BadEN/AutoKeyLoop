@@ -1,0 +1,34 @@
+#include "sysmodule_manager.hpp"
+
+// 检查系统模块是否正在运行
+bool SysModuleManager::isRunning() {
+    u64 pid = 0;
+    
+    // 使用 pmdmnt 服务获取进程ID（libtesla已初始化）
+    if (R_FAILED(pmdmntGetProcessId(&pid, MODULE_ID))) {
+        return false;
+    }
+    
+    return pid > 0;
+}
+
+// 启动系统模块
+Result SysModuleManager::startModule() {
+    // 如果已经在运行，则不需要启动
+    if (isRunning()) {
+        return 0;
+    }
+    
+    // 构建程序位置信息
+    NcmProgramLocation programLocation = {
+        .program_id = MODULE_ID,
+        .storageID = NcmStorageId_None
+    };
+    
+    // 使用 pmshell 启动程序
+    u64 pid = 0;
+    Result rc = pmshellLaunchProgram(0, &programLocation, &pid);
+    
+    return rc;
+}
+
