@@ -174,7 +174,7 @@ void AutoKeyManager::ProcessInputReading() {
         // 每5ms读取一次（比连发线程慢，避免过度轮询）
         svcSleepThread(5000000ULL);
     }
-    log_info("输入读取线程结束运行");
+    log_info("输入读取线程函数结束运行");
 }
 
 // 连发处理函数
@@ -190,7 +190,7 @@ void AutoKeyManager::ProcessAutoKey() {
 
     }
     
-    log_info("连发线程结束运行");
+    log_info("连发线程函数结束运行");
 }
 
 // 读取物理输入（直接从HID读取真实手柄状态，绕过HDLS虚拟层）
