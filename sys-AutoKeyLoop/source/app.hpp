@@ -12,7 +12,7 @@ private:
     std::mutex autokey_mutex;                   // 保护 autokey_manager 的互斥锁
 
     // 控制住循环是否结束的
-    bool loop_error = false;
+    bool m_loop_error = false;
     
     // 上一次检测到的游戏 Title ID
     u64 m_last_game_tid = 0;

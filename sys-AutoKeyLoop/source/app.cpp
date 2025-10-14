@@ -47,7 +47,7 @@ App::App() {
     // 初始化配置路径
     if (!InitializeConfigPath()) {
         // 失败则退出程序
-        loop_error = true;
+        m_loop_error = true;
         return;
     }
     
@@ -58,14 +58,14 @@ App::App() {
         log_error("IPC服务启动失败！");
         delete ipc_server;
         ipc_server = nullptr;
-        loop_error = true;
+        m_loop_error = true;
         return;
     }
 
     // 设置IPC退出回调：当收到退出命令时，标记主循环退出
     ipc_server->SetExitCallback([this]() {
         log_info("IPC请求退出连发系统模块！");
-        loop_error = true;
+        m_loop_error = true;
     });
     
     // 设置IPC开启连发回调
@@ -104,7 +104,7 @@ App::~App() {
 
 void App::Loop() {
     // 主程序循环 - 监控游戏状态，自动启动/停止连发模块
-    while (!loop_error) {
+    while (!m_loop_error) {
         // 获取当前游戏 Title ID
         u64 current_tid = GetCurrentGameTitleId();
         
@@ -175,7 +175,7 @@ void App::LoadGameConfig(u64 tid) {
     // 更新当前 TID
     m_CurrentTid = tid;
     
-    log_info("配置加载完成: TID=0x%016lX, buttons=0x%llx, press=%ums, fire=%ums, auto=%d", 
+    log_info("配置加载完成: TID=0x%016lX, buttons=0x%llx, press=%dms, fire=%dms, auto=%d", 
              tid, m_CurrentButtons, m_CurrentPressTime, m_CurrentFireInterval, m_CurrentAutoEnable);
 }
 
