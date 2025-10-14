@@ -78,7 +78,7 @@ tsl::elm::Element* MainMenu::createUI()
                                                     TextFontSize, tsl::style::color::ColorText, tsl::style::color::ColorHighlight);
             
             // 第3行：配置类型
-            snprintf(tempText, sizeof(tempText), "配置：%s", s_TextAreaInfo.isGlobalConfig ? "全局" : "自定义");
+            snprintf(tempText, sizeof(tempText), "配置：%s", s_TextAreaInfo.isGlobalConfig ? "全局" : "独立");
             renderer->drawStringWithColoredSections(std::string(tempText), {"配置："}, x + SPACING, textStartY + 2 * (TextFontSize + SPACING), 
                                                     TextFontSize, tsl::style::color::ColorText, tsl::style::color::ColorHighlight);
 
@@ -130,9 +130,9 @@ tsl::elm::Element* MainMenu::createUI()
 
     // 创建设置列表项
     auto listItemSetting = new tsl::elm::ListItem("连发设置",">");
-    listItemSetting->setClickListener([](u64 keys) {
+    listItemSetting->setClickListener([this](u64 keys) {
         if (keys & HidNpadButton_A) {
-            tsl::changeTo<AutoKeySetting>();
+            tsl::changeTo<AutoKeySetting>(s_TextAreaInfo.gameId, s_TextAreaInfo.gameName);
             return true;
         }
         return false;

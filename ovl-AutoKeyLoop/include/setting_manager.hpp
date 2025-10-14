@@ -8,8 +8,16 @@
 // 游戏设置界面
 class GameSetting : public tsl::Gui 
 {
+private:
+    std::string m_titleId;            // 当前游戏 Title ID（0表示不在游戏）
+    std::string m_gameName;            // 当前游戏 Name
+    std::string m_gameConfigPath;      // 当前游戏配置文件路径
+    std::string m_FireInterval;   // 连发间隔时间（ms）
+    std::string m_PressTime;      // 按住持续时间（ms）
+    
+    
 public:
-    GameSetting();  // 构造函数
+    GameSetting(std::string titleId, std::string gameName);  // 构造函数
     
     virtual tsl::elm::Element* createUI() override;  // 创建用户界面
 };
@@ -68,12 +76,13 @@ public:
 class AutoKeySetting : public tsl::Gui 
 {
 private:
-    // 配置值成员变量
-    bool m_logEnabled;    // 日志开关
-    bool m_autoEnabled;   // 自动开启连发
+    std::string m_titleId;            // 当前游戏 Title ID（0表示不在游戏）
+    std::string m_gameName;            // 当前游戏 Name
+    bool m_logEnabled;        // 日志开关
+    bool m_autoEnabled;       // 自动开启连发
     
 public:
-    AutoKeySetting();  // 构造函数
+    AutoKeySetting(std::string titleId, std::string gameName);  // 构造函数
     
     virtual tsl::elm::Element* createUI() override;  // 创建用户界面
 };
