@@ -212,18 +212,22 @@ tsl::elm::Element* AutoKeySetting::createUI()
     auto categoryHeader1 = new tsl::elm::CategoryHeader(" 彻底关闭/开启系统模块");
     list->addItem(categoryHeader1);
     
-    // 添加列表项（暂时空着）
+    // 添加连发模块
     bool isModuleRunning = SysModuleManager::isRunning();
     auto listItemModule = new tsl::elm::ListItem("连发模块", isModuleRunning ? "开" : "关");
     list->addItem(listItemModule);
 
     // 添加分类标题
-    auto categoryHeader2 = new tsl::elm::CategoryHeader(" 游戏默认开启连发功能");
+    auto categoryHeader2 = new tsl::elm::CategoryHeader(" 基础功能设置");
     list->addItem(categoryHeader2);
     
-    // 添加列表项（暂时空着）
+    // 添加默认连发
     auto listItemDefaultAuto = new tsl::elm::ListItem("默认连发", "关");
     list->addItem(listItemDefaultAuto);
+    
+    // 添加调试日志
+    auto listItemDefaultAuto1 = new tsl::elm::ListItem("调试日志", "关");
+    list->addItem(listItemDefaultAuto1);
 
     // 添加分类标题
     auto categoryHeader3 = new tsl::elm::CategoryHeader(" 详细连发参数设置");
