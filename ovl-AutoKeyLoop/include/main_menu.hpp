@@ -24,8 +24,6 @@ public:
     // 静态成员变量：文本区域信息
     static TextAreaInfo s_TextAreaInfo;
     
-    // 静态成员变量：设置项指针（用于动态更新文本）
-    static tsl::elm::ListItem* s_SettingItem;
 
 
 

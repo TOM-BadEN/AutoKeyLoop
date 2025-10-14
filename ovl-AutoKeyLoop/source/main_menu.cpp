@@ -12,7 +12,6 @@
 
 // 静态成员变量定义
 TextAreaInfo MainMenu::s_TextAreaInfo;
-tsl::elm::ListItem* MainMenu::s_SettingItem = nullptr;
 
 // 静态方法：更新文本区域信息
 void MainMenu::UpdateTextAreaInfo() {
@@ -32,11 +31,6 @@ void MainMenu::UpdateTextAreaInfo() {
     // 默认使用全局配置
     s_TextAreaInfo.isGlobalConfig = true;
     
-    // 动态更新设置项的文本（如果已创建）
-    if (s_SettingItem != nullptr) {
-        const char* settingText = s_TextAreaInfo.isInGame ? "游戏设置" : "全局设置";
-        s_SettingItem->setText(settingText);
-    }
 }
 
 // 主菜单构造函数
@@ -134,23 +128,19 @@ tsl::elm::Element* MainMenu::createUI()
     auto listItemEnable = new tsl::elm::ListItem("开启连发", "已关闭");
     mainList->addItem(listItemEnable);
 
-    // 创建设置列表项 - 根据是否在游戏中显示不同文本
-    const char* settingText = s_TextAreaInfo.isInGame ? "游戏设置" : "全局设置";
-    s_SettingItem = new tsl::elm::ListItem(settingText, ">");
-    // 为关于插件列表项添加点击事件处理
-    s_SettingItem->setClickListener([](u64 keys) {
+    // 创建设置列表项
+    auto listItemSetting = new tsl::elm::ListItem("连发设置",">");
+    listItemSetting->setClickListener([](u64 keys) {
         if (keys & HidNpadButton_A) {
-            // 切换到设置插件界面
-            if (s_TextAreaInfo.isInGame) tsl::changeTo<GameSetting>();
-            else tsl::changeTo<GlobalSetting>();
+            tsl::changeTo<AutoKeySetting>();
             return true;
         }
         return false;
     });
-    mainList->addItem(s_SettingItem);
+    mainList->addItem(listItemSetting);
 
     // 创建保存设置列表项
-    auto listItemSave = new tsl::elm::ListItem("保存设置",">");
+    auto listItemSave = new tsl::elm::ListItem("切换配置",">");
     mainList->addItem(listItemSave);
 
     // 创建关于插件列表项
