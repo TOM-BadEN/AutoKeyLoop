@@ -40,7 +40,7 @@ private:
     // 连发按键池（白名单）- 只有这些按键允许连发
     u64 autokey_whitelist_mask;
     
-    // 连发参数（参考pad-macro项目）
+    // 连发参数
     static const u64 FIRE_INTERVAL_NS = 100000000ULL;         // 100ms切换间隔（按下/松开）
     static const u64 UPDATE_INTERVAL_NS = 1000000ULL;         // 1ms线程更新
     static const u64 RELEASE_DEBOUNCE_NS = 15000000ULL;       // 15ms松开防抖动时间

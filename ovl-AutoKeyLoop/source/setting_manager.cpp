@@ -4,6 +4,10 @@
 
 #define CONFIG_PATH "/config/AutoKeyLoop/config.ini"
 
+// 文件作用域静态变量 - 只在本文件内的GUI类之间共享
+static tsl::elm::ListItem* g_FireIntervalItem = nullptr;
+static tsl::elm::ListItem* g_PressTimeItem = nullptr;
+
 
 
 // ========== 游戏设置界面 ==========
@@ -30,7 +34,7 @@ tsl::elm::Element* GameSetting::createUI()
     auto listItem4 = new tsl::elm::ListItem("连发按键", ">");
     list->addItem(listItem4);
     
-    auto listItem2 = new tsl::elm::ListItem("连发间隔", ">");
+    auto listItem2 = new tsl::elm::ListItem("松开时间", ">");
     list->addItem(listItem2);
     
     auto listItem3 = new tsl::elm::ListItem("按住时间", ">");
@@ -108,6 +112,11 @@ tsl::elm::Element* GameSetting::createUI()
 // 构造函数
 GlobalSetting::GlobalSetting()
 {
+    // 读取连发间隔时间（默认值：100ms）
+    m_FireInterval = IniHelper::getString("AUTOFIRE", "fireinterval", "100", CONFIG_PATH);
+    
+    // 读取按住持续时间（默认值：100ms）
+    m_PressTime = IniHelper::getString("AUTOFIRE", "presstime", "100", CONFIG_PATH);
 }
 
 // 创建用户界面
@@ -126,11 +135,29 @@ tsl::elm::Element* GlobalSetting::createUI()
     auto listItem4 = new tsl::elm::ListItem("连发按键", ">");
     list->addItem(listItem4);
     
-    auto listItem2 = new tsl::elm::ListItem("连发间隔", ">");
-    list->addItem(listItem2);
+    // 使用全局变量（参考ovl-FtpAutoBack的g_timeoutItem）
+    g_FireIntervalItem = new tsl::elm::ListItem("松开时间", m_FireInterval + "ms");
+    g_FireIntervalItem->setClickListener([this](u64 keys) {
+        if (keys & HidNpadButton_A) {
+            std::string FireInterval = IniHelper::getString("AUTOFIRE", "fireinterval", "100", CONFIG_PATH);
+            tsl::changeTo<TimeSetting>(FireInterval, "fireinterval", "松开时间", true);
+            return true;
+        }
+        return false;
+    });
+    list->addItem(g_FireIntervalItem);
     
-    auto listItem3 = new tsl::elm::ListItem("按住时间", ">");
-    list->addItem(listItem3);
+    // 使用全局变量（参考ovl-FtpAutoBack的g_backupCountItem）
+    g_PressTimeItem = new tsl::elm::ListItem("按住时间", m_PressTime + "ms");
+    g_PressTimeItem->setClickListener([this](u64 keys) {
+        if (keys & HidNpadButton_A) {
+            std::string PressTime = IniHelper::getString("AUTOFIRE", "presstime", "100", CONFIG_PATH);
+            tsl::changeTo<TimeSetting>(PressTime, "presstime", "按住时间", true);
+            return true;
+        }
+        return false;
+    });
+    list->addItem(g_PressTimeItem);
     
     // 按键显示区域高度（720 - 标题97 - 底部73 - 分类标题63 - 3个列表项210 = 277）
     s32 buttonDisplayHeight = 277;
@@ -195,6 +222,82 @@ tsl::elm::Element* GlobalSetting::createUI()
     rootFrame->setContent(list);
     
     return rootFrame;
+}
+
+// ========== 时间设置界面 ==========
+
+TimeSetting::TimeSetting(std::string currentValue, std::string configKey, 
+                         std::string title, bool isGlobal)
+    : m_currentTime(std::stoi(currentValue))
+    , m_configKey(configKey)
+    , m_title(title)
+    , m_isGlobal(isGlobal)
+    , m_list(nullptr)
+    , m_needsRefocus(true)
+    , m_frameCounter(0)
+{
+}
+
+tsl::elm::Element* TimeSetting::createUI()
+{
+    std::string subtitle = m_isGlobal ? "全局配置" : "游戏独立配置";
+    auto rootFrame = new tsl::elm::OverlayFrame(m_title, subtitle);
+    
+    m_list = new tsl::elm::List();
+    m_list->addItem(new tsl::elm::CategoryHeader("单位：毫秒 (ms)"));
+    
+    // 生成 100-300ms，间隔20ms 的选项（共11个）
+    for (int idx = 0; idx < 11; idx++) {
+        int value = 100 + idx * 20;
+        std::string valueStr = std::to_string(value);
+        
+        auto item = new tsl::elm::ListItem(valueStr + "ms");
+        
+        // 当前值显示勾选标记，并将值转换为索引
+        if (value == m_currentTime) {
+            item->setValue("\uE14B");
+            m_currentTime = idx;
+        }
+        
+        item->setClickListener([this, valueStr](u64 keys) {
+            if (keys & HidNpadButton_A) {
+                IniHelper::setString("AUTOFIRE", m_configKey, valueStr, CONFIG_PATH);
+                
+                // 更新全局 ListItem 显示值
+                if (m_configKey == "fireinterval" && g_FireIntervalItem != nullptr) {
+                    g_FireIntervalItem->setValue(valueStr + "ms");
+                } else if (m_configKey == "presstime" && g_PressTimeItem != nullptr) {
+                    g_PressTimeItem->setValue(valueStr + "ms");
+                }
+                
+                tsl::goBack();
+                return true;
+            }
+            return false;
+        });
+        
+        m_list->addItem(item);
+    }
+    
+    rootFrame->setContent(m_list);
+    return rootFrame;
+}
+
+void TimeSetting::update()
+{
+    // 延迟2帧后设置焦点，确保 Tesla 框架初始化完成
+    if (m_needsRefocus && m_list != nullptr) {
+        m_frameCounter++;
+        if (m_frameCounter >= 2) {
+            // +1 是因为 CategoryHeader 占用了 list[0]
+            m_list->setFocusedIndex(m_currentTime + 1);
+            auto targetItem = m_list->getItemAtIndex(m_currentTime + 1);
+            if (targetItem != nullptr) {
+                this->requestFocus(targetItem, tsl::FocusDirection::None, false);
+            }
+            m_needsRefocus = false;
+        }
+    }
 }
 
 // ========== 总设置界面 ==========
