@@ -64,6 +64,9 @@ App::App() {
 }
 
 App::~App() {
+
+    log_info("App析构函数开始执行！");
+
     // 清理IPC服务器
     if (ipc_server) {
         ipc_server->Stop();
@@ -76,6 +79,8 @@ App::~App() {
         delete autokey_manager;
         autokey_manager = nullptr;
     }
+
+    log_info("App析构函数执行完毕！");
 }
 
 void App::Loop() {

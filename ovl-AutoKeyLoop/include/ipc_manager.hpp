@@ -11,7 +11,7 @@
  */
 class IPCManager {
 private:
-    static constexpr const char* SERVICE_NAME = "akloop";  // 系统模块注册的服务名
+    static constexpr const char* SERVICE_NAME = "keyLoop";  // 系统模块注册的服务名
     
     Service m_service;      // IPC 服务句柄
     bool m_connected;       // 连接状态

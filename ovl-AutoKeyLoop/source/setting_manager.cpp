@@ -215,6 +215,25 @@ tsl::elm::Element* AutoKeySetting::createUI()
     // 添加连发模块
     bool isModuleRunning = SysModuleManager::isRunning();
     auto listItemModule = new tsl::elm::ListItem("连发模块", isModuleRunning ? "开" : "关");
+    listItemModule->setClickListener([listItemModule](u64 keys) {
+        if (keys & HidNpadButton_A) {
+            if (SysModuleManager::isRunning()) {
+                // 关闭系统模块
+                SysModuleManager::stopModule();
+                // 即使 IPC 返回错误，系统模块可能也已经开始退出
+                // 所以直接更新 UI（延迟后会自动同步状态）
+                listItemModule->setValue("关");
+            } else {
+                // 启动系统模块
+                Result rc = SysModuleManager::startModule();
+                if (R_SUCCEEDED(rc)) {
+                    listItemModule->setValue("开");
+                }
+            }
+            return true;
+        }
+        return false;
+    });
     list->addItem(listItemModule);
 
     // 添加分类标题
