@@ -1,4 +1,5 @@
 #include "sysmodule_manager.hpp"
+#include "ipc_manager.hpp"
 
 // 检查系统模块是否正在运行
 bool SysModuleManager::isRunning() {
@@ -28,6 +29,19 @@ Result SysModuleManager::startModule() {
     // 使用 pmshell 启动程序
     u64 pid = 0;
     Result rc = pmshellLaunchProgram(0, &programLocation, &pid);
+    
+    return rc;
+}
+
+// 通过 IPC 通知系统模块退出
+Result SysModuleManager::stopModule() {
+    // 检查系统模块是否正在运行
+    if (!isRunning()) {
+        return 0xCAFE02; // 自定义错误码：系统模块未运行
+    }
+    
+    // 使用 IPC 管理器发送退出命令
+    Result rc = g_ipcManager.sendExitCommand();
     
     return rc;
 }

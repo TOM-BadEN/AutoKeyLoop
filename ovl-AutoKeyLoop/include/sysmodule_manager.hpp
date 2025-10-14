@@ -21,5 +21,12 @@ public:
      * @return Result 0=成功，其他=失败
      */
     static Result startModule();
+    
+    /**
+     * 通过 IPC 通知系统模块退出
+     * @return Result 0=成功，其他=失败
+     * @note 如果系统模块未运行，会返回失败
+     */
+    static Result stopModule();
 };
 
