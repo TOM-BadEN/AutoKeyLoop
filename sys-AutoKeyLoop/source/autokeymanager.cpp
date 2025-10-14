@@ -10,8 +10,15 @@ alignas(0x1000) char AutoKeyManager::input_reader_thread_stack[4 * 1024];
 alignas(0x1000) u8 AutoKeyManager::hdls_work_buffer[0x1000];
 
 // 构造函数
-AutoKeyManager::AutoKeyManager() {
+AutoKeyManager::AutoKeyManager(u64 buttons, u32 presstime, u32 fireinterval) {
 
+    // 存储配置参数
+    autokey_whitelist_mask = buttons;
+    press_duration_ns = (u64)presstime * 1000000ULL;    // 毫秒转纳秒
+    release_duration_ns = (u64)fireinterval * 1000000ULL; // 毫秒转纳秒
+    
+    log_info("连发配置: 白名单=0x%llx, 按下=%ums, 松开=%ums", 
+             buttons, presstime, fireinterval);
 
     // 初始化HDLS工作缓冲区（核心，需要这个来虚拟输入）
     Result rc = hiddbgAttachHdlsWorkBuffer(&hdls_session_id, hdls_work_buffer, sizeof(hdls_work_buffer));
@@ -34,11 +41,6 @@ AutoKeyManager::AutoKeyManager() {
     autokey_last_switch_time = 0;
     autokey_release_start_time = 0;
     memset(&shared_physical_state, 0, sizeof(shared_physical_state));
-    
-    // 初始化连发按键池（白名单）- 默认允许 ABXY + LR + ZLZR
-    autokey_whitelist_mask = 
-        HidNpadButton_A | HidNpadButton_B | HidNpadButton_X | HidNpadButton_Y |
-        HidNpadButton_L | HidNpadButton_R | HidNpadButton_ZL | HidNpadButton_ZR;
     
     // 初始化线程状态
     thread_created = false;
@@ -266,8 +268,9 @@ void AutoKeyManager::HijackAndModifyState() {
         // 计算经过的时间
         u64 elapsed_ns = armTicksToNs(current_time - autokey_last_switch_time);
         
-        // 检查是否到达切换时间（100ms）
-        if (elapsed_ns >= FIRE_INTERVAL_NS) {
+        // 检查是否到达切换时间（按下和松开时间不同）
+        u64 threshold = autokey_is_pressed ? press_duration_ns : release_duration_ns;
+        if (elapsed_ns >= threshold) {
             // 切换连发状态
             autokey_is_pressed = !autokey_is_pressed;
             autokey_last_switch_time = current_time;

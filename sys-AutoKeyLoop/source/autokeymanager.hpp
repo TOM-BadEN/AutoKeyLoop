@@ -40,14 +40,20 @@ private:
     // 连发按键池（白名单）- 只有这些按键允许连发
     u64 autokey_whitelist_mask;
     
-    // 连发参数
-    static const u64 FIRE_INTERVAL_NS = 100000000ULL;         // 100ms切换间隔（按下/松开）
+    // 连发参数（可配置）
+    u64 press_duration_ns;      // 按键按下持续时间（纳秒）
+    u64 release_duration_ns;    // 按键松开持续时间（纳秒）
+    
+    // 线程参数（固定）
     static const u64 UPDATE_INTERVAL_NS = 1000000ULL;         // 1ms线程更新
     static const u64 RELEASE_DEBOUNCE_NS = 15000000ULL;       // 15ms松开防抖动时间
 
 public:
     // 构造函数
-    AutoKeyManager();
+    // @param buttons 白名单按键掩码 (u64)
+    // @param presstime 按键按下持续时间（毫秒）
+    // @param fireinterval 按键松开持续时间（毫秒）
+    AutoKeyManager(u64 buttons, u32 presstime, u32 fireinterval);
     
     // 析构函数
     ~AutoKeyManager();
