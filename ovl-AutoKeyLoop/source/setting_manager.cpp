@@ -1,12 +1,46 @@
 #include "setting_manager.hpp"
 #include "sysmodule_manager.hpp"
 #include "ini_helper.hpp"
+#include <string>
 
 #define CONFIG_PATH "/config/AutoKeyLoop/config.ini"
+
+// Switch 按键 Unicode 图标
+namespace ButtonIcon {
+    constexpr const char* A      = "\uE0A0";  // A 按键
+    constexpr const char* B      = "\uE0A1";  // B 按键
+    constexpr const char* X      = "\uE0A2";  // X 按键
+    constexpr const char* Y      = "\uE0A3";  // Y 按键
+    constexpr const char* L      = "\uE0A4";  // L 按键
+    constexpr const char* R      = "\uE0A5";  // R 按键
+    constexpr const char* ZL     = "\uE0A6";  // ZL 按键
+    constexpr const char* ZR     = "\uE0A7";  // ZR 按键
+    constexpr const char* Up     = "\uE0AF";  // 方向键上
+    constexpr const char* Down   = "\uE0B0";  // 方向键下
+    constexpr const char* Left   = "\uE0B1";  // 方向键左
+    constexpr const char* Right  = "\uE0B2";  // 方向键右
+}
+
+// 按键位标志定义（与 HidNpadButton 位索引保持一致）
+enum ButtonFlags : u64 {
+    BTN_A     = 1ULL << 0,   // HidNpadButton_A
+    BTN_B     = 1ULL << 1,   // HidNpadButton_B
+    BTN_X     = 1ULL << 2,   // HidNpadButton_X
+    BTN_Y     = 1ULL << 3,   // HidNpadButton_Y
+    BTN_L     = 1ULL << 6,   // HidNpadButton_L（跳过 StickL/StickR）
+    BTN_R     = 1ULL << 7,   // HidNpadButton_R
+    BTN_ZL    = 1ULL << 8,   // HidNpadButton_ZL
+    BTN_ZR    = 1ULL << 9,   // HidNpadButton_ZR
+    BTN_LEFT  = 1ULL << 12,  // HidNpadButton_Left（跳过 Plus/Minus）
+    BTN_UP    = 1ULL << 13,  // HidNpadButton_Up
+    BTN_RIGHT = 1ULL << 14,  // HidNpadButton_Right
+    BTN_DOWN  = 1ULL << 15   // HidNpadButton_Down
+};
 
 // 文件作用域静态变量 - 只在本文件内的GUI类之间共享
 static tsl::elm::ListItem* g_FireIntervalItem = nullptr;
 static tsl::elm::ListItem* g_PressTimeItem = nullptr;
+static u64 g_selectedButtons = 0;  // 当前选中的连发按键（位掩码，与HidNpadButton兼容）
 
 
 
@@ -72,30 +106,30 @@ tsl::elm::Element* GameSetting::createUI()
         // === 绘制按钮（5行） ===
         // 行1: ZL, ZR
         s32 row1Y = baseY;
-        r->drawString("\uE0A6", false, leftColumnX, row1Y, buttonSize, a(whiteColor));
-        r->drawString("\uE0A7", false, rightColumnX, row1Y, buttonSize, a(whiteColor));
+        r->drawString(ButtonIcon::ZL, false, leftColumnX, row1Y, buttonSize, a(whiteColor));
+        r->drawString(ButtonIcon::ZR, false, rightColumnX, row1Y, buttonSize, a(whiteColor));
         
         // 行2: L, R
         s32 row2Y = baseY + buttonSize + rowSpacing;
-        r->drawString("\uE0A4", false, leftColumnX, row2Y, buttonSize, a(lightBlueColor));
-        r->drawString("\uE0A5", false, rightColumnX, row2Y, buttonSize, a(whiteColor));
+        r->drawString(ButtonIcon::L, false, leftColumnX, row2Y, buttonSize, a(lightBlueColor));
+        r->drawString(ButtonIcon::R, false, rightColumnX, row2Y, buttonSize, a(whiteColor));
         
         // 行3: 方向键上, X
         s32 row3Y = baseY + 2 * (buttonSize + rowSpacing);
-        r->drawString("\uE0AF", false, leftColumnX, row3Y, buttonSize, a(whiteColor));
-        r->drawString("\uE0A2", false, rightColumnX, row3Y, buttonSize, a(lightBlueColor));
+        r->drawString(ButtonIcon::Up, false, leftColumnX, row3Y, buttonSize, a(whiteColor));
+        r->drawString(ButtonIcon::X, false, rightColumnX, row3Y, buttonSize, a(lightBlueColor));
         
         // 行4: 方向键左右, Y/A
         s32 row4Y = baseY + 3 * (buttonSize + rowSpacing);
-        r->drawString("\uE0B1", false, dpadLeftX, row4Y, buttonSize, a(whiteColor));
-        r->drawString("\uE0B2", false, dpadRightX, row4Y, buttonSize, a(whiteColor));
-        r->drawString("\uE0A3", false, yButtonX, row4Y, buttonSize, a(whiteColor));
-        r->drawString("\uE0A0", false, aButtonX, row4Y, buttonSize, a(lightBlueColor));
+        r->drawString(ButtonIcon::Left, false, dpadLeftX, row4Y, buttonSize, a(whiteColor));
+        r->drawString(ButtonIcon::Right, false, dpadRightX, row4Y, buttonSize, a(whiteColor));
+        r->drawString(ButtonIcon::Y, false, yButtonX, row4Y, buttonSize, a(whiteColor));
+        r->drawString(ButtonIcon::A, false, aButtonX, row4Y, buttonSize, a(lightBlueColor));
         
         // 行5: 方向键下, B
         s32 row5Y = baseY + 4 * (buttonSize + rowSpacing);
-        r->drawString("\uE0B0", false, leftColumnX, row5Y, buttonSize, a(whiteColor));
-        r->drawString("\uE0A1", false, rightColumnX, row5Y, buttonSize, a(whiteColor));
+        r->drawString(ButtonIcon::Down, false, leftColumnX, row5Y, buttonSize, a(whiteColor));
+        r->drawString(ButtonIcon::B, false, rightColumnX, row5Y, buttonSize, a(whiteColor));
     });
     
     list->addItem(buttonDisplay, buttonDisplayHeight);
@@ -117,6 +151,10 @@ GlobalSetting::GlobalSetting()
     
     // 读取按住持续时间（默认值：100ms）
     m_PressTime = IniHelper::getString("AUTOFIRE", "presstime", "100", CONFIG_PATH);
+    
+    // 读取连发按键配置（默认值：0 = 无按键）
+    std::string buttonsStr = IniHelper::getString("AUTOFIRE", "buttons", "0", CONFIG_PATH);
+    g_selectedButtons = std::stoull(buttonsStr);  // 字符串转u64
 }
 
 // 创建用户界面
@@ -133,6 +171,13 @@ tsl::elm::Element* GlobalSetting::createUI()
     list->addItem(categoryHeader2);
 
     auto listItem4 = new tsl::elm::ListItem("连发按键", ">");
+    listItem4->setClickListener([](u64 keys) {
+        if (keys & HidNpadButton_A) {
+            tsl::changeTo<ButtonSetting>(g_selectedButtons, CONFIG_PATH, true);
+            return true;
+        }
+        return false;
+    });
     list->addItem(listItem4);
     
     // 使用全局变量（参考ovl-FtpAutoBack的g_timeoutItem）
@@ -140,7 +185,7 @@ tsl::elm::Element* GlobalSetting::createUI()
     g_FireIntervalItem->setClickListener([this](u64 keys) {
         if (keys & HidNpadButton_A) {
             std::string FireInterval = IniHelper::getString("AUTOFIRE", "fireinterval", "100", CONFIG_PATH);
-            tsl::changeTo<TimeSetting>(FireInterval, "fireinterval", "松开时间", true);
+            tsl::changeTo<TimeSetting>(FireInterval, "fireinterval", "松开时间", CONFIG_PATH, true);
             return true;
         }
         return false;
@@ -152,7 +197,7 @@ tsl::elm::Element* GlobalSetting::createUI()
     g_PressTimeItem->setClickListener([this](u64 keys) {
         if (keys & HidNpadButton_A) {
             std::string PressTime = IniHelper::getString("AUTOFIRE", "presstime", "100", CONFIG_PATH);
-            tsl::changeTo<TimeSetting>(PressTime, "presstime", "按住时间", true);
+            tsl::changeTo<TimeSetting>(PressTime, "presstime", "按住时间", CONFIG_PATH, true);
             return true;
         }
         return false;
@@ -162,59 +207,63 @@ tsl::elm::Element* GlobalSetting::createUI()
     // 按键显示区域高度（720 - 标题97 - 底部73 - 分类标题63 - 3个列表项210 = 277）
     s32 buttonDisplayHeight = 277;
     
-    // 添加按键布局显示区域
+    // 添加按键布局显示区域（根据 g_selectedButtons 动态显示颜色）
     auto buttonDisplay = new tsl::elm::CustomDrawer([](tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h) {
         tsl::Color whiteColor = {0xFF, 0xFF, 0xFF, 0xFF};
-        tsl::Color lightBlueColor = {0x00, 0xDD, 0xFF, 0xFF};  // 亮天蓝色
+        tsl::Color lightBlueColor = {0x00, 0xDD, 0xFF, 0xFF};  // 选中颜色
         
-        const s32 buttonSize = 30;   // 按钮大小
-        const s32 rowSpacing = 10;   // 行间距
+        const s32 buttonSize = 30;
+        const s32 rowSpacing = 10;
         
-        // === 水平位置计算 ===
-        // 左侧：方向键左距边界40，中心在80
         s32 dpadLeftX = x + 40;
         s32 leftColumnX = x + 80;
         s32 dpadRightX = x + 120;
-        
-        // 右侧：A键距边界40，中心在w-80
         s32 aButtonX = x + w - 40;
         s32 rightColumnX = x + w - 80;
         s32 yButtonX = x + w - 120;
         
-        // === 垂直位置计算 ===
-        // 总高度 = 5行×30px + 4个间距×10px = 190px
         const s32 layoutTotalHeight = 5 * buttonSize + 4 * rowSpacing;
-        
-        // 垂直居中（drawString的y参数是文字底部，需加buttonSize偏移）
         s32 baseY = y + (h - layoutTotalHeight) / 2 + buttonSize;
         
-        // === 绘制按钮（5行） ===
+        // === 根据 g_selectedButtons 显示按键颜色 ===
         // 行1: ZL, ZR
         s32 row1Y = baseY;
-        r->drawString("\uE0A6", false, leftColumnX, row1Y, buttonSize, a(whiteColor));
-        r->drawString("\uE0A7", false, rightColumnX, row1Y, buttonSize, a(whiteColor));
+        r->drawString(ButtonIcon::ZL, false, leftColumnX, row1Y, buttonSize, 
+            a((g_selectedButtons & BTN_ZL) ? lightBlueColor : whiteColor));
+        r->drawString(ButtonIcon::ZR, false, rightColumnX, row1Y, buttonSize, 
+            a((g_selectedButtons & BTN_ZR) ? lightBlueColor : whiteColor));
         
         // 行2: L, R
         s32 row2Y = baseY + buttonSize + rowSpacing;
-        r->drawString("\uE0A4", false, leftColumnX, row2Y, buttonSize, a(lightBlueColor));
-        r->drawString("\uE0A5", false, rightColumnX, row2Y, buttonSize, a(whiteColor));
+        r->drawString(ButtonIcon::L, false, leftColumnX, row2Y, buttonSize, 
+            a((g_selectedButtons & BTN_L) ? lightBlueColor : whiteColor));
+        r->drawString(ButtonIcon::R, false, rightColumnX, row2Y, buttonSize, 
+            a((g_selectedButtons & BTN_R) ? lightBlueColor : whiteColor));
         
         // 行3: 方向键上, X
         s32 row3Y = baseY + 2 * (buttonSize + rowSpacing);
-        r->drawString("\uE0AF", false, leftColumnX, row3Y, buttonSize, a(whiteColor));
-        r->drawString("\uE0A2", false, rightColumnX, row3Y, buttonSize, a(lightBlueColor));
+        r->drawString(ButtonIcon::Up, false, leftColumnX, row3Y, buttonSize, 
+            a((g_selectedButtons & BTN_UP) ? lightBlueColor : whiteColor));
+        r->drawString(ButtonIcon::X, false, rightColumnX, row3Y, buttonSize, 
+            a((g_selectedButtons & BTN_X) ? lightBlueColor : whiteColor));
         
         // 行4: 方向键左右, Y/A
         s32 row4Y = baseY + 3 * (buttonSize + rowSpacing);
-        r->drawString("\uE0B1", false, dpadLeftX, row4Y, buttonSize, a(whiteColor));
-        r->drawString("\uE0B2", false, dpadRightX, row4Y, buttonSize, a(whiteColor));
-        r->drawString("\uE0A3", false, yButtonX, row4Y, buttonSize, a(whiteColor));
-        r->drawString("\uE0A0", false, aButtonX, row4Y, buttonSize, a(lightBlueColor));
+        r->drawString(ButtonIcon::Left, false, dpadLeftX, row4Y, buttonSize, 
+            a((g_selectedButtons & BTN_LEFT) ? lightBlueColor : whiteColor));
+        r->drawString(ButtonIcon::Right, false, dpadRightX, row4Y, buttonSize, 
+            a((g_selectedButtons & BTN_RIGHT) ? lightBlueColor : whiteColor));
+        r->drawString(ButtonIcon::Y, false, yButtonX, row4Y, buttonSize, 
+            a((g_selectedButtons & BTN_Y) ? lightBlueColor : whiteColor));
+        r->drawString(ButtonIcon::A, false, aButtonX, row4Y, buttonSize, 
+            a((g_selectedButtons & BTN_A) ? lightBlueColor : whiteColor));
         
         // 行5: 方向键下, B
         s32 row5Y = baseY + 4 * (buttonSize + rowSpacing);
-        r->drawString("\uE0B0", false, leftColumnX, row5Y, buttonSize, a(whiteColor));
-        r->drawString("\uE0A1", false, rightColumnX, row5Y, buttonSize, a(whiteColor));
+        r->drawString(ButtonIcon::Down, false, leftColumnX, row5Y, buttonSize, 
+            a((g_selectedButtons & BTN_DOWN) ? lightBlueColor : whiteColor));
+        r->drawString(ButtonIcon::B, false, rightColumnX, row5Y, buttonSize, 
+            a((g_selectedButtons & BTN_B) ? lightBlueColor : whiteColor));
     });
     list->addItem(buttonDisplay, buttonDisplayHeight);
     
@@ -224,13 +273,81 @@ tsl::elm::Element* GlobalSetting::createUI()
     return rootFrame;
 }
 
+// ========== 按键设置界面 ==========
+
+ButtonSetting::ButtonSetting(u64 currentButtons, std::string configPath, bool isGlobal)
+    : m_selectedButtons(currentButtons)
+    , m_configPath(configPath)
+    , m_isGlobal(isGlobal)
+{
+}
+
+tsl::elm::Element* ButtonSetting::createUI()
+{
+    std::string subtitle = m_isGlobal ? "全局配置" : "游戏独立配置";
+    auto rootFrame = new tsl::elm::OverlayFrame("连发按键", subtitle);
+    
+    auto list = new tsl::elm::List();
+    list->addItem(new tsl::elm::CategoryHeader("选择连发按键（可多选）"));
+    
+    // 定义按键配置：名称、Unicode符号、位标志
+    struct ButtonConfig {
+        const char* name;
+        const char* unicode;
+        int flag;
+    };
+    
+    ButtonConfig buttons[] = {
+        {"按键", ButtonIcon::A, BTN_A},
+        {"按键", ButtonIcon::B, BTN_B},
+        {"按键", ButtonIcon::X, BTN_X},
+        {"按键", ButtonIcon::Y, BTN_Y},
+        {"按键", ButtonIcon::L, BTN_L},
+        {"按键", ButtonIcon::R, BTN_R},
+        {"按键", ButtonIcon::ZL, BTN_ZL},
+        {"按键", ButtonIcon::ZR, BTN_ZR},
+        {"方向键上", ButtonIcon::Up, BTN_UP},
+        {"方向键下", ButtonIcon::Down, BTN_DOWN},
+        {"方向键左", ButtonIcon::Left, BTN_LEFT},
+        {"方向键右", ButtonIcon::Right, BTN_RIGHT}
+    };
+    
+    for (const auto& btn : buttons) {
+        bool isSelected = (m_selectedButtons & btn.flag) != 0;
+        auto item = new tsl::elm::ToggleListItem(
+            std::string(btn.name) + "  " + btn.unicode, 
+            isSelected
+        );
+        
+        item->setStateChangedListener([this, btn](bool state) {
+            if (state) {
+                m_selectedButtons |= btn.flag;  // 添加按键
+            } else {
+                m_selectedButtons &= ~btn.flag; // 移除按键
+            }
+            
+            // 保存到配置文件（u64转为字符串保存，避免溢出）
+            IniHelper::setString("AUTOFIRE", "buttons", std::to_string(m_selectedButtons), m_configPath);
+            
+            // 更新全局变量（用于CustomDrawer显示）
+            g_selectedButtons = m_selectedButtons;
+        });
+        
+        list->addItem(item);
+    }
+    
+    rootFrame->setContent(list);
+    return rootFrame;
+}
+
 // ========== 时间设置界面 ==========
 
 TimeSetting::TimeSetting(std::string currentValue, std::string configKey, 
-                         std::string title, bool isGlobal)
+                         std::string title, std::string configPath, bool isGlobal)
     : m_currentTime(std::stoi(currentValue))
     , m_configKey(configKey)
     , m_title(title)
+    , m_configPath(configPath)
     , m_isGlobal(isGlobal)
     , m_list(nullptr)
     , m_needsRefocus(true)
@@ -261,7 +378,7 @@ tsl::elm::Element* TimeSetting::createUI()
         
         item->setClickListener([this, valueStr](u64 keys) {
             if (keys & HidNpadButton_A) {
-                IniHelper::setString("AUTOFIRE", m_configKey, valueStr, CONFIG_PATH);
+                IniHelper::setString("AUTOFIRE", m_configKey, valueStr, m_configPath);
                 
                 // 更新全局 ListItem 显示值
                 if (m_configKey == "fireinterval" && g_FireIntervalItem != nullptr) {

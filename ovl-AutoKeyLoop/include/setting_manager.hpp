@@ -28,6 +28,20 @@ public:
     virtual tsl::elm::Element* createUI() override;  // 创建用户界面
 };
 
+// 按键设置界面
+class ButtonSetting : public tsl::Gui 
+{
+private:
+    u64 m_selectedButtons;          // 当前选中的按键（位掩码，与HidNpadButton兼容）
+    std::string m_configPath;       // 配置文件路径
+    bool m_isGlobal;                // 是否全局设置
+    
+public:
+    ButtonSetting(u64 currentButtons, std::string configPath, bool isGlobal);
+    
+    virtual tsl::elm::Element* createUI() override;
+};
+
 // 时间设置界面（通用：用于设置松开时间和按住时间）
 class TimeSetting : public tsl::Gui 
 {
@@ -35,6 +49,7 @@ private:
     int m_currentTime;              // 当前选中的时间值（会在createUI中转换为索引）
     std::string m_configKey;        // 配置键名 ("fireinterval" 或 "presstime")
     std::string m_title;            // 界面标题
+    std::string m_configPath;       // 配置文件路径
     bool m_isGlobal;                // 是否全局设置
     
     tsl::elm::List* m_list;         // 列表指针（用于延迟焦点设置）
@@ -43,7 +58,7 @@ private:
     
 public:
     TimeSetting(std::string currentValue, std::string configKey, 
-                std::string title, bool isGlobal);
+                std::string title, std::string configPath, bool isGlobal);
     
     virtual tsl::elm::Element* createUI() override;
     virtual void update() override;
