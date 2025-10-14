@@ -7,20 +7,20 @@ alignas(0x1000) char IPCServer::ipc_thread_stack[8 * 1024];
 
 // 构造函数
 IPCServer::IPCServer() : 
-    is_client_connected(false),
-    should_exit(false),
-    thread_created(false),
-    thread_running(false) {
+    m_IsClientConnected(false),
+    m_ShouldExit(false),
+    m_ThreadCreated(false),
+    m_ThreadRunning(false) {
     
     // 初始化句柄数组
-    handles[0] = INVALID_HANDLE;
-    handles[1] = INVALID_HANDLE;
+    m_Handles[0] = INVALID_HANDLE;
+    m_Handles[1] = INVALID_HANDLE;
     
     // 初始化服务名
-    memset(&server_name, 0, sizeof(SmServiceName));
+    memset(&m_ServerName, 0, sizeof(SmServiceName));
     
     // 初始化线程
-    memset(&ipc_thread, 0, sizeof(Thread));
+    memset(&m_IpcThread, 0, sizeof(Thread));
 }
 
 // 析构函数
@@ -32,65 +32,65 @@ IPCServer::~IPCServer() {
 bool IPCServer::Start(const char* service_name) {
     
     // 设置服务名称（最多8字符）
-    memset(&server_name, 0, sizeof(SmServiceName));
-    memcpy(server_name.name, service_name, 
+    memset(&m_ServerName, 0, sizeof(SmServiceName));
+    memcpy(m_ServerName.name, service_name, 
            service_name[7] == '\0' ? 8 : 7);  // 确保不超过8字符
     
     // 创建IPC线程
-    Result rc = threadCreate(&ipc_thread, ThreadEntry, this, 
+    Result rc = threadCreate(&m_IpcThread, ThreadEntry, this, 
                            ipc_thread_stack, sizeof(ipc_thread_stack), 44, 3);
     if (R_FAILED(rc)) {
         log_error("IPC线程创建失败: 0x%x", rc);
         return false;
     }
     
-    thread_created = true;
+    m_ThreadCreated = true;
     
     // 启动线程
-    rc = threadStart(&ipc_thread);
+    rc = threadStart(&m_IpcThread);
     if (R_FAILED(rc)) {
         log_error("IPC线程启动失败: 0x%x", rc);
         return false;
     }
     
-    thread_running = true;
+    m_ThreadRunning = true;
     log_info("IPC服务启动成功: %s", service_name);
     return true;
 }
 
 // 停止IPC服务
 void IPCServer::Stop() {
-    if (!thread_created) return;
+    if (!m_ThreadCreated) return;
     
     log_info("准备停止IPC服务");
-    should_exit = true;
+    m_ShouldExit = true;
     
     // 等待线程结束
-    if (thread_running) {
-        threadWaitForExit(&ipc_thread);
+    if (m_ThreadRunning) {
+        threadWaitForExit(&m_IpcThread);
         log_info("IPC线程已停止");
     }
     
     // 关闭线程
-    if (thread_created) {
-        threadClose(&ipc_thread);
+    if (m_ThreadCreated) {
+        threadClose(&m_IpcThread);
         log_info("IPC线程关闭成功");
     }
 }
 
 // 设置退出回调函数
 void IPCServer::SetExitCallback(std::function<void()> callback) {
-    exit_callback = callback;
+    m_ExitCallback = callback;
 }
 
 // 设置开启连发回调函数
 void IPCServer::SetEnableCallback(std::function<void()> callback) {
-    enable_callback = callback;
+    m_EnableCallback = callback;
 }
 
 // 设置关闭连发回调函数
 void IPCServer::SetDisableCallback(std::function<void()> callback) {
-    disable_callback = callback;
+    m_DisableCallback = callback;
 }
 
 // 静态线程入口函数
@@ -103,7 +103,7 @@ void IPCServer::ThreadEntry(void* arg) {
 void IPCServer::IpcThreadMain() {
     StartServer();
     
-    while (!should_exit) {
+    while (!m_ShouldExit) {
         WaitAndProcessRequest();
     }
     
@@ -114,34 +114,34 @@ void IPCServer::IpcThreadMain() {
 void IPCServer::StartServer() {
     
     // ★ 修正：第二个参数传 SmServiceName 值，不是指针
-    Result rc = smRegisterService(server_handle, server_name, false, 1);
+    Result rc = smRegisterService(m_ServerHandle, m_ServerName, false, 1);
     if (R_FAILED(rc)) {
         log_error("注册IPC服务失败: 0x%x", rc);
-        should_exit = true;
+        m_ShouldExit = true;
         return;
     }
-    log_info("IPC服务注册成功: %s", server_name.name);
+    log_info("IPC服务注册成功: %s", m_ServerName.name);
 }
 
 // 停止服务器
 void IPCServer::StopServer() {
     // 关闭客户端连接
-    if (is_client_connected && *client_handle != INVALID_HANDLE) {
-        svcCloseHandle(*client_handle);
-        *client_handle = INVALID_HANDLE;
-        is_client_connected = false;
+    if (m_IsClientConnected && *m_ClientHandle != INVALID_HANDLE) {
+        svcCloseHandle(*m_ClientHandle);
+        *m_ClientHandle = INVALID_HANDLE;
+        m_IsClientConnected = false;
     }
     
     // 关闭服务器句柄并注销服务
-    if (*server_handle != INVALID_HANDLE) {
-        svcCloseHandle(*server_handle);
+    if (*m_ServerHandle != INVALID_HANDLE) {
+        svcCloseHandle(*m_ServerHandle);
         
-        Result rc = smUnregisterService(server_name);
+        Result rc = smUnregisterService(m_ServerName);
         if (R_FAILED(rc)) {
             log_error("注销IPC服务失败: 0x%x", rc);
         }
         
-        *server_handle = INVALID_HANDLE;
+        *m_ServerHandle = INVALID_HANDLE;
     }
 }
 
@@ -150,43 +150,43 @@ void IPCServer::WaitAndProcessRequest() {
     s32 index = -1;
     
     // 等待同步（监听服务器句柄和客户端句柄）
-    Result rc = svcWaitSynchronization(&index, handles, is_client_connected ? 2 : 1, UINT64_MAX);
+    Result rc = svcWaitSynchronization(&index, m_Handles, m_IsClientConnected ? 2 : 1, UINT64_MAX);
     if (R_FAILED(rc)) {
         log_error("等待同步失败: 0x%x", rc);
-        should_exit = true;
+        m_ShouldExit = true;
         return;
     }
     
     if (index == 0) {
         // 接受新的客户端会话
         Handle new_client;
-        rc = svcAcceptSession(&new_client, *server_handle);
+        rc = svcAcceptSession(&new_client, *m_ServerHandle);
         if (R_FAILED(rc)) {
             log_error("接受会话失败: 0x%x", rc);
             return;
         }
         
         // 如果已经有客户端连接，关闭新连接（最大客户端数限制）
-        if (is_client_connected) {
+        if (m_IsClientConnected) {
             svcCloseHandle(new_client);
             log_warning("已有客户端连接，拒绝新连接");
             return;
         }
         
-        is_client_connected = true;
-        *client_handle = new_client;
+        m_IsClientConnected = true;
+        *m_ClientHandle = new_client;
         log_info("客户端连接成功");
         
     } else if (index == 1) {
         // 处理客户端消息
-        if (!is_client_connected) {
+        if (!m_IsClientConnected) {
             log_error("客户端未连接但收到消息");
-            should_exit = true;
+            m_ShouldExit = true;
             return;
         }
         
         s32 _idx;
-        rc = svcReplyAndReceive(&_idx, client_handle, 1, 0, UINT64_MAX);
+        rc = svcReplyAndReceive(&_idx, m_ClientHandle, 1, 0, UINT64_MAX);
         if (R_FAILED(rc)) {
             log_error("接收消息失败: 0x%x", rc);
             return;
@@ -212,7 +212,7 @@ void IPCServer::WaitAndProcessRequest() {
         }
         
         // ✅ 先发送响应（此时服务器处于正常运行状态）
-        rc = svcReplyAndReceive(&_idx, client_handle, 0, *client_handle, 0);
+        rc = svcReplyAndReceive(&_idx, m_ClientHandle, 0, *m_ClientHandle, 0);
         
         if (rc != KERNELRESULT(TimedOut)) {
             if (R_FAILED(rc)) {
@@ -222,9 +222,9 @@ void IPCServer::WaitAndProcessRequest() {
         
         // 然后关闭连接
         if (should_close) {
-            svcCloseHandle(*client_handle);
-            *client_handle = INVALID_HANDLE;
-            is_client_connected = false;
+            svcCloseHandle(*m_ClientHandle);
+            *m_ClientHandle = INVALID_HANDLE;
+            m_IsClientConnected = false;
             log_info("客户端连接关闭");
         }
         
@@ -232,23 +232,23 @@ void IPCServer::WaitAndProcessRequest() {
         
         // 开启连发回调
         if (cmd_result.should_enable_autokey) {
-            if (enable_callback) {
-                enable_callback();
+            if (m_EnableCallback) {
+                m_EnableCallback();
             }
         }
         
         // 关闭连发回调
         if (cmd_result.should_disable_autokey) {
-            if (disable_callback) {
-                disable_callback();
+            if (m_DisableCallback) {
+                m_DisableCallback();
             }
         }
         
         // 退出服务器回调
         if (cmd_result.should_exit_server) {
-            should_exit = true;
-            if (exit_callback) {
-                exit_callback();
+            m_ShouldExit = true;
+            if (m_ExitCallback) {
+                m_ExitCallback();
             }
         }
     }

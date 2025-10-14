@@ -19,25 +19,25 @@ struct CommandResult {
 class IPCServer {
 private:
     // 句柄和服务名
-    Handle handles[2];
-    SmServiceName server_name;
-    Handle* const server_handle = &handles[0];
-    Handle* const client_handle = &handles[1];
+    Handle m_Handles[2];
+    SmServiceName m_ServerName;
+    Handle* const m_ServerHandle = &m_Handles[0];
+    Handle* const m_ClientHandle = &m_Handles[1];
     
     // 状态变量
-    bool is_client_connected = false;
-    volatile bool should_exit = false;
+    bool m_IsClientConnected = false;
+    volatile bool m_ShouldExit = false;
     
     // 线程相关
-    Thread ipc_thread;
+    Thread m_IpcThread;
     alignas(0x1000) static char ipc_thread_stack[8 * 1024];  // 8KB线程栈
-    bool thread_created = false;
-    bool thread_running = false;
+    bool m_ThreadCreated = false;
+    bool m_ThreadRunning = false;
     
     // 回调函数
-    std::function<void()> exit_callback;      // 退出回调
-    std::function<void()> enable_callback;    // 开启连发回调
-    std::function<void()> disable_callback;   // 关闭连发回调
+    std::function<void()> m_ExitCallback;      // 退出回调
+    std::function<void()> m_EnableCallback;    // 开启连发回调
+    std::function<void()> m_DisableCallback;   // 关闭连发回调
     
     // 内部方法
     void StartServer();
@@ -73,5 +73,5 @@ public:
     void SetExitCallback(std::function<void()> callback);
     void SetEnableCallback(std::function<void()> callback);
     void SetDisableCallback(std::function<void()> callback);
-    bool ShouldExit() const { return should_exit; }
+    bool ShouldExit() const { return m_ShouldExit; }
 };
