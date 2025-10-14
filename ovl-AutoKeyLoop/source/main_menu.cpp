@@ -147,6 +147,12 @@ MainMenu::MainMenu()
     UpdateMainMenu();
 }
 
+/*
+    注意：ovl插件中关于连发开关已启动的功能，只是UI的更新，所以异常状态下，是有可能出现状态不同步的
+    实际连发功能是否开启，还是需要看系统模块的真实状态，整个ovl中没有真正获取的方法，
+    我不太想通过ipc去读取，感觉没必要。
+*/
+
 // 创建用户界面
 tsl::elm::Element* MainMenu::createUI()
 {  
