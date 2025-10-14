@@ -135,7 +135,7 @@ void IPCServer::StopServer() {
     }
 }
 
-// 等待并处理请求（参考 pad-macro 实现）
+// 等待并处理请求
 void IPCServer::WaitAndProcessRequest() {
     s32 index = -1;
     
@@ -183,11 +183,14 @@ void IPCServer::WaitAndProcessRequest() {
         }
         
         bool should_close = false;
+        CommandResult cmd_result = {false, false};
         Request request = ParseRequestFromTLS();
         
         switch (request.type) {
             case CmifCommandType_Request:
-                should_close = HandleCommand(request.cmd_id);
+                // 处理命令并获取结果
+                cmd_result = HandleCommand(request.cmd_id);
+                should_close = cmd_result.should_close_connection;
                 break;
             case CmifCommandType_Close:
                 WriteResponseToTLS(0);
@@ -198,7 +201,7 @@ void IPCServer::WaitAndProcessRequest() {
                 break;
         }
         
-        // 发送响应
+        // ✅ 先发送响应（此时服务器处于正常运行状态）
         rc = svcReplyAndReceive(&_idx, client_handle, 0, *client_handle, 0);
         
         if (rc != KERNELRESULT(TimedOut)) {
@@ -207,35 +210,46 @@ void IPCServer::WaitAndProcessRequest() {
             }
         }
         
+        // ✅ 然后关闭连接
         if (should_close) {
             svcCloseHandle(*client_handle);
             *client_handle = INVALID_HANDLE;
             is_client_connected = false;
             log_info("客户端连接关闭");
         }
-    }
-}
-
-// 处理命令
-bool IPCServer::HandleCommand(u64 cmd_id) {
-    switch (cmd_id) {
-        case CMD_EXIT:
-            log_info("收到退出命令");
-            WriteResponseToTLS(0);
+        
+        // ✅ 最后才执行退出逻辑（确保响应已成功发送）
+        if (cmd_result.should_exit_server) {
             should_exit = true;
-            
-            // 调用退出回调
             if (exit_callback) {
                 exit_callback();
             }
-            
-            return true;  // 关闭连接
+        }
+    }
+}
+
+// 处理命令 - 完整处理命令逻辑，但不直接修改服务器状态
+CommandResult IPCServer::HandleCommand(u64 cmd_id) {
+    CommandResult result = {false, false};
+    
+    switch (cmd_id) {
+        case CMD_EXIT:
+            log_info("收到退出命令");
+            // ✅ 写入成功响应
+            WriteResponseToTLS(0);
+            // ✅ 通过返回值告诉调用者需要做什么（而不是直接修改状态）
+            result.should_close_connection = true;  // 需要关闭客户端连接
+            result.should_exit_server = true;       // 需要退出服务器
+            break;
             
         default:
             log_warning("未知命令: %llu", cmd_id);
             WriteResponseToTLS(1);
-            return false;
+            // 默认值 {false, false}，不做任何额外操作
+            break;
     }
+    
+    return result;
 }
 
 // 解析TLS中的请求

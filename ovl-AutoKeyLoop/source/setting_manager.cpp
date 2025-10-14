@@ -219,10 +219,10 @@ tsl::elm::Element* AutoKeySetting::createUI()
         if (keys & HidNpadButton_A) {
             if (SysModuleManager::isRunning()) {
                 // 关闭系统模块
-                SysModuleManager::stopModule();
-                // 即使 IPC 返回错误，系统模块可能也已经开始退出
-                // 所以直接更新 UI（延迟后会自动同步状态）
-                listItemModule->setValue("关");
+                Result rc = SysModuleManager::stopModule();
+                if (R_SUCCEEDED(rc)) {
+                    listItemModule->setValue("关");
+                }
             } else {
                 // 启动系统模块
                 Result rc = SysModuleManager::startModule();

@@ -5,6 +5,12 @@
 // IPC命令定义
 #define CMD_EXIT 999
 
+// IPC命令处理结果
+struct CommandResult {
+    bool should_close_connection;  // 是否需要关闭客户端连接
+    bool should_exit_server;       // 是否需要退出服务器（在响应发送后）
+};
+
 // IPC服务器类
 class IPCServer {
 private:
@@ -31,7 +37,7 @@ private:
     void StartServer();
     void StopServer();
     void WaitAndProcessRequest();
-    bool HandleCommand(u64 cmd_id);
+    CommandResult HandleCommand(u64 cmd_id);
     
     // 请求解析和响应
     struct Request {
