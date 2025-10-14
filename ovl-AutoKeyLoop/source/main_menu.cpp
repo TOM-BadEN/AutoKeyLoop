@@ -1,6 +1,10 @@
 #include "main_menu.hpp"
 #include "game_monitor.hpp"
 #include "setting_manager.hpp"
+#include "ini_helper.hpp"
+#include "ipc_manager.hpp"
+#include "sysmodule_manager.hpp"
+#include <ultra.hpp>
 
 // Tesla插件界面尺寸常量定义
 #define TESLA_VIEW_HEIGHT 720      // Tesla插件总高度
@@ -9,16 +13,16 @@
 #define LIST_ITEM_HEIGHT 70        // 列表项高度
 #define SPACING 20  // 间距常量
 
+#define CONFIG_PATH "/config/AutoKeyLoop/config.ini"
 
 // 静态成员变量定义
 TextAreaInfo MainMenu::s_TextAreaInfo;
 
-// 全局指针：用于在 UpdateTextAreaInfo 中更新
+// 全局指针：用于在 UpdateMainMenu 中更新
 static tsl::elm::ListItem* g_EnableItem = nullptr;          // 开启连发列表项
-static tsl::elm::ListItemV2* g_ConfigSwitchItem = nullptr;  // 切换配置列表项
 
-// 静态方法：更新文本区域信息
-void MainMenu::UpdateTextAreaInfo() {
+// 静态方法：更新一次关键信息
+void MainMenu::UpdateMainMenu() {
     
     // 获取当前运行程序的Title ID
     u64 currentTitleId = GameMonitor::getCurrentTitleId();
@@ -31,29 +35,116 @@ void MainMenu::UpdateTextAreaInfo() {
     
     // 获取游戏名称，写入到结构体中
     GameMonitor::getTitleIdGameName(currentTitleId, s_TextAreaInfo.gameName);
-    
+
     // 默认使用全局配置
     s_TextAreaInfo.isGlobalConfig = true;
-    
-    // 如果 ListItem 已创建，则同步更新 UI
-    
+    // 默认是显示连发不开启
+    s_TextAreaInfo.isAutoEnabled = false;
+
+    /**
+        逻辑如下：
+        1. 这里读取信息只为了更新ovl插件的UI，实际开启由系统模块自己控制
+        2. 先看有没有独立配置文件，没有的话，就使用全局配置
+        3. 如果有独立配置文件，则读取独立配置文件的内容
+        4. 更新开启连发列表项的UI显示
+    */
+    if (s_TextAreaInfo.isInGame) {
+        std::string GameConfigPath = "/config/AutoKeyLoop/GameConfig/" + std::string(s_TextAreaInfo.gameId) + ".ini";
+        s_TextAreaInfo.GameConfigPath = GameConfigPath;
+        if(ult::isFile(GameConfigPath)) {
+            s_TextAreaInfo.isGlobalConfig = IniHelper::getBool("AUTOFIRE", "globconfig", true, GameConfigPath);
+            s_TextAreaInfo.isAutoEnabled = IniHelper::getBool("AUTOFIRE", "autoenable", false, GameConfigPath);
+        } else s_TextAreaInfo.isAutoEnabled = IniHelper::getBool("AUTOFIRE", "autoenable", false, CONFIG_PATH);
+    }
+
     // 更新开启连发状态
-    if (g_EnableItem != nullptr) g_EnableItem->setValue(s_TextAreaInfo.isInGame ? "已关闭" : "不可用");
-    
-    // 更新切换配置状态
-    if (g_ConfigSwitchItem != nullptr) {
-        g_ConfigSwitchItem->setValue(s_TextAreaInfo.isInGame ? ">" : "不可用");
-        if (!s_TextAreaInfo.isInGame) g_ConfigSwitchItem->setValueColor({0xF, 0x5, 0x5, 0xF}); // 红色
-        else g_ConfigSwitchItem->setValueColor({0x8, 0xC, 0xF, 0xF}); // 标准蓝色
+    if (g_EnableItem != nullptr) g_EnableItem->setValue(s_TextAreaInfo.isAutoEnabled ? "已开启" : "已关闭");
+
+}
+
+// 静态方法：连发功能开关
+void MainMenu::AutoKeyToggle() {
+    // 不在游戏中，不响应
+    if (!s_TextAreaInfo.isInGame) return;
+
+    // 检查系统模块是否在运行
+    bool isRunning = SysModuleManager::isRunning();
+
+    // 如果当前是关闭状态，并且系统模块未运行，则启动它
+    if (!s_TextAreaInfo.isAutoEnabled && !isRunning) {
+        Result rc = SysModuleManager::startModule();
+        if (R_FAILED(rc)) {
+            g_EnableItem->setValue("启动失败");
+            return;
+        }
+        svcSleepThread(20000000ULL);  // 等待20ms初始化
+        isRunning = true;  // 更新运行状态
     }
     
+    // 如果当前是开启状态，并且系统模块未运行，则直接关闭
+    if (s_TextAreaInfo.isAutoEnabled && !isRunning) {
+        s_TextAreaInfo.isAutoEnabled = false;
+        g_EnableItem->setValue("已关闭");
+        return;
+    }
+
+    // 根据状态发送命令
+    Result rc = s_TextAreaInfo.isAutoEnabled 
+        ? g_ipcManager.sendDisableCommand()   // 关闭
+        : g_ipcManager.sendEnableCommand();   // 开启
+
+    if (R_FAILED(rc)) {
+        g_EnableItem->setValue("通信失败");
+        return;
+    }
+
+    // 更新状态
+    s_TextAreaInfo.isAutoEnabled = !s_TextAreaInfo.isAutoEnabled;
+    g_EnableItem->setValue(s_TextAreaInfo.isAutoEnabled ? "已开启" : "已关闭");
+    
+    // 保存配置到独立游戏配置文件
+    IniHelper::setBool("AUTOFIRE", "globconfig", s_TextAreaInfo.isGlobalConfig, s_TextAreaInfo.GameConfigPath);
+    IniHelper::setBool("AUTOFIRE", "autoenable", s_TextAreaInfo.isAutoEnabled, s_TextAreaInfo.GameConfigPath);
+}
+
+// 静态方法：配置切换（全局/独立）
+void MainMenu::ConfigToggle() {
+    // 不在游戏中，不响应
+    if (!s_TextAreaInfo.isInGame) return;
+    
+    // 切换全局/独立配置
+    s_TextAreaInfo.isGlobalConfig = !s_TextAreaInfo.isGlobalConfig;
+    
+    // 保存配置到独立游戏配置文件
+    IniHelper::setBool("AUTOFIRE", "globconfig", s_TextAreaInfo.isGlobalConfig, s_TextAreaInfo.GameConfigPath);
+    IniHelper::setBool("AUTOFIRE", "autoenable", s_TextAreaInfo.isAutoEnabled, s_TextAreaInfo.GameConfigPath);
+    
+    // 如果连发功能未开启，则不重启
+    if (!s_TextAreaInfo.isAutoEnabled) return;
+
+    // 如果系统模块未运行，则启动它
+    if (!SysModuleManager::isRunning()) {
+        Result rc = SysModuleManager::startModule();
+        if (R_FAILED(rc)) {
+            g_EnableItem->setValue("启动失败");
+            return;
+        }
+        svcSleepThread(20000000ULL);  // 等待20ms初始化
+    }
+
+    // 重启连发功能（让他重加载配置）
+    Result rc = g_ipcManager.sendRestartCommand();
+    if (R_FAILED(rc)) {
+        g_EnableItem->setValue("通信失败");
+        return;
+    }
 }
 
 // 主菜单构造函数
 MainMenu::MainMenu()
 {
     // 初始化时更新文本区域信息
-    UpdateTextAreaInfo();
+    UpdateMainMenu();
 }
 
 // 创建用户界面
@@ -94,7 +185,7 @@ tsl::elm::Element* MainMenu::createUI()
                                                     TextFontSize, tsl::style::color::ColorText, tsl::style::color::ColorHighlight);
             
             // 第3行：配置类型
-            snprintf(tempText, sizeof(tempText), "配置：%s", s_TextAreaInfo.isGlobalConfig ? "全局" : "独立");
+            snprintf(tempText, sizeof(tempText), "配置：%s", s_TextAreaInfo.isGlobalConfig ? "全局配置" : "独立游戏配置");
             renderer->drawStringWithColoredSections(std::string(tempText), {"配置："}, x + SPACING, textStartY + 2 * (TextFontSize + SPACING), 
                                                     TextFontSize, tsl::style::color::ColorText, tsl::style::color::ColorHighlight);
 
@@ -141,7 +232,14 @@ tsl::elm::Element* MainMenu::createUI()
 
     // ============= 下半部分：列表区域 =============
     // 创建开启连发列表项
-    g_EnableItem = new tsl::elm::ListItem("开启连发", s_TextAreaInfo.isInGame ? "已关闭" : "已关闭");
+    g_EnableItem = new tsl::elm::ListItem("开启连发", s_TextAreaInfo.isAutoEnabled ? "已开启" : "已关闭");
+    g_EnableItem->setClickListener([](u64 keys) {
+        if (keys & HidNpadButton_A) {
+            MainMenu::AutoKeyToggle();
+            return true;
+        }
+        return false;
+    });
     mainList->addItem(g_EnableItem);
 
     // 创建设置列表项
@@ -156,13 +254,15 @@ tsl::elm::Element* MainMenu::createUI()
     mainList->addItem(listItemSetting);
 
     // 创建切换配置列表项
-    g_ConfigSwitchItem = new tsl::elm::ListItemV2("切换配置", s_TextAreaInfo.isInGame ? ">" : "不可用");
-    
-    // 如果不在游戏中，设置值为红色；否则使用标准蓝色
-    if (!s_TextAreaInfo.isInGame) g_ConfigSwitchItem->setValueColor({0xF, 0x5, 0x5, 0xF}); // 红色
-    else g_ConfigSwitchItem->setValueColor({0x8, 0xC, 0xF, 0xF}); // 标准蓝色
-    
-    mainList->addItem(g_ConfigSwitchItem);
+    auto ConfigSwitchItem = new tsl::elm::ListItem("切换配置",">");
+    ConfigSwitchItem->setClickListener([](u64 keys) {
+        if (keys & HidNpadButton_A) {
+            MainMenu::ConfigToggle();
+            return true;
+        }
+        return false;
+    });
+    mainList->addItem(ConfigSwitchItem);
  
     // 创建关于插件列表项
     auto listItemAbout = new tsl::elm::ListItem("关于插件",">");

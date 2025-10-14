@@ -68,6 +68,13 @@ public:
      * @note 成功发送后会自动断开连接
      */
     Result sendExitCommand();
+    
+    /**
+     * 重启连发功能（先关闭，等待50ms，再开启）
+     * @return Result 0=成功，其他=失败
+     * @note 用于切换配置后重新加载配置
+     */
+    Result sendRestartCommand();
 };
 
 // 全局实例 - 程序退出时自动调用析构函数

@@ -23,7 +23,7 @@ public:
 
     // 覆盖层显示时调用，用于更新游戏信息
     virtual void onShow() override {
-        MainMenu::UpdateTextAreaInfo();  // 更新文本区域信息
+        MainMenu::UpdateMainMenu();  // 更新文本区域信息
     }
 
     // 加载初始GUI界面

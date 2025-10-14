@@ -96,3 +96,19 @@ Result IPCManager::sendExitCommand() {
     return rc;
 }
 
+Result IPCManager::sendRestartCommand() {
+    // 发送关闭命令
+    Result rc = sendDisableCommand();
+    if (R_FAILED(rc)) {
+        return rc;  // 关闭失败，返回错误
+    }
+    
+    // 等待50ms，让系统模块完成清理
+    svcSleepThread(50000000ULL);  // 50ms
+    
+    // 发送开启命令
+    rc = sendEnableCommand();
+    
+    return rc;
+}
+
