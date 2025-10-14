@@ -15,10 +15,24 @@ private:
     bool loop_error = false;
     
     // 上一次检测到的游戏 Title ID
-    u64 last_game_tid = 0;
+    u64 m_last_game_tid = 0;
+    
+    // 当前游戏的配置缓存
+    u64 m_CurrentTid = 0;                    // 当前游戏 TID
+    u64 m_CurrentButtons = 0;                // 白名单按键
+    int m_CurrentPressTime = 60;             // 按下时长（毫秒）
+    int m_CurrentFireInterval = 160;         // 松开时长（毫秒）
+    bool m_CurrentAutoEnable = false;        // 是否自动启动
+    bool m_CurrentGlobConfig = true;         // 是否使用全局配置
     
     // 初始化配置路径（确保目录存在）
     bool InitializeConfigPath();
+    
+    // 检查文件是否存在
+    bool FileExists(const char* path);
+    
+    // 加载游戏配置（读取并缓存配置参数）
+    void LoadGameConfig(u64 tid);
     
     // 获取当前游戏 Title ID（仅游戏，非游戏返回0）
     u64 GetCurrentGameTitleId();

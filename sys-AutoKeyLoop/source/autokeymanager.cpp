@@ -10,14 +10,14 @@ alignas(0x1000) char AutoKeyManager::input_reader_thread_stack[4 * 1024];
 alignas(0x1000) u8 AutoKeyManager::hdls_work_buffer[0x1000];
 
 // 构造函数
-AutoKeyManager::AutoKeyManager(u64 buttons, u32 presstime, u32 fireinterval) {
+AutoKeyManager::AutoKeyManager(u64 buttons, int presstime, int fireinterval) {
 
     // 存储配置参数
     autokey_whitelist_mask = buttons;
     press_duration_ns = (u64)presstime * 1000000ULL;    // 毫秒转纳秒
     release_duration_ns = (u64)fireinterval * 1000000ULL; // 毫秒转纳秒
     
-    log_info("连发配置: 白名单=0x%llx, 按下=%ums, 松开=%ums", 
+    log_info("连发配置: 白名单=0x%llx, 按下=%dms, 松开=%dms", 
              buttons, presstime, fireinterval);
 
     // 初始化HDLS工作缓冲区（核心，需要这个来虚拟输入）

@@ -4,10 +4,17 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <minIni.h>
+#include <cstdlib>
 
 #define CONFIG_DIR "/config/AutoKeyLoop"
 #define CONFIG_PATH "/config/AutoKeyLoop/config.ini"
 
+
+// 检查文件是否存在
+bool App::FileExists(const char* path) {
+    struct stat st;
+    return (stat(path, &st) == 0 && S_ISREG(st.st_mode));
+}
 
 // 初始化配置路径（确保配置目录存在）
 bool App::InitializeConfigPath() {
@@ -102,13 +109,18 @@ void App::Loop() {
         u64 current_tid = GetCurrentGameTitleId();
         
         // 检测 Title ID 是否发生变化
-        if (current_tid != last_game_tid) {
-            log_info("检测到游戏状态变化: 0x%016lX -> 0x%016lX", last_game_tid, current_tid);
-            
+        if (current_tid != m_last_game_tid) {
+            log_info("检测到游戏状态变化: 0x%016lX -> 0x%016lX", m_last_game_tid, current_tid);
             if (current_tid != 0) {
                 // 检测到游戏启动
-                log_info("检测到游戏启动，自动开启连发模块");
-                StartAutoKey();
+                log_info("检测到游戏启动，加载配置文件！");
+                // 加载游戏配置
+                LoadGameConfig(current_tid);
+                if (m_CurrentAutoEnable) {
+                    log_info("配置要求自动启动，开启连发模块！");
+                    StartAutoKey();
+                } else log_info("配置不要求自动启动，等待手动开启！");
+                
             } else {
                 // 检测到游戏退出
                 log_info("检测到游戏退出，自动关闭连发模块");
@@ -116,7 +128,7 @@ void App::Loop() {
             }
             
             // 更新上次检测的 Title ID
-            last_game_tid = current_tid;
+            m_last_game_tid = current_tid;
         }
         
         // 每1秒检测一次
@@ -124,6 +136,48 @@ void App::Loop() {
     }
 }
 
+// 加载游戏配置（读取并缓存配置参数）
+void App::LoadGameConfig(u64 tid) {
+    // 构建游戏配置文件路径 (固定长度: 55字符)
+    char game_config_path[64];
+    snprintf(game_config_path, sizeof(game_config_path), 
+             "/config/AutoKeyLoop/GameConfig/%016lX.ini", tid);
+    
+    const char* config_to_use = CONFIG_PATH;  // 默认使用全局配置
+    
+    // 检查游戏配置文件是否存在
+    if (FileExists(game_config_path)) {
+        // 游戏配置文件存在，读取 globconfig
+        m_CurrentGlobConfig = ini_getbool("AUTOFIRE", "globconfig", 1, game_config_path);
+        m_CurrentAutoEnable = ini_getbool("AUTOFIRE", "autoenable", 0, game_config_path);
+        // 如果游戏配置文件中要求不使用全局配置
+        if (!m_CurrentGlobConfig) {
+            // 使用游戏独立配置
+            config_to_use = game_config_path;
+            log_info("使用游戏独立配置: %s", game_config_path);
+        } else log_info("游戏配置文件存在，但使用全局配置");
+    } else {
+        // 游戏配置文件不存在，使用全局配置
+        m_CurrentGlobConfig = true;
+        m_CurrentAutoEnable = ini_getbool("AUTOFIRE", "autoenable", 0, CONFIG_PATH);
+        log_info("游戏配置文件不存在，使用全局配置");
+    }
+    
+    // 读取按键配置（字符串格式）
+    char buttons_str[32];
+    ini_gets("AUTOFIRE", "buttons", "0", buttons_str, sizeof(buttons_str), config_to_use);
+    m_CurrentButtons = strtoull(buttons_str, nullptr, 10);
+    
+    // 读取时间配置
+    m_CurrentPressTime = ini_getl("AUTOFIRE", "presstime", 100, config_to_use);
+    m_CurrentFireInterval = ini_getl("AUTOFIRE", "fireinterval", 100, config_to_use);
+    
+    // 更新当前 TID
+    m_CurrentTid = tid;
+    
+    log_info("配置加载完成: TID=0x%016lX, buttons=0x%llx, press=%ums, fire=%ums, auto=%d", 
+             tid, m_CurrentButtons, m_CurrentPressTime, m_CurrentFireInterval, m_CurrentAutoEnable);
+}
 
 // 获取当前游戏 Title ID（仅游戏，非游戏返回0）
 u64 App::GetCurrentGameTitleId() {
@@ -154,12 +208,16 @@ bool App::StartAutoKey() {
     
     // 如果已经创建，则不重复创建
     if (autokey_manager != nullptr) {
-        log_warning("请勿重复创建连发模块！");
+        log_warning("连发模块已在运行中，无需重复创建！");
         return true;
     }
     
     // 创建并初始化连发模块
-    autokey_manager = new AutoKeyManager();
+    autokey_manager = new AutoKeyManager(
+        m_CurrentButtons,
+        m_CurrentPressTime,
+        m_CurrentFireInterval
+    );
     
     if (autokey_manager == nullptr) {
         log_error("连发模块创建失败！");

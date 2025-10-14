@@ -53,7 +53,7 @@ public:
     // @param buttons 白名单按键掩码 (u64)
     // @param presstime 按键按下持续时间（毫秒）
     // @param fireinterval 按键松开持续时间（毫秒）
-    AutoKeyManager(u64 buttons, u32 presstime, u32 fireinterval);
+    AutoKeyManager(u64 buttons, int presstime, int fireinterval);
     
     // 析构函数
     ~AutoKeyManager();
