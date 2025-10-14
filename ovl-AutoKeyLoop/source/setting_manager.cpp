@@ -580,7 +580,7 @@ tsl::elm::Element* AutoKeySetting::createUI()
     // 检查是否在游戏中
     bool isInGame = (m_titleId != "0000000000000000");
 
-    auto listItemIndependentSetting = new tsl::elm::ListItemV2("独立配置", isInGame ? ">" : "不在游戏中");
+    auto listItemIndependentSetting = new tsl::elm::ListItemV2("独立配置", isInGame ? ">" : "不可用");
     
     // 如果不在游戏中，设置值为红色
     if (!isInGame) {

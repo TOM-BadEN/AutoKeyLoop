@@ -13,6 +13,10 @@
 // 静态成员变量定义
 TextAreaInfo MainMenu::s_TextAreaInfo;
 
+// 全局指针：用于在 UpdateTextAreaInfo 中更新
+static tsl::elm::ListItem* g_EnableItem = nullptr;          // 开启连发列表项
+static tsl::elm::ListItemV2* g_ConfigSwitchItem = nullptr;  // 切换配置列表项
+
 // 静态方法：更新文本区域信息
 void MainMenu::UpdateTextAreaInfo() {
     
@@ -30,6 +34,18 @@ void MainMenu::UpdateTextAreaInfo() {
     
     // 默认使用全局配置
     s_TextAreaInfo.isGlobalConfig = true;
+    
+    // 如果 ListItem 已创建，则同步更新 UI
+    
+    // 更新开启连发状态
+    if (g_EnableItem != nullptr) g_EnableItem->setValue(s_TextAreaInfo.isInGame ? "已关闭" : "不可用");
+    
+    // 更新切换配置状态
+    if (g_ConfigSwitchItem != nullptr) {
+        g_ConfigSwitchItem->setValue(s_TextAreaInfo.isInGame ? ">" : "不可用");
+        if (!s_TextAreaInfo.isInGame) g_ConfigSwitchItem->setValueColor({0xF, 0x5, 0x5, 0xF}); // 红色
+        else g_ConfigSwitchItem->setValueColor({0x8, 0xC, 0xF, 0xF}); // 标准蓝色
+    }
     
 }
 
@@ -125,8 +141,8 @@ tsl::elm::Element* MainMenu::createUI()
 
     // ============= 下半部分：列表区域 =============
     // 创建开启连发列表项
-    auto listItemEnable = new tsl::elm::ListItem("开启连发", "已关闭");
-    mainList->addItem(listItemEnable);
+    g_EnableItem = new tsl::elm::ListItem("开启连发", s_TextAreaInfo.isInGame ? "已关闭" : "已关闭");
+    mainList->addItem(g_EnableItem);
 
     // 创建设置列表项
     auto listItemSetting = new tsl::elm::ListItem("连发设置",">");
@@ -139,10 +155,15 @@ tsl::elm::Element* MainMenu::createUI()
     });
     mainList->addItem(listItemSetting);
 
-    // 创建保存设置列表项
-    auto listItemSave = new tsl::elm::ListItem("切换配置",">");
-    mainList->addItem(listItemSave);
-
+    // 创建切换配置列表项
+    g_ConfigSwitchItem = new tsl::elm::ListItemV2("切换配置", s_TextAreaInfo.isInGame ? ">" : "不可用");
+    
+    // 如果不在游戏中，设置值为红色；否则使用标准蓝色
+    if (!s_TextAreaInfo.isInGame) g_ConfigSwitchItem->setValueColor({0xF, 0x5, 0x5, 0xF}); // 红色
+    else g_ConfigSwitchItem->setValueColor({0x8, 0xC, 0xF, 0xF}); // 标准蓝色
+    
+    mainList->addItem(g_ConfigSwitchItem);
+ 
     // 创建关于插件列表项
     auto listItemAbout = new tsl::elm::ListItem("关于插件",">");
     // 为关于插件列表项添加点击事件处理
