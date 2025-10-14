@@ -1,5 +1,10 @@
 #include "setting_manager.hpp"
 #include "sysmodule_manager.hpp"
+#include "ini_helper.hpp"
+
+#define CONFIG_PATH "/config/AutoKeyLoop/config.ini"
+
+
 
 // ========== 游戏设置界面 ==========
 
@@ -197,6 +202,11 @@ tsl::elm::Element* GlobalSetting::createUI()
 // 构造函数
 AutoKeySetting::AutoKeySetting()
 {
+    // 读取日志开关配置（默认值：false）
+    m_logEnabled = IniHelper::getBool("LOG", "log", false, CONFIG_PATH);
+    
+    // 读取自动开启连发配置（默认值：false）
+    m_autoEnabled = IniHelper::getBool("AUTOFIRE", "autoenable", false, CONFIG_PATH);
 }
 
 // 创建用户界面
@@ -241,12 +251,30 @@ tsl::elm::Element* AutoKeySetting::createUI()
     list->addItem(categoryHeader2);
     
     // 添加默认连发
-    auto listItemDefaultAuto = new tsl::elm::ListItem("默认连发", "关");
+    auto listItemDefaultAuto = new tsl::elm::ListItem("默认连发", m_autoEnabled ? "开" : "关");
+    listItemDefaultAuto->setClickListener([listItemDefaultAuto](u64 keys) {
+        if (keys & HidNpadButton_A) {
+            bool autoEnabled = IniHelper::getBool("AUTOFIRE", "autoenable", false, CONFIG_PATH);
+            IniHelper::setBool("AUTOFIRE", "autoenable", !autoEnabled, CONFIG_PATH);
+            listItemDefaultAuto->setValue(!autoEnabled ? "开" : "关");
+            return true;
+        }
+        return false;
+    });
     list->addItem(listItemDefaultAuto);
     
     // 添加调试日志
-    auto listItemDefaultAuto1 = new tsl::elm::ListItem("调试日志", "关");
-    list->addItem(listItemDefaultAuto1);
+    auto listItemLogEnable = new tsl::elm::ListItem("调试日志", m_logEnabled ? "开" : "关");
+    listItemLogEnable->setClickListener([listItemLogEnable](u64 keys) {
+        if (keys & HidNpadButton_A) {
+            bool logEnabled = IniHelper::getBool("LOG", "log", false, CONFIG_PATH);
+            IniHelper::setBool("LOG", "log", !logEnabled, CONFIG_PATH);
+            listItemLogEnable->setValue(!logEnabled ? "开" : "关");
+            return true;
+        }
+        return false;
+    });
+    list->addItem(listItemLogEnable);
 
     // 添加分类标题
     auto categoryHeader3 = new tsl::elm::CategoryHeader(" 详细连发参数设置");

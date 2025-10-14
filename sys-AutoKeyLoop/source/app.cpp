@@ -34,7 +34,7 @@ bool App::InitializeConfigPath() {
 App::App() {
 
     // 读取日志配置并设置日志开关
-    bool log_enabled = ini_getbool("LOG", "log", 1, CONFIG_PATH);
+    bool log_enabled = ini_getbool("LOG", "log", 0, CONFIG_PATH);
     log_set_enabled(log_enabled);
     
     // 初始化配置路径
