@@ -42,6 +42,42 @@ bool IPCManager::isConnected() const {
     return m_connected;
 }
 
+Result IPCManager::sendEnableCommand() {
+    // 如果未连接，先尝试连接
+    if (!m_connected) {
+        Result rc = connect();
+        if (R_FAILED(rc)) {
+            return rc;  // 连接失败，可能系统模块未运行
+        }
+    }
+    
+    // 发送开启连发命令给系统模块
+    Result rc = serviceDispatch(&m_service, CMD_ENABLE_AUTOKEY);
+    
+    // 发送完成后断开连接
+    disconnect();
+    
+    return rc;
+}
+
+Result IPCManager::sendDisableCommand() {
+    // 如果未连接，先尝试连接
+    if (!m_connected) {
+        Result rc = connect();
+        if (R_FAILED(rc)) {
+            return rc;  // 连接失败，可能系统模块未运行
+        }
+    }
+    
+    // 发送关闭连发命令给系统模块
+    Result rc = serviceDispatch(&m_service, CMD_DISABLE_AUTOKEY);
+    
+    // 发送完成后断开连接
+    disconnect();
+    
+    return rc;
+}
+
 Result IPCManager::sendExitCommand() {
     // 如果未连接，先尝试连接
     if (!m_connected) {
@@ -55,9 +91,7 @@ Result IPCManager::sendExitCommand() {
     Result rc = serviceDispatch(&m_service, CMD_EXIT);
     
     // 发送成功后断开连接（系统模块即将退出）
-    if (R_SUCCEEDED(rc)) {
-        disconnect();
-    }
+    disconnect();
     
     return rc;
 }

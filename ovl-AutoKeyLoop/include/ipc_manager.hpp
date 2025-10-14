@@ -2,7 +2,9 @@
 #include <switch.h>
 
 // IPC命令定义
-#define CMD_EXIT 999
+#define CMD_ENABLE_AUTOKEY  1   // 开启连发模块
+#define CMD_DISABLE_AUTOKEY 2   // 关闭连发模块
+#define CMD_EXIT            999 // 退出系统模块
 
 /**
  * IPC管理类 - 负责与 sys-AutoKeyLoop 系统模块的通信
@@ -47,6 +49,18 @@ public:
      * @return true=已连接, false=未连接
      */
     bool isConnected() const;
+    
+    /**
+     * 发送开启连发命令给系统模块
+     * @return Result 0=成功，其他=失败
+     */
+    Result sendEnableCommand();
+    
+    /**
+     * 发送关闭连发命令给系统模块
+     * @return Result 0=成功，其他=失败
+     */
+    Result sendDisableCommand();
     
     /**
      * 发送退出命令给系统模块

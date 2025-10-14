@@ -1,13 +1,15 @@
 #pragma once
 #include "autokeymanager.hpp"
-#include "ipc.hpp"  // ← 添加IPC头文件
+#include "ipc.hpp"
+#include <mutex>
 
 // APP应用程序类
 class App final {
 private:
 
     AutoKeyManager* autokey_manager = nullptr;  // 自动按键管理器
-    IPCServer* ipc_server = nullptr;            // IPC服务器 ← 新增
+    IPCServer* ipc_server = nullptr;            // IPC服务器
+    std::mutex autokey_mutex;                   // 保护 autokey_manager 的互斥锁
 
     // 控制住循环是否结束的
     bool loop_error = false;

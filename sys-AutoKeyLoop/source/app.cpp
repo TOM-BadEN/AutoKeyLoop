@@ -61,6 +61,18 @@ App::App() {
         loop_error = true;
     });
     
+    // 设置IPC开启连发回调
+    ipc_server->SetEnableCallback([this]() {
+        log_info("IPC请求开启连发模块！");
+        StartAutoKey();
+    });
+    
+    // 设置IPC关闭连发回调
+    ipc_server->SetDisableCallback([this]() {
+        log_info("IPC请求关闭连发模块！");
+        StopAutoKey();
+    });
+    
 }
 
 App::~App() {
@@ -138,6 +150,8 @@ u64 App::GetCurrentGameTitleId() {
 
 // 开启连发模块
 bool App::StartAutoKey() {
+    std::lock_guard<std::mutex> lock(autokey_mutex);
+    
     // 如果已经创建，则不重复创建
     if (autokey_manager != nullptr) {
         log_warning("请勿重复创建连发模块！");
@@ -152,11 +166,14 @@ bool App::StartAutoKey() {
         return false;
     }
     
+    log_info("连发模块已开启！");
     return true;
 }
 
 // 退出连发模块
 void App::StopAutoKey() {
+    std::lock_guard<std::mutex> lock(autokey_mutex);
+    
     // 如果没有创建，则无需清理
     if (autokey_manager == nullptr) {
         log_warning("连发模块未运行，无需停止！");

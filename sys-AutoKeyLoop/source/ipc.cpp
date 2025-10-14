@@ -83,6 +83,16 @@ void IPCServer::SetExitCallback(std::function<void()> callback) {
     exit_callback = callback;
 }
 
+// 设置开启连发回调函数
+void IPCServer::SetEnableCallback(std::function<void()> callback) {
+    enable_callback = callback;
+}
+
+// 设置关闭连发回调函数
+void IPCServer::SetDisableCallback(std::function<void()> callback) {
+    disable_callback = callback;
+}
+
 // 静态线程入口函数
 void IPCServer::ThreadEntry(void* arg) {
     IPCServer* server = static_cast<IPCServer*>(arg);
@@ -183,7 +193,7 @@ void IPCServer::WaitAndProcessRequest() {
         }
         
         bool should_close = false;
-        CommandResult cmd_result = {false, false};
+        CommandResult cmd_result = {false, false, false, false};
         Request request = ParseRequestFromTLS();
         
         switch (request.type) {
@@ -210,7 +220,7 @@ void IPCServer::WaitAndProcessRequest() {
             }
         }
         
-        // ✅ 然后关闭连接
+        // 然后关闭连接
         if (should_close) {
             svcCloseHandle(*client_handle);
             *client_handle = INVALID_HANDLE;
@@ -218,7 +228,23 @@ void IPCServer::WaitAndProcessRequest() {
             log_info("客户端连接关闭");
         }
         
-        // ✅ 最后才执行退出逻辑（确保响应已成功发送）
+        // 最后才执行回调逻辑（确保响应已成功发送）
+        
+        // 开启连发回调
+        if (cmd_result.should_enable_autokey) {
+            if (enable_callback) {
+                enable_callback();
+            }
+        }
+        
+        // 关闭连发回调
+        if (cmd_result.should_disable_autokey) {
+            if (disable_callback) {
+                disable_callback();
+            }
+        }
+        
+        // 退出服务器回调
         if (cmd_result.should_exit_server) {
             should_exit = true;
             if (exit_callback) {
@@ -230,9 +256,23 @@ void IPCServer::WaitAndProcessRequest() {
 
 // 处理命令 - 完整处理命令逻辑，但不直接修改服务器状态
 CommandResult IPCServer::HandleCommand(u64 cmd_id) {
-    CommandResult result = {false, false};
+    CommandResult result = {false, false, false, false};
     
     switch (cmd_id) {
+        case CMD_ENABLE_AUTOKEY:
+            log_info("收到开启连发命令");
+            WriteResponseToTLS(0);  // 写入成功响应
+            // ✅ 通过返回值告诉调用者需要在响应发送后执行回调
+            result.should_enable_autokey = true;
+            break;
+            
+        case CMD_DISABLE_AUTOKEY:
+            log_info("收到关闭连发命令");
+            WriteResponseToTLS(0);  // 写入成功响应
+            // ✅ 通过返回值告诉调用者需要在响应发送后执行回调
+            result.should_disable_autokey = true;
+            break;
+            
         case CMD_EXIT:
             log_info("收到退出命令");
             // ✅ 写入成功响应
@@ -245,7 +285,7 @@ CommandResult IPCServer::HandleCommand(u64 cmd_id) {
         default:
             log_warning("未知命令: %llu", cmd_id);
             WriteResponseToTLS(1);
-            // 默认值 {false, false}，不做任何额外操作
+            // 默认值 {false, false, false, false}，不做任何额外操作
             break;
     }
     
