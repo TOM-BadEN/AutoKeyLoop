@@ -10,6 +10,7 @@ struct TextAreaInfo {
     bool isGlobalConfig;        // 全局配置还是自定义配置
     bool isAutoEnabled;         // 连发开关
     std::string GameConfigPath; // 游戏配置文件路径
+    u64 buttons;                // 连发按键
 };
 
 // 主菜单类定义
@@ -22,6 +23,9 @@ public:
     
     // 静态方法：更新游戏信息
     static void UpdateMainMenu();
+    
+    // 静态方法：刷新按钮配置
+    static void RefreshButtonsConfig();
     
     // 静态方法：连发功能开关
     static void AutoKeyToggle();

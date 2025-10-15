@@ -12,7 +12,7 @@
 #include "ini_helper.hpp"
 #include <string>
 #include "ipc_manager.hpp"
-
+#include "main_menu.hpp"  
 #define CONFIG_PATH "/config/AutoKeyLoop/config.ini"
 
 // Switch 按键 Unicode 图标
@@ -137,15 +137,21 @@ tsl::elm::Element* GameSetting::createUI()
         const s32 rowSpacing = 10;   // 行间距
         
         // === 水平位置计算 ===
-        // 左侧：方向键左距边界40，中心在80
-        s32 dpadLeftX = x + 40;
-        s32 leftColumnX = x + 80;
-        s32 dpadRightX = x + 120;
+        // 左侧：方向键组
+        s32 dpadLeftX = x + 40;      // 方向键左
+        s32 dpadCenterX = x + 80;    // 方向键上/下
+        s32 dpadRightX = x + 120;    // 方向键右
         
-        // 右侧：A键距边界40，中心在w-80
-        s32 aButtonX = x + w - 40;
-        s32 rightColumnX = x + w - 80;
-        s32 yButtonX = x + w - 120;
+        // L/ZL列：在方向键右的右边，保持间距
+        s32 lColumnX = dpadRightX + 35;  // L和ZL垂直对齐
+        
+        // 右侧：ABXY按键组
+        s32 aButtonX = x + w - 40;    // A按键
+        s32 rightColumnX = x + w - 80;  // X和B按键（垂直对齐）
+        s32 yButtonX = x + w - 120;   // Y按键
+        
+        // R/ZR列：在Y左边，保持间距
+        s32 rColumnX = yButtonX - 35;  // R和ZR垂直对齐
         
         // === 垂直位置计算 ===
         // 总高度 = 5行×30px + 4个间距×10px = 190px
@@ -157,21 +163,21 @@ tsl::elm::Element* GameSetting::createUI()
         // === 根据 g_selectedButtons_Game 显示按键颜色 ===
         // 行1: ZL, ZR
         s32 row1Y = baseY;
-        r->drawString(ButtonIcon::ZL, false, leftColumnX, row1Y, buttonSize, 
+        r->drawString(ButtonIcon::ZL, false, lColumnX, row1Y, buttonSize, 
             a((g_selectedButtons_Game & BTN_ZL) ? lightBlueColor : whiteColor));
-        r->drawString(ButtonIcon::ZR, false, rightColumnX, row1Y, buttonSize, 
+        r->drawString(ButtonIcon::ZR, false, rColumnX, row1Y, buttonSize, 
             a((g_selectedButtons_Game & BTN_ZR) ? lightBlueColor : whiteColor));
         
         // 行2: L, R
         s32 row2Y = baseY + buttonSize + rowSpacing;
-        r->drawString(ButtonIcon::L, false, leftColumnX, row2Y, buttonSize, 
+        r->drawString(ButtonIcon::L, false, lColumnX, row2Y + 10, buttonSize, 
             a((g_selectedButtons_Game & BTN_L) ? lightBlueColor : whiteColor));
-        r->drawString(ButtonIcon::R, false, rightColumnX, row2Y, buttonSize, 
+        r->drawString(ButtonIcon::R, false, rColumnX, row2Y + 10, buttonSize, 
             a((g_selectedButtons_Game & BTN_R) ? lightBlueColor : whiteColor));
         
         // 行3: 方向键上, X
         s32 row3Y = baseY + 2 * (buttonSize + rowSpacing);
-        r->drawString(ButtonIcon::Up, false, leftColumnX, row3Y, buttonSize, 
+        r->drawString(ButtonIcon::Up, false, dpadCenterX, row3Y, buttonSize, 
             a((g_selectedButtons_Game & BTN_UP) ? lightBlueColor : whiteColor));
         r->drawString(ButtonIcon::X, false, rightColumnX, row3Y, buttonSize, 
             a((g_selectedButtons_Game & BTN_X) ? lightBlueColor : whiteColor));
@@ -189,7 +195,7 @@ tsl::elm::Element* GameSetting::createUI()
         
         // 行5: 方向键下, B
         s32 row5Y = baseY + 4 * (buttonSize + rowSpacing);
-        r->drawString(ButtonIcon::Down, false, leftColumnX, row5Y, buttonSize, 
+        r->drawString(ButtonIcon::Down, false, dpadCenterX, row5Y, buttonSize, 
             a((g_selectedButtons_Game & BTN_DOWN) ? lightBlueColor : whiteColor));
         r->drawString(ButtonIcon::B, false, rightColumnX, row5Y, buttonSize, 
             a((g_selectedButtons_Game & BTN_B) ? lightBlueColor : whiteColor));
@@ -278,12 +284,22 @@ tsl::elm::Element* GlobalSetting::createUI()
         const s32 buttonSize = 30;
         const s32 rowSpacing = 10;
         
-        s32 dpadLeftX = x + 40;
-        s32 leftColumnX = x + 80;
-        s32 dpadRightX = x + 120;
-        s32 aButtonX = x + w - 40;
-        s32 rightColumnX = x + w - 80;
-        s32 yButtonX = x + w - 120;
+        // === 水平位置计算 ===
+        // 左侧：方向键组
+        s32 dpadLeftX = x + 40;      // 方向键左
+        s32 dpadCenterX = x + 80;    // 方向键上/下
+        s32 dpadRightX = x + 120;    // 方向键右
+        
+        // L/ZL列：在方向键右的右边，保持间距
+        s32 lColumnX = dpadRightX + 35;  // L和ZL垂直对齐
+        
+        // 右侧：ABXY按键组
+        s32 aButtonX = x + w - 40;    // A按键
+        s32 rightColumnX = x + w - 80;  // X和B按键（垂直对齐）
+        s32 yButtonX = x + w - 120;   // Y按键
+        
+        // R/ZR列：在Y左边，保持间距
+        s32 rColumnX = yButtonX - 35;  // R和ZR垂直对齐
         
         const s32 layoutTotalHeight = 5 * buttonSize + 4 * rowSpacing;
         s32 baseY = y + (h - layoutTotalHeight) / 2 + buttonSize;
@@ -291,21 +307,21 @@ tsl::elm::Element* GlobalSetting::createUI()
         // === 根据 g_selectedButtons_Global 显示按键颜色 ===
         // 行1: ZL, ZR
         s32 row1Y = baseY;
-        r->drawString(ButtonIcon::ZL, false, leftColumnX, row1Y, buttonSize, 
+        r->drawString(ButtonIcon::ZL, false, lColumnX, row1Y, buttonSize, 
             a((g_selectedButtons_Global & BTN_ZL) ? lightBlueColor : whiteColor));
-        r->drawString(ButtonIcon::ZR, false, rightColumnX, row1Y, buttonSize, 
+        r->drawString(ButtonIcon::ZR, false, rColumnX, row1Y, buttonSize, 
             a((g_selectedButtons_Global & BTN_ZR) ? lightBlueColor : whiteColor));
         
         // 行2: L, R
         s32 row2Y = baseY + buttonSize + rowSpacing;
-        r->drawString(ButtonIcon::L, false, leftColumnX, row2Y, buttonSize, 
+        r->drawString(ButtonIcon::L, false, lColumnX, row2Y + 10, buttonSize, 
             a((g_selectedButtons_Global & BTN_L) ? lightBlueColor : whiteColor));
-        r->drawString(ButtonIcon::R, false, rightColumnX, row2Y, buttonSize, 
+        r->drawString(ButtonIcon::R, false, rColumnX, row2Y + 10, buttonSize, 
             a((g_selectedButtons_Global & BTN_R) ? lightBlueColor : whiteColor));
         
         // 行3: 方向键上, X
         s32 row3Y = baseY + 2 * (buttonSize + rowSpacing);
-        r->drawString(ButtonIcon::Up, false, leftColumnX, row3Y, buttonSize, 
+        r->drawString(ButtonIcon::Up, false, dpadCenterX, row3Y, buttonSize, 
             a((g_selectedButtons_Global & BTN_UP) ? lightBlueColor : whiteColor));
         r->drawString(ButtonIcon::X, false, rightColumnX, row3Y, buttonSize, 
             a((g_selectedButtons_Global & BTN_X) ? lightBlueColor : whiteColor));
@@ -323,7 +339,7 @@ tsl::elm::Element* GlobalSetting::createUI()
         
         // 行5: 方向键下, B
         s32 row5Y = baseY + 4 * (buttonSize + rowSpacing);
-        r->drawString(ButtonIcon::Down, false, leftColumnX, row5Y, buttonSize, 
+        r->drawString(ButtonIcon::Down, false, dpadCenterX, row5Y, buttonSize, 
             a((g_selectedButtons_Global & BTN_DOWN) ? lightBlueColor : whiteColor));
         r->drawString(ButtonIcon::B, false, rightColumnX, row5Y, buttonSize, 
             a((g_selectedButtons_Global & BTN_B) ? lightBlueColor : whiteColor));
@@ -395,6 +411,11 @@ tsl::elm::Element* ButtonSetting::createUI()
             // 更新全局变量（用于CustomDrawer显示）
             if (m_isGlobal) g_selectedButtons_Global = m_selectedButtons;
             else g_selectedButtons_Game = m_selectedButtons;
+            
+            // 更新主菜单的按钮显示
+            MainMenu::RefreshButtonsConfig();
+            
+            // 通知系统模块重新加载配置
             if (SysModuleManager::isRunning()) g_ipcManager.sendReloadConfigCommand();
         });
         

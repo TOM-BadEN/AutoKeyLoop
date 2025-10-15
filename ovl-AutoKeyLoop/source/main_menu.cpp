@@ -15,11 +15,29 @@
 
 #define CONFIG_PATH "/config/AutoKeyLoop/config.ini"
 
+
+// Switch 按键 Unicode 图标
+namespace ButtonIcon {
+    constexpr const char* A      = "\uE0A0";  // A 按键
+    constexpr const char* B      = "\uE0A1";  // B 按键
+    constexpr const char* X      = "\uE0A2";  // X 按键
+    constexpr const char* Y      = "\uE0A3";  // Y 按键
+    constexpr const char* L      = "\uE0A4";  // L 按键
+    constexpr const char* R      = "\uE0A5";  // R 按键
+    constexpr const char* ZL     = "\uE0A6";  // ZL 按键
+    constexpr const char* ZR     = "\uE0A7";  // ZR 按键
+    constexpr const char* Up     = "\uE0AF";  // 方向键上
+    constexpr const char* Down   = "\uE0B0";  // 方向键下
+    constexpr const char* Left   = "\uE0B1";  // 方向键左
+    constexpr const char* Right  = "\uE0B2";  // 方向键右
+}
+
 // 静态成员变量定义
 TextAreaInfo MainMenu::s_TextAreaInfo;
 
 // 全局指针：用于在 UpdateMainMenu 中更新
 static tsl::elm::ListItem* g_EnableItem = nullptr;          // 开启连发列表项
+
 
 // 静态方法：更新一次关键信息
 void MainMenu::UpdateMainMenu() {
@@ -48,8 +66,8 @@ void MainMenu::UpdateMainMenu() {
         3. 如果有独立配置文件，则读取独立配置文件的内容
         4. 更新开启连发列表项的UI显示
     */
+    std::string GameConfigPath = "/config/AutoKeyLoop/GameConfig/" + std::string(s_TextAreaInfo.gameId) + ".ini";
     if (s_TextAreaInfo.isInGame) {
-        std::string GameConfigPath = "/config/AutoKeyLoop/GameConfig/" + std::string(s_TextAreaInfo.gameId) + ".ini";
         s_TextAreaInfo.GameConfigPath = GameConfigPath;
         if(ult::isFile(GameConfigPath)) {
             s_TextAreaInfo.isGlobalConfig = IniHelper::getBool("AUTOFIRE", "globconfig", true, GameConfigPath);
@@ -57,9 +75,26 @@ void MainMenu::UpdateMainMenu() {
         } else s_TextAreaInfo.isAutoEnabled = IniHelper::getBool("AUTOFIRE", "autoenable", false, CONFIG_PATH);
     }
 
+    // 读取按钮掩码值用于绘制按钮图标
+    RefreshButtonsConfig();
+    
     // 更新开启连发状态
     if (g_EnableItem != nullptr) g_EnableItem->setValue(s_TextAreaInfo.isAutoEnabled ? "已开启" : "已关闭");
 
+}
+
+// 静态方法：刷新按钮配置（从配置文件中读取）
+void MainMenu::RefreshButtonsConfig() {
+    std::string GameConfigPath = "/config/AutoKeyLoop/GameConfig/" + std::string(s_TextAreaInfo.gameId) + ".ini";
+    std::string buttonsStr;
+    
+    if (s_TextAreaInfo.isGlobalConfig) {
+        buttonsStr = IniHelper::getString("AUTOFIRE", "buttons", "0", CONFIG_PATH);
+    } else {
+        buttonsStr = IniHelper::getString("AUTOFIRE", "buttons", "0", GameConfigPath);
+    }
+    
+    s_TextAreaInfo.buttons = std::stoull(buttonsStr);
 }
 
 // 静态方法：连发功能开关
@@ -118,6 +153,9 @@ void MainMenu::ConfigToggle() {
     // 保存配置到独立游戏配置文件
     IniHelper::setBool("AUTOFIRE", "globconfig", s_TextAreaInfo.isGlobalConfig, s_TextAreaInfo.GameConfigPath);
     IniHelper::setBool("AUTOFIRE", "autoenable", s_TextAreaInfo.isAutoEnabled, s_TextAreaInfo.GameConfigPath);
+    
+    // 刷新按钮配置（切换配置后立即更新UI显示）
+    RefreshButtonsConfig();
     
     // 如果连发功能未开启，则不重启
     if (!s_TextAreaInfo.isAutoEnabled) return;
@@ -185,32 +223,78 @@ tsl::elm::Element* MainMenu::createUI()
     // ============= 上半部分：纯文本显示区域 =============
     // 创建自定义绘制器来显示纯文本内容（使用结构体成员数量）
     auto textArea = new tsl::elm::CustomDrawer([](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
-        // 动态计算
-        int TextLineCount = s_TextAreaInfo.isInGame ? 3 : 1;
-        s32 TextFontSize = 22;
-        s32 totalTextHeight = TextLineCount * TextFontSize + (TextLineCount - 1) * SPACING;  // 总文本高度
-        s32 textStartY = y + (h - totalTextHeight) / 2;  // 垂直居中计算
         
-        // 格式化信息文本
-        char tempText[128];
         
-        // 如果在游戏中，绘制游戏名称、ID和配置类型
+        // 如果在游戏中，绘制按键图标
         if (s_TextAreaInfo.isInGame) {
-
-            // 第1行：游戏名称
-            snprintf(tempText, sizeof(tempText), "名称：%s", s_TextAreaInfo.gameName);
-            renderer->drawStringWithColoredSections(std::string(tempText), {"名称："}, x + SPACING, textStartY, 
-                                                    TextFontSize, tsl::style::color::ColorText, tsl::style::color::ColorHighlight);
+            tsl::Color whiteColor = {0xFF, 0xFF, 0xFF, 0xFF};
+            tsl::Color lightBlueColor = {0x00, 0xDD, 0xFF, 0xFF};  // 亮天蓝色
             
-            // 第2行：游戏ID（修改为"编号"）
-            snprintf(tempText, sizeof(tempText), "编号：%s", s_TextAreaInfo.gameId);
-            renderer->drawStringWithColoredSections(std::string(tempText), {"编号："}, x + SPACING, textStartY + (TextFontSize + SPACING), 
-                                                    TextFontSize, tsl::style::color::ColorText, tsl::style::color::ColorHighlight);
+            const s32 buttonSize = 25;   // 按钮大小（缩小）
+            const s32 rowSpacing = 8;    // 行间距（缩小）
             
-            // 第3行：配置类型
-            snprintf(tempText, sizeof(tempText), "配置：%s", s_TextAreaInfo.isGlobalConfig ? "全局配置" : "独立游戏配置");
-            renderer->drawStringWithColoredSections(std::string(tempText), {"配置："}, x + SPACING, textStartY + 2 * (TextFontSize + SPACING), 
-                                                    TextFontSize, tsl::style::color::ColorText, tsl::style::color::ColorHighlight);
+            // === 水平位置计算 ===
+            // 左侧：方向键组
+            s32 dpadLeftX = x + 35;      // 方向键左
+            s32 dpadCenterX = x + 70;    // 方向键上/下
+            s32 dpadRightX = x + 105;    // 方向键右
+            
+            // L/ZL列：在方向键右的右边，保持间距
+            s32 lColumnX = dpadRightX + 35;  // L和ZL垂直对齐
+            
+            // 右侧：ABXY按键组（保持原位）
+            s32 aButtonX = x + w - 35;    // A按键
+            s32 rightColumnX = x + w - 70;  // X和B按键（垂直对齐）
+            s32 yButtonX = x + w - 105;   // Y按键
+            
+            // R/ZR列：在Y左边，保持间距
+            s32 rColumnX = yButtonX - 35;  // R和ZR垂直对齐
+            
+            // === 垂直位置计算 ===
+            const s32 layoutTotalHeight = 5 * buttonSize + 4 * rowSpacing;
+            
+            // 垂直居中
+            s32 baseY = y + (h - layoutTotalHeight) / 2 + buttonSize - 10;
+            
+            // === 根据 s_TextAreaInfo.buttons 显示按键颜色 ===
+            // 行1: ZL, ZR
+            s32 row1Y = baseY;
+            renderer->drawString(ButtonIcon::ZL, false, lColumnX, row1Y, buttonSize, 
+                renderer->a((s_TextAreaInfo.buttons & HidNpadButton_ZL) ? lightBlueColor : whiteColor));
+            renderer->drawString(ButtonIcon::ZR, false, rColumnX, row1Y, buttonSize, 
+                renderer->a((s_TextAreaInfo.buttons & HidNpadButton_ZR) ? lightBlueColor : whiteColor));
+            
+            // 行2: L, R
+            s32 row2Y = baseY + buttonSize + rowSpacing;
+            renderer->drawString(ButtonIcon::L, false, lColumnX, row2Y + 5, buttonSize, 
+                renderer->a((s_TextAreaInfo.buttons & HidNpadButton_L) ? lightBlueColor : whiteColor));
+            renderer->drawString(ButtonIcon::R, false, rColumnX, row2Y + 5, buttonSize, 
+                renderer->a((s_TextAreaInfo.buttons & HidNpadButton_R) ? lightBlueColor : whiteColor));
+            
+            // 行3: 方向键上, X
+            s32 row3Y = baseY + 2 * (buttonSize + rowSpacing);
+            renderer->drawString(ButtonIcon::Up, false, dpadCenterX, row3Y, buttonSize, 
+                renderer->a((s_TextAreaInfo.buttons & HidNpadButton_Up) ? lightBlueColor : whiteColor));
+            renderer->drawString(ButtonIcon::X, false, rightColumnX, row3Y, buttonSize, 
+                renderer->a((s_TextAreaInfo.buttons & HidNpadButton_X) ? lightBlueColor : whiteColor));
+            
+            // 行4: 方向键左右, Y/A
+            s32 row4Y = baseY + 3 * (buttonSize + rowSpacing);
+            renderer->drawString(ButtonIcon::Left, false, dpadLeftX, row4Y, buttonSize, 
+                renderer->a((s_TextAreaInfo.buttons & HidNpadButton_Left) ? lightBlueColor : whiteColor));
+            renderer->drawString(ButtonIcon::Right, false, dpadRightX, row4Y, buttonSize, 
+                renderer->a((s_TextAreaInfo.buttons & HidNpadButton_Right) ? lightBlueColor : whiteColor));
+            renderer->drawString(ButtonIcon::Y, false, yButtonX, row4Y, buttonSize, 
+                renderer->a((s_TextAreaInfo.buttons & HidNpadButton_Y) ? lightBlueColor : whiteColor));
+            renderer->drawString(ButtonIcon::A, false, aButtonX, row4Y, buttonSize, 
+                renderer->a((s_TextAreaInfo.buttons & HidNpadButton_A) ? lightBlueColor : whiteColor));
+            
+            // 行5: 方向键下, B
+            s32 row5Y = baseY + 4 * (buttonSize + rowSpacing);
+            renderer->drawString(ButtonIcon::Down, false, dpadCenterX, row5Y, buttonSize, 
+                renderer->a((s_TextAreaInfo.buttons & HidNpadButton_Down) ? lightBlueColor : whiteColor));
+            renderer->drawString(ButtonIcon::B, false, rightColumnX, row5Y, buttonSize, 
+                renderer->a((s_TextAreaInfo.buttons & HidNpadButton_B) ? lightBlueColor : whiteColor));
 
         } else {
             // 不在游戏中，绘制相关信息（使用红色，水平和垂直居中）
