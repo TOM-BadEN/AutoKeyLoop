@@ -16,8 +16,13 @@ include $(DEVKITPRO)/libnx/switch_rules
 # DATA is a list of directories containing data files
 # INCLUDES is a list of directories containing header files
 #---------------------------------------------------------------------------------
+# ovl-AutoKeyLoop
+# 6F766C2D4175746F4B65794C6F6F70
+# E68C89E994AEE8BF9EE58F91000000    
+# 按键连发            
+
 APP_TITLE	:=	ovl-AutoKeyLoop
-APP_VERSION :=	v1.0.0
+APP_VERSION :=	1.0.0
 
 TARGET		:=	$(APP_TITLE)
 BUILD		:=	build
@@ -42,7 +47,7 @@ UI_OVERRIDE_PATH := /config/AutoKeyLoop/
 CFLAGS += -DUI_OVERRIDE_PATH="\"$(UI_OVERRIDE_PATH)\""
 
 # Define version macro for use in source code
-CFLAGS += -DAPP_VERSION_STRING="\"$(APP_VERSION)\""
+CFLAGS += -DAPP_VERSION_STRING="\"v$(APP_VERSION)\""
 
 # For theme / wallpaper loading in GUI class method
 INITIALIZE_IN_GUI_DIRECTIVE := 1

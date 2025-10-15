@@ -48,10 +48,6 @@ enum ButtonFlags : u64 {
 };
 
 // 文件作用域静态变量 - 只在本文件内的GUI类之间共享
-static tsl::elm::ListItem* g_FireIntervalItem_Global = nullptr;
-static tsl::elm::ListItem* g_PressTimeItem_Global = nullptr;
-static tsl::elm::ListItem* g_FireIntervalItem_Game = nullptr;
-static tsl::elm::ListItem* g_PressTimeItem_Game = nullptr;
 static u64 g_selectedButtons_Global = 0;  // 全局配置用，储存当前选中的连发按键（位掩码，与HidNpadButton兼容）
 static u64 g_selectedButtons_Game = 0;  // 独立配置用，储存当前选中的连发按键（位掩码，与HidNpadButton兼容）
 
@@ -60,24 +56,19 @@ static u64 g_selectedButtons_Game = 0;  // 独立配置用，储存当前选中�
 // ========== 游戏设置界面 ==========
 
 // 构造函数
-GameSetting::GameSetting(std::string titleId, std::string gameName)
+GameSetting::GameSetting(std::string titleId)
     : m_titleId(titleId)
-    , m_gameName(gameName)
 {
 
     // 生成当前游戏配置文件路径 示例：/config/AutoKeyLoop/GameConfig/01007EF00011E000.ini
     m_gameConfigPath = "/config/AutoKeyLoop/GameConfig/" + m_titleId + ".ini";
-
-    // 读取连发间隔时间（默认值：100ms）
-    m_FireInterval = IniHelper::getString("AUTOFIRE", "fireinterval", "100", m_gameConfigPath);
-    
-    // 读取按住持续时间（默认值：100ms）
-    m_PressTime = IniHelper::getString("AUTOFIRE", "presstime", "100", m_gameConfigPath);
     
     // 读取连发按键配置（默认值：0 = 无按键）
     std::string buttonsStr = IniHelper::getString("AUTOFIRE", "buttons", "0", m_gameConfigPath);
     g_selectedButtons_Game = std::stoull(buttonsStr);  // 字符串转u64
 
+    // 读取速度配置（0=普通，1=高速）
+    m_IsHighSpeed = (IniHelper::getInt("AUTOFIRE", "presstime", 100, CONFIG_PATH) == 100);
 
 }
 
@@ -85,7 +76,7 @@ GameSetting::GameSetting(std::string titleId, std::string gameName)
 tsl::elm::Element* GameSetting::createUI()
 {
     // 创建根框架
-    auto rootFrame = new tsl::elm::OverlayFrame("独立配置", m_gameName);
+    auto rootFrame = new tsl::elm::OverlayFrame("独立配置", "独立设置连发参数");
     
     // 创建列表
     auto list = new tsl::elm::List();
@@ -105,25 +96,44 @@ tsl::elm::Element* GameSetting::createUI()
     });
     list->addItem(listItem4);
     
-    g_FireIntervalItem_Game = new tsl::elm::ListItem("松开时间", m_FireInterval + "ms");
-    g_FireIntervalItem_Game->setClickListener([this](u64 keys) {
-        if (keys & HidNpadButton_A) {
-            tsl::changeTo<TimeSetting>(m_FireInterval, "fireinterval", "松开时间", m_gameConfigPath, false);
-            return true;
-        }
-        return false;
-    });
-    list->addItem(g_FireIntervalItem_Game);
+    // 创建两个速度选项列表项
+    m_HighSpeedItem = new tsl::elm::ListItem("高速连发", m_IsHighSpeed ? "\uE14B" : "");
+    m_LowSpeedItem = new tsl::elm::ListItem("普通连发", !m_IsHighSpeed ? "\uE14B" : "");
     
-    g_PressTimeItem_Game = new tsl::elm::ListItem("按住时间", m_PressTime + "ms");
-    g_PressTimeItem_Game->setClickListener([this](u64 keys) {
+    // 高速连发点击事件
+    m_HighSpeedItem->setClickListener([this](u64 keys) {
         if (keys & HidNpadButton_A) {
-            tsl::changeTo<TimeSetting>(m_PressTime, "presstime", "按住时间", m_gameConfigPath, false);
+            m_IsHighSpeed = true;
+            m_HighSpeedItem->setValue("\uE14B");
+            m_LowSpeedItem->setValue("");
+            // 高速，按下100ms，松开100ms
+            IniHelper::setInt("AUTOFIRE", "presstime", 100, CONFIG_PATH);
+            IniHelper::setInt("AUTOFIRE", "fireinterval", 100, CONFIG_PATH);
+            // 通知系统模块重载配置
+            if (SysModuleManager::isRunning()) g_ipcManager.sendReloadConfigCommand();
             return true;
         }
         return false;
     });
-    list->addItem(g_PressTimeItem_Game);
+    
+    // 普通连发点击事件
+    m_LowSpeedItem->setClickListener([this](u64 keys) {
+        if (keys & HidNpadButton_A) {
+            m_IsHighSpeed = false;
+            m_HighSpeedItem->setValue("");
+            m_LowSpeedItem->setValue("\uE14B");
+            // 普通速度，按下200ms，松开50ms
+            IniHelper::setInt("AUTOFIRE", "presstime", 200, CONFIG_PATH);
+            IniHelper::setInt("AUTOFIRE", "fireinterval", 50, CONFIG_PATH);
+            // 通知系统模块重载配置
+            if (SysModuleManager::isRunning()) g_ipcManager.sendReloadConfigCommand();
+            return true;
+        }
+        return false;
+    });
+    
+    list->addItem(m_HighSpeedItem);
+    list->addItem(m_LowSpeedItem);
 
     // 按键显示区域高度（720 - 标题97 - 底部73 - 分类标题63 - 3个列表项210 = 277）
     s32 buttonDisplayHeight = 277;
@@ -214,16 +224,15 @@ tsl::elm::Element* GameSetting::createUI()
 
 // 构造函数
 GlobalSetting::GlobalSetting()
+    : m_HighSpeedItem(nullptr)
+    , m_LowSpeedItem(nullptr)
 {
-    // 读取连发间隔时间（默认值：100ms）
-    m_FireInterval = IniHelper::getString("AUTOFIRE", "fireinterval", "100", CONFIG_PATH);
-    
-    // 读取按住持续时间（默认值：100ms）
-    m_PressTime = IniHelper::getString("AUTOFIRE", "presstime", "100", CONFIG_PATH);
-    
     // 读取连发按键配置（默认值：0 = 无按键）
     std::string buttonsStr = IniHelper::getString("AUTOFIRE", "buttons", "0", CONFIG_PATH);
     g_selectedButtons_Global = std::stoull(buttonsStr);  // 字符串转u64
+    
+    // 读取速度配置（0=普通，1=高速）
+    m_IsHighSpeed = (IniHelper::getInt("AUTOFIRE", "presstime", 100, CONFIG_PATH) == 100);
 }
 
 // 创建用户界面
@@ -248,30 +257,46 @@ tsl::elm::Element* GlobalSetting::createUI()
         return false;
     });
     list->addItem(listItem4);
+
+    // 创建两个速度选项列表项
+    m_HighSpeedItem = new tsl::elm::ListItem("高速连发", m_IsHighSpeed ? "\uE14B" : "");
+    m_LowSpeedItem = new tsl::elm::ListItem("普通连发", !m_IsHighSpeed ? "\uE14B" : "");
     
-    // 使用全局变量（参考ovl-FtpAutoBack的g_timeoutItem）
-    g_FireIntervalItem_Global = new tsl::elm::ListItem("松开时间", m_FireInterval + "ms");
-    g_FireIntervalItem_Global->setClickListener([this](u64 keys) {
+    // 高速连发点击事件
+    m_HighSpeedItem->setClickListener([this](u64 keys) {
         if (keys & HidNpadButton_A) {
-            std::string FireInterval = IniHelper::getString("AUTOFIRE", "fireinterval", "100", CONFIG_PATH);
-            tsl::changeTo<TimeSetting>(FireInterval, "fireinterval", "松开时间", CONFIG_PATH, true);
+            m_IsHighSpeed = true;
+            m_HighSpeedItem->setValue("\uE14B");
+            m_LowSpeedItem->setValue("");
+            // 高速，按下100ms，松开100ms
+            IniHelper::setInt("AUTOFIRE", "presstime", 100, CONFIG_PATH);
+            IniHelper::setInt("AUTOFIRE", "fireinterval", 100, CONFIG_PATH);
+            // 通知系统模块重载配置
+            if (SysModuleManager::isRunning()) g_ipcManager.sendReloadConfigCommand();
             return true;
         }
         return false;
     });
-    list->addItem(g_FireIntervalItem_Global);
     
-    // 使用全局变量（参考ovl-FtpAutoBack的g_backupCountItem）
-    g_PressTimeItem_Global = new tsl::elm::ListItem("按住时间", m_PressTime + "ms");
-    g_PressTimeItem_Global->setClickListener([this](u64 keys) {
+    // 普通连发点击事件
+    m_LowSpeedItem->setClickListener([this](u64 keys) {
         if (keys & HidNpadButton_A) {
-            std::string PressTime = IniHelper::getString("AUTOFIRE", "presstime", "100", CONFIG_PATH);
-            tsl::changeTo<TimeSetting>(PressTime, "presstime", "按住时间", CONFIG_PATH, true);
+            m_IsHighSpeed = false;
+            m_HighSpeedItem->setValue("");
+            m_LowSpeedItem->setValue("\uE14B");
+            // 普通速度，按下200ms，松开50ms
+            IniHelper::setInt("AUTOFIRE", "presstime", 200, CONFIG_PATH);
+            IniHelper::setInt("AUTOFIRE", "fireinterval", 50, CONFIG_PATH);
+            // 通知系统模块重载配置
+            if (SysModuleManager::isRunning()) g_ipcManager.sendReloadConfigCommand();
             return true;
         }
         return false;
     });
-    list->addItem(g_PressTimeItem_Global);
+    
+    list->addItem(m_HighSpeedItem);
+    list->addItem(m_LowSpeedItem);
+
     
     // 按键显示区域高度（720 - 标题97 - 底部73 - 分类标题63 - 3个列表项210 = 277）
     s32 buttonDisplayHeight = 277;
@@ -426,91 +451,12 @@ tsl::elm::Element* ButtonSetting::createUI()
     return rootFrame;
 }
 
-// ========== 时间设置界面 ==========
-
-TimeSetting::TimeSetting(std::string currentValue, std::string configKey, 
-                         std::string title, std::string configPath, bool isGlobal)
-    : m_currentTime(std::stoi(currentValue))
-    , m_configKey(configKey)
-    , m_title(title)
-    , m_configPath(configPath)
-    , m_isGlobal(isGlobal)  // 是修改全局设置还是独立设置
-    , m_list(nullptr)
-    , m_needsRefocus(true)
-    , m_frameCounter(0)
-{
-}
-
-tsl::elm::Element* TimeSetting::createUI()
-{
-    std::string subtitle = m_isGlobal ? "全局配置" : "独立配置";
-    auto rootFrame = new tsl::elm::OverlayFrame(m_title, subtitle);
-    
-    m_list = new tsl::elm::List();
-    m_list->addItem(new tsl::elm::CategoryHeader("单位：毫秒 (ms)"));
-    
-    // 生成 100-300ms，间隔20ms 的选项（共11个）
-    for (int idx = 0; idx < 11; idx++) {
-        int value = 100 + idx * 20;
-        std::string valueStr = std::to_string(value);
-        
-        auto item = new tsl::elm::ListItem(valueStr + "ms");
-        
-        // 当前值显示勾选标记，并将值转换为索引
-        if (value == m_currentTime) {
-            item->setValue("\uE14B");
-            m_currentTime = idx;
-        }
-        
-        item->setClickListener([this, valueStr](u64 keys) {
-            if (keys & HidNpadButton_A) {
-                IniHelper::setString("AUTOFIRE", m_configKey, valueStr, m_configPath);
-                
-                // 更新全局 ListItem 显示值
-                if (m_configKey == "fireinterval" && g_FireIntervalItem_Global != nullptr) {
-                    if (m_isGlobal) g_FireIntervalItem_Global->setValue(valueStr + "ms");
-                    else g_FireIntervalItem_Game->setValue(valueStr + "ms");
-                } else if (m_configKey == "presstime" && g_PressTimeItem_Global != nullptr) {
-                    if (m_isGlobal) g_PressTimeItem_Global->setValue(valueStr + "ms");
-                    else g_PressTimeItem_Game->setValue(valueStr + "ms");
-                }
-                if (SysModuleManager::isRunning()) g_ipcManager.sendReloadConfigCommand();
-                tsl::goBack();
-                return true;
-            }
-            return false;
-        });
-        
-        m_list->addItem(item);
-    }
-    
-    rootFrame->setContent(m_list);
-    return rootFrame;
-}
-
-void TimeSetting::update()
-{
-    // 延迟2帧后设置焦点，确保 Tesla 框架初始化完成
-    if (m_needsRefocus && m_list != nullptr) {
-        m_frameCounter++;
-        if (m_frameCounter >= 2) {
-            // +1 是因为 CategoryHeader 占用了 list[0]
-            m_list->setFocusedIndex(m_currentTime + 1);
-            auto targetItem = m_list->getItemAtIndex(m_currentTime + 1);
-            if (targetItem != nullptr) {
-                this->requestFocus(targetItem, tsl::FocusDirection::None, false);
-            }
-            m_needsRefocus = false;
-        }
-    }
-}
 
 // ========== 总设置界面 ==========
 
 // 构造函数
-AutoKeySetting::AutoKeySetting(std::string titleId, std::string gameName)
+AutoKeySetting::AutoKeySetting(std::string titleId)
     : m_titleId(titleId)
-    , m_gameName(gameName)
 {
     // 读取日志开关配置（默认值：false）
     m_logEnabled = IniHelper::getBool("LOG", "log", false, CONFIG_PATH);
@@ -555,7 +501,7 @@ tsl::elm::Element* AutoKeySetting::createUI()
     
     listItemIndependentSetting->setClickListener([this, isInGame](u64 keys) {
         if (keys & HidNpadButton_A) {
-            if (isInGame) tsl::changeTo<GameSetting>(m_titleId, m_gameName);
+            if (isInGame) tsl::changeTo<GameSetting>(m_titleId);
             return true;
         }
         return false;
@@ -609,12 +555,14 @@ tsl::elm::Element* AutoKeySetting::createUI()
                 Result rc = SysModuleManager::stopModule();
                 if (R_SUCCEEDED(rc)) {
                     listItemModule->setValue("关");
+                    MainMenu::UpdateMainMenu();
                 }
             } else {
                 // 启动系统模块
                 Result rc = SysModuleManager::startModule();
                 if (R_SUCCEEDED(rc)) {
                     listItemModule->setValue("开");
+                    MainMenu::UpdateMainMenu();
                 }
             }
             return true;

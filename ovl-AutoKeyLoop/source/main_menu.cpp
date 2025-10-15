@@ -50,9 +50,6 @@ void MainMenu::UpdateMainMenu() {
     
     // 将Title ID转换为16位十六进制字符串
     snprintf(s_TextAreaInfo.gameId, sizeof(s_TextAreaInfo.gameId), "%016lX", currentTitleId);
-    
-    // 获取游戏名称，写入到结构体中
-    GameMonitor::getTitleIdGameName(currentTitleId, s_TextAreaInfo.gameName);
 
     // 默认使用全局配置
     s_TextAreaInfo.isGlobalConfig = true;
@@ -135,6 +132,7 @@ void MainMenu::AutoKeyToggle() {
 
     // 更新状态
     s_TextAreaInfo.isAutoEnabled = !s_TextAreaInfo.isAutoEnabled;
+    
     g_EnableItem->setValue(s_TextAreaInfo.isAutoEnabled ? "已开启" : "已关闭");
     
     // 保存配置到独立游戏配置文件
@@ -353,7 +351,7 @@ tsl::elm::Element* MainMenu::createUI()
     auto listItemSetting = new tsl::elm::ListItem("连发设置",">");
     listItemSetting->setClickListener([this](u64 keys) {
         if (keys & HidNpadButton_A) {
-            tsl::changeTo<AutoKeySetting>(s_TextAreaInfo.gameId, s_TextAreaInfo.gameName);
+            tsl::changeTo<AutoKeySetting>(s_TextAreaInfo.gameId);
             return true;
         }
         return false;

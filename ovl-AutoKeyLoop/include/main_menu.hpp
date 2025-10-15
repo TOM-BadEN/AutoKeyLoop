@@ -5,7 +5,6 @@
 // 游戏状态结构体
 struct TextAreaInfo {
     bool isInGame;              // 是否在游戏中
-    char gameName[64];          // 游戏名字
     char gameId[17];            // 游戏ID
     bool isGlobalConfig;        // 全局配置还是自定义配置
     bool isAutoEnabled;         // 连发开关

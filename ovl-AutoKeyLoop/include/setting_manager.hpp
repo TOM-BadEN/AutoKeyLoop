@@ -10,14 +10,15 @@ class GameSetting : public tsl::Gui
 {
 private:
     std::string m_titleId;            // 当前游戏 Title ID（0表示不在游戏）
-    std::string m_gameName;            // 当前游戏 Name
     std::string m_gameConfigPath;      // 当前游戏配置文件路径
-    std::string m_FireInterval;   // 连发间隔时间（ms）
-    std::string m_PressTime;      // 按住持续时间（ms）
+    // 速度选项成员变量
+    bool m_IsHighSpeed;              // 是否高速连发
+    tsl::elm::ListItem* m_HighSpeedItem;  // 高速连发列表项
+    tsl::elm::ListItem* m_LowSpeedItem;   // 普通连发列表项
     
     
 public:
-    GameSetting(std::string titleId, std::string gameName);  // 构造函数
+    GameSetting(std::string titleId);  // 构造函数
     
     virtual tsl::elm::Element* createUI() override;  // 创建用户界面
 };
@@ -26,9 +27,10 @@ public:
 class GlobalSetting : public tsl::Gui 
 {
 private:
-    // 配置值成员变量
-    std::string m_FireInterval;   // 连发间隔时间（ms）
-    std::string m_PressTime;      // 按住持续时间（ms）
+    // 速度选项成员变量
+    bool m_IsHighSpeed;              // 是否高速连发
+    tsl::elm::ListItem* m_HighSpeedItem;  // 高速连发列表项
+    tsl::elm::ListItem* m_LowSpeedItem;   // 普通连发列表项
     
 public:
     GlobalSetting();  // 构造函数
@@ -50,27 +52,6 @@ public:
     virtual tsl::elm::Element* createUI() override;
 };
 
-// 时间设置界面（通用：用于设置松开时间和按住时间）
-class TimeSetting : public tsl::Gui 
-{
-private:
-    int m_currentTime;              // 当前选中的时间值（会在createUI中转换为索引）
-    std::string m_configKey;        // 配置键名 ("fireinterval" 或 "presstime")
-    std::string m_title;            // 界面标题
-    std::string m_configPath;       // 配置文件路径
-    bool m_isGlobal;                // 是否全局设置
-    
-    tsl::elm::List* m_list;         // 列表指针（用于延迟焦点设置）
-    bool m_needsRefocus;            // 是否需要重新设置焦点
-    int m_frameCounter;             // 帧计数器（延迟2帧后设置焦点）
-    
-public:
-    TimeSetting(std::string currentValue, std::string configKey, 
-                std::string title, std::string configPath, bool isGlobal);
-    
-    virtual tsl::elm::Element* createUI() override;
-    virtual void update() override;
-};
 
 // 总设置界面
 class AutoKeySetting : public tsl::Gui 
@@ -82,7 +63,7 @@ private:
     bool m_autoEnabled;       // 自动开启连发
     
 public:
-    AutoKeySetting(std::string titleId, std::string gameName);  // 构造函数
+    AutoKeySetting(std::string titleId);  // 构造函数
     
     virtual tsl::elm::Element* createUI() override;  // 创建用户界面
 };
