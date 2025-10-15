@@ -28,5 +28,12 @@ public:
      * @note 如果系统模块未运行，会返回失败
      */
     static Result stopModule();
+    
+    /**
+     * 重启系统模块（先停止，等待50ms，再启动）
+     * @return Result 0=成功，其他=失败
+     * @note 如果系统模块未运行，直接返回成功
+     */
+    static Result restartModule();
 };
 

@@ -81,6 +81,25 @@ App::App() {
         StopAutoKey();
     });
     
+    // 设置IPC重载配置回调
+    ipc_server->SetReloadConfigCallback([this]() {
+        log_info("IPC请求重载配置！");
+        
+        // 重新加载配置到缓存变量
+        LoadGameConfig(m_CurrentTid);
+        
+        // 如果连发模块正在运行，动态更新其配置
+        std::lock_guard<std::mutex> lock(autokey_mutex);
+        if (autokey_manager != nullptr) {
+            autokey_manager->UpdateConfig(
+                m_CurrentButtons,
+                m_CurrentPressTime,
+                m_CurrentFireInterval
+            );
+            log_info("已动态更新连发模块配置");
+        } else log_info("连发模块未运行，配置已缓存，下次启动时生效");
+    });
+    
 }
 
 App::~App() {

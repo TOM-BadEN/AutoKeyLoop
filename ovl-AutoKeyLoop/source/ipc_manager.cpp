@@ -112,3 +112,21 @@ Result IPCManager::sendRestartCommand() {
     return rc;
 }
 
+Result IPCManager::sendReloadConfigCommand() {
+    // 如果未连接，先尝试连接
+    if (!m_connected) {
+        Result rc = connect();
+        if (R_FAILED(rc)) {
+            return rc;  // 连接失败，可能系统模块未运行
+        }
+    }
+    
+    // 发送重载配置命令给系统模块
+    Result rc = serviceDispatch(&m_service, CMD_RELOAD_CONFIG);
+    
+    // 发送完成后断开连接
+    disconnect();
+    
+    return rc;
+}
+

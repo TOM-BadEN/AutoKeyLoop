@@ -46,3 +46,25 @@ Result SysModuleManager::stopModule() {
     return rc;
 }
 
+// 重启系统模块（先停止，等待50ms，再启动）
+Result SysModuleManager::restartModule() {
+    // 检查系统模块是否正在运行
+    if (!isRunning()) {
+        return 0;  // 未运行，直接返回成功
+    }
+    
+    // 停止系统模块
+    Result rc = stopModule();
+    if (R_FAILED(rc)) {
+        return rc;  // 停止失败，返回错误
+    }
+    
+    // 等待50ms，确保系统模块完全退出
+    svcSleepThread(50000000ULL);
+    
+    // 重新启动系统模块
+    rc = startModule();
+    
+    return rc;
+}
+

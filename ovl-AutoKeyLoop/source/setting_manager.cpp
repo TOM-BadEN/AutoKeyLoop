@@ -394,6 +394,7 @@ tsl::elm::Element* ButtonSetting::createUI()
             // 更新全局变量（用于CustomDrawer显示）
             if (m_isGlobal) g_selectedButtons_Global = m_selectedButtons;
             else g_selectedButtons_Game = m_selectedButtons;
+            if (SysModuleManager::isRunning()) g_ipcManager.sendReloadConfigCommand();
         });
         
         list->addItem(item);
@@ -451,7 +452,7 @@ tsl::elm::Element* TimeSetting::createUI()
                     if (m_isGlobal) g_PressTimeItem_Global->setValue(valueStr + "ms");
                     else g_PressTimeItem_Game->setValue(valueStr + "ms");
                 }
-                
+                if (SysModuleManager::isRunning()) g_ipcManager.sendReloadConfigCommand();
                 tsl::goBack();
                 return true;
             }
@@ -504,64 +505,6 @@ tsl::elm::Element* AutoKeySetting::createUI()
     
     // 创建列表
     auto list = new tsl::elm::List();
-    
-    // 添加分类标题
-    auto categoryHeader1 = new tsl::elm::CategoryHeader(" 彻底关闭/开启系统模块");
-    list->addItem(categoryHeader1);
-    
-    // 添加连发模块
-    bool isModuleRunning = SysModuleManager::isRunning();
-    auto listItemModule = new tsl::elm::ListItem("连发模块", isModuleRunning ? "开" : "关");
-    listItemModule->setClickListener([listItemModule](u64 keys) {
-        if (keys & HidNpadButton_A) {
-            if (SysModuleManager::isRunning()) {
-                // 关闭系统模块
-                Result rc = SysModuleManager::stopModule();
-                if (R_SUCCEEDED(rc)) {
-                    listItemModule->setValue("关");
-                }
-            } else {
-                // 启动系统模块
-                Result rc = SysModuleManager::startModule();
-                if (R_SUCCEEDED(rc)) {
-                    listItemModule->setValue("开");
-                }
-            }
-            return true;
-        }
-        return false;
-    });
-    list->addItem(listItemModule);
-
-    // 添加分类标题
-    auto categoryHeader2 = new tsl::elm::CategoryHeader(" 基础功能设置");
-    list->addItem(categoryHeader2);
-    
-    // 添加默认连发
-    auto listItemDefaultAuto = new tsl::elm::ListItem("默认连发", m_autoEnabled ? "开" : "关");
-    listItemDefaultAuto->setClickListener([listItemDefaultAuto](u64 keys) {
-        if (keys & HidNpadButton_A) {
-            bool autoEnabled = IniHelper::getBool("AUTOFIRE", "autoenable", false, CONFIG_PATH);
-            IniHelper::setBool("AUTOFIRE", "autoenable", !autoEnabled, CONFIG_PATH);
-            listItemDefaultAuto->setValue(!autoEnabled ? "开" : "关");
-            return true;
-        }
-        return false;
-    });
-    list->addItem(listItemDefaultAuto);
-    
-    // 添加调试日志
-    auto listItemLogEnable = new tsl::elm::ListItem("调试日志", m_logEnabled ? "开" : "关");
-    listItemLogEnable->setClickListener([listItemLogEnable](u64 keys) {
-        if (keys & HidNpadButton_A) {
-            bool logEnabled = IniHelper::getBool("LOG", "log", false, CONFIG_PATH);
-            IniHelper::setBool("LOG", "log", !logEnabled, CONFIG_PATH);
-            listItemLogEnable->setValue(!logEnabled ? "开" : "关");
-            return true;
-        }
-        return false;
-    });
-    list->addItem(listItemLogEnable);
 
     // 添加分类标题
     auto categoryHeader3 = new tsl::elm::CategoryHeader(" 详细连发参数设置");
@@ -596,6 +539,67 @@ tsl::elm::Element* AutoKeySetting::createUI()
         return false;
     });
     list->addItem(listItemIndependentSetting);
+
+    // 添加分类标题
+    auto categoryHeader2 = new tsl::elm::CategoryHeader(" 基础功能设置");
+    list->addItem(categoryHeader2);
+    
+    // 添加默认连发
+    auto listItemDefaultAuto = new tsl::elm::ListItem("默认连发", m_autoEnabled ? "开" : "关");
+    listItemDefaultAuto->setClickListener([listItemDefaultAuto](u64 keys) {
+        if (keys & HidNpadButton_A) {
+            bool autoEnabled = IniHelper::getBool("AUTOFIRE", "autoenable", false, CONFIG_PATH);
+            IniHelper::setBool("AUTOFIRE", "autoenable", !autoEnabled, CONFIG_PATH);
+            listItemDefaultAuto->setValue(!autoEnabled ? "开" : "关");
+            SysModuleManager::restartModule();
+            return true;
+        }
+        return false;
+    });
+    list->addItem(listItemDefaultAuto);
+    
+    // 添加调试日志
+    auto listItemLogEnable = new tsl::elm::ListItem("调试日志", m_logEnabled ? "开" : "关");
+    listItemLogEnable->setClickListener([listItemLogEnable](u64 keys) {
+        if (keys & HidNpadButton_A) {
+            bool logEnabled = IniHelper::getBool("LOG", "log", false, CONFIG_PATH);
+            IniHelper::setBool("LOG", "log", !logEnabled, CONFIG_PATH);
+            listItemLogEnable->setValue(!logEnabled ? "开" : "关");
+            SysModuleManager::restartModule();
+            return true;
+        }
+        
+        return false;
+    });
+    list->addItem(listItemLogEnable);
+
+    // 添加分类标题
+    auto categoryHeader1 = new tsl::elm::CategoryHeader(" 彻底关闭/开启系统模块");
+    list->addItem(categoryHeader1);
+    
+    // 添加连发模块
+    bool isModuleRunning = SysModuleManager::isRunning();
+    auto listItemModule = new tsl::elm::ListItem("连发模块", isModuleRunning ? "开" : "关");
+    listItemModule->setClickListener([listItemModule](u64 keys) {
+        if (keys & HidNpadButton_A) {
+            if (SysModuleManager::isRunning()) {
+                // 关闭系统模块
+                Result rc = SysModuleManager::stopModule();
+                if (R_SUCCEEDED(rc)) {
+                    listItemModule->setValue("关");
+                }
+            } else {
+                // 启动系统模块
+                Result rc = SysModuleManager::startModule();
+                if (R_SUCCEEDED(rc)) {
+                    listItemModule->setValue("开");
+                }
+            }
+            return true;
+        }
+        return false;
+    });
+    list->addItem(listItemModule);
     
     // 将列表添加到框架
     rootFrame->setContent(list);

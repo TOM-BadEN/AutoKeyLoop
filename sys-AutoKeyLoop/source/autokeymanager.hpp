@@ -22,6 +22,9 @@ private:
     HidNpadHandheldState m_SharedPhysicalState;
     std::mutex m_InputMutex;
     
+    // 配置参数互斥锁（保护连发配置的线程安全修改）
+    std::mutex m_ConfigMutex;
+    
     // HDLS工作缓冲区
     alignas(0x1000) static u8 hdls_work_buffer[0x1000];
     HiddbgHdlsSessionId m_HdlsSessionId;
@@ -57,6 +60,12 @@ public:
     
     // 析构函数
     ~AutoKeyManager();
+    
+    // 动态更新配置参数（线程安全）
+    // @param buttons 白名单按键掩码 (u64)
+    // @param presstime 按键按下持续时间（毫秒）
+    // @param fireinterval 按键松开持续时间（毫秒）
+    void UpdateConfig(u64 buttons, int presstime, int fireinterval);
     
 private:
     // 连发线程函数

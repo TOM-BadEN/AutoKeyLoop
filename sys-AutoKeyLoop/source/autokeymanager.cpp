@@ -101,6 +101,16 @@ AutoKeyManager::AutoKeyManager(u64 buttons, int presstime, int fireinterval) {
 
 }
 
+// 动态更新配置参数（线程安全）
+void AutoKeyManager::UpdateConfig(u64 buttons, int presstime, int fireinterval) {
+    std::lock_guard<std::mutex> lock(m_ConfigMutex);
+    m_AutoKeyWhitelistMask = buttons;
+    m_PressDurationNs = (u64)presstime * 1000000ULL;    // 毫秒转纳秒
+    m_ReleaseDurationNs = (u64)fireinterval * 1000000ULL; // 毫秒转纳秒
+    log_info("配置已动态更新: 白名单=0x%llx, 按下=%dms, 松开=%dms", 
+             buttons, presstime, fireinterval);
+}
+
 // 析构函数
 AutoKeyManager::~AutoKeyManager() {
 

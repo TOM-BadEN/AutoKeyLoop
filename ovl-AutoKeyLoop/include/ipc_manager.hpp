@@ -4,6 +4,7 @@
 // IPC命令定义
 #define CMD_ENABLE_AUTOKEY  1   // 开启连发模块
 #define CMD_DISABLE_AUTOKEY 2   // 关闭连发模块
+#define CMD_RELOAD_CONFIG   3   // 重载配置
 #define CMD_EXIT            999 // 退出系统模块
 
 /**
@@ -75,6 +76,13 @@ public:
      * @note 用于切换配置后重新加载配置
      */
     Result sendRestartCommand();
+    
+    /**
+     * 发送重载配置命令给系统模块
+     * @return Result 0=成功，其他=失败
+     * @note 系统模块会重新读取配置并动态更新连发参数（不重启线程）
+     */
+    Result sendReloadConfigCommand();
 };
 
 // 全局实例 - 程序退出时自动调用析构函数

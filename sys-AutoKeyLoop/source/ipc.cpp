@@ -93,6 +93,11 @@ void IPCServer::SetDisableCallback(std::function<void()> callback) {
     m_DisableCallback = callback;
 }
 
+// 设置重载配置回调函数
+void IPCServer::SetReloadConfigCallback(std::function<void()> callback) {
+    m_ReloadConfigCallback = callback;
+}
+
 // 静态线程入口函数
 void IPCServer::ThreadEntry(void* arg) {
     IPCServer* server = static_cast<IPCServer*>(arg);
@@ -193,7 +198,7 @@ void IPCServer::WaitAndProcessRequest() {
         }
         
         bool should_close = false;
-        CommandResult cmd_result = {false, false, false, false};
+        CommandResult cmd_result = {false, false, false, false, false};
         Request request = ParseRequestFromTLS();
         
         switch (request.type) {
@@ -244,6 +249,13 @@ void IPCServer::WaitAndProcessRequest() {
             }
         }
         
+        // 重载配置回调
+        if (cmd_result.should_reload_config) {
+            if (m_ReloadConfigCallback) {
+                m_ReloadConfigCallback();
+            }
+        }
+        
         // 退出服务器回调
         if (cmd_result.should_exit_server) {
             m_ShouldExit = true;
@@ -256,28 +268,35 @@ void IPCServer::WaitAndProcessRequest() {
 
 // 处理命令 - 完整处理命令逻辑，但不直接修改服务器状态
 CommandResult IPCServer::HandleCommand(u64 cmd_id) {
-    CommandResult result = {false, false, false, false};
+    CommandResult result = {false, false, false, false, false};
     
     switch (cmd_id) {
         case CMD_ENABLE_AUTOKEY:
             log_info("收到开启连发命令");
             WriteResponseToTLS(0);  // 写入成功响应
-            // ✅ 通过返回值告诉调用者需要在响应发送后执行回调
+            // 通过返回值告诉调用者需要在响应发送后执行回调
             result.should_enable_autokey = true;
             break;
             
         case CMD_DISABLE_AUTOKEY:
             log_info("收到关闭连发命令");
             WriteResponseToTLS(0);  // 写入成功响应
-            // ✅ 通过返回值告诉调用者需要在响应发送后执行回调
+            // 通过返回值告诉调用者需要在响应发送后执行回调
             result.should_disable_autokey = true;
+            break;
+            
+        case CMD_RELOAD_CONFIG:
+            log_info("收到重载配置命令");
+            WriteResponseToTLS(0);  // 写入成功响应
+            // 通过返回值告诉调用者需要在响应发送后执行回调
+            result.should_reload_config = true;
             break;
             
         case CMD_EXIT:
             log_info("收到退出命令");
-            // ✅ 写入成功响应
+            // 写入成功响应
             WriteResponseToTLS(0);
-            // ✅ 通过返回值告诉调用者需要做什么（而不是直接修改状态）
+            // 通过返回值告诉调用者需要做什么（而不是直接修改状态）
             result.should_close_connection = true;  // 需要关闭客户端连接
             result.should_exit_server = true;       // 需要退出服务器
             break;
@@ -285,7 +304,7 @@ CommandResult IPCServer::HandleCommand(u64 cmd_id) {
         default:
             log_warning("未知命令: %llu", cmd_id);
             WriteResponseToTLS(1);
-            // 默认值 {false, false, false, false}，不做任何额外操作
+            // 默认值 {false, false, false, false, false}，不做任何额外操作
             break;
     }
     

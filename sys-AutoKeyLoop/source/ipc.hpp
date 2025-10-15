@@ -5,6 +5,7 @@
 // IPC命令定义
 #define CMD_ENABLE_AUTOKEY  1   // 开启连发模块
 #define CMD_DISABLE_AUTOKEY 2   // 关闭连发模块
+#define CMD_RELOAD_CONFIG   3   // 重载配置
 #define CMD_EXIT            999 // 退出系统模块
 
 // IPC命令处理结果
@@ -13,6 +14,7 @@ struct CommandResult {
     bool should_exit_server;        // 是否需要退出服务器（在响应发送后）
     bool should_enable_autokey;     // 是否需要开启连发（在响应发送后）
     bool should_disable_autokey;    // 是否需要关闭连发（在响应发送后）
+    bool should_reload_config;      // 是否需要重载配置（在响应发送后）
 };
 
 // IPC服务器类
@@ -35,9 +37,10 @@ private:
     bool m_ThreadRunning = false;
     
     // 回调函数
-    std::function<void()> m_ExitCallback;      // 退出回调
-    std::function<void()> m_EnableCallback;    // 开启连发回调
-    std::function<void()> m_DisableCallback;   // 关闭连发回调
+    std::function<void()> m_ExitCallback;        // 退出回调
+    std::function<void()> m_EnableCallback;      // 开启连发回调
+    std::function<void()> m_DisableCallback;     // 关闭连发回调
+    std::function<void()> m_ReloadConfigCallback; // 重载配置回调
     
     // 内部方法
     void StartServer();
@@ -73,5 +76,6 @@ public:
     void SetExitCallback(std::function<void()> callback);
     void SetEnableCallback(std::function<void()> callback);
     void SetDisableCallback(std::function<void()> callback);
+    void SetReloadConfigCallback(std::function<void()> callback);
     bool ShouldExit() const { return m_ShouldExit; }
 };
