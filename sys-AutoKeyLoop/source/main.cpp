@@ -7,8 +7,8 @@
 // libnx fake heap initialization
 extern "C" {
 
-// 内部堆的大小（根据需要调整）
-#define INNER_HEAP_SIZE 0x80000
+// 内部堆的大小（根据需要调整） 128KB
+#define INNER_HEAP_SIZE 0x20000
 
 // 系统模块不应使用applet相关功能
 u32 __nx_applet_type = AppletType_None;
