@@ -159,8 +159,25 @@ tsl::elm::Element* MainMenu::createUI()
     // 动态计算文本区域高度
     s32 TextAreaHeight = (TESLA_VIEW_HEIGHT - TESLA_TITLE_HEIGHT - TESLA_BOTTOM_HEIGHT) - (4 * LIST_ITEM_HEIGHT) - SPACING * 2;
 
-    // 创建覆盖层框架，设置标题和版本（使用宏定义的版本号）
-    auto frame = new tsl::elm::OverlayFrame("按键连发", APP_VERSION_STRING);
+    // 创建覆盖层框架，使用自定义头部（指定高度97避免滚动条）
+    auto frame = new tsl::elm::HeaderOverlayFrame(TESLA_TITLE_HEIGHT);
+    
+    // 自定义头部绘制器
+    frame->setHeader(new tsl::elm::CustomDrawer([](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
+        // 左侧：标题和版本（参考 EdiZon 坐标）
+        renderer->drawString("按键连发", false, 20, 50+2, 32, renderer->a(tsl::defaultOverlayColor));
+        renderer->drawString(APP_VERSION_STRING, false, 20, 50+23, 15, renderer->a(tsl::versionTextColor));
+        
+        // 右侧：两行信息（往左移，避免截断，屏幕可见宽度约615px）
+        // 垂直居中：高度97，行间距25，第一行Y=36，第二行Y=61
+        renderer->drawString("TID :", false, 235, 36, 15, renderer->a(tsl::style::color::ColorText));
+        renderer->drawString(s_TextAreaInfo.gameId, false, 275, 36, 15, renderer->a(tsl::style::color::ColorHighlight));
+        
+        renderer->drawString("配置:", false, 235, 61, 15, renderer->a(tsl::style::color::ColorText));
+        const char* config = s_TextAreaInfo.isGlobalConfig ? "全局配置" : "独立配置";
+        renderer->drawString(config, false, 275, 61, 15, renderer->a(tsl::style::color::ColorHighlight));
+
+    }));
 
     // 创建主列表容器
     auto mainList = new tsl::elm::List();
