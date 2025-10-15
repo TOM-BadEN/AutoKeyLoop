@@ -11,6 +11,7 @@
 #include "sysmodule_manager.hpp"
 #include "ini_helper.hpp"
 #include <string>
+#include "ipc_manager.hpp"
 
 #define CONFIG_PATH "/config/AutoKeyLoop/config.ini"
 
