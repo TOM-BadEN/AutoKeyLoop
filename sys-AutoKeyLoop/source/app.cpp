@@ -71,6 +71,7 @@ App::App() {
     // 设置IPC开启连发回调
     ipc_server->SetEnableCallback([this]() {
         log_info("IPC请求开启连发模块！");
+        LoadGameConfig(m_CurrentTid);
         StartAutoKey();
     });
     
@@ -187,7 +188,7 @@ u64 App::GetCurrentGameTitleId() {
     if (R_FAILED(pmdmntGetApplicationProcessId(&pid))) {
         return 0;
     }
-    
+
     // 2. 根据进程ID获取程序ID (Title ID)
     if (R_FAILED(pmdmntGetProgramId(&tid, pid))) {
         return 0;
