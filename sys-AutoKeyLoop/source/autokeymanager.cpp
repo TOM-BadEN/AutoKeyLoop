@@ -107,6 +107,10 @@ void AutoKeyManager::UpdateConfig(u64 buttons, int presstime, int fireinterval) 
     m_AutoKeyWhitelistMask = buttons;
     m_PressDurationNs = (u64)presstime * 1000000ULL;    // 毫秒转纳秒
     m_ReleaseDurationNs = (u64)fireinterval * 1000000ULL; // 毫秒转纳秒
+    // 重置连发状态，让新配置立即生效（下次按键时重新计时）
+    m_AutoKeyLastSwitchTime = 0;
+    m_AutoKeyIsPressed = false;
+    m_AutoKeyReleaseStartTime = 0;
     log_info("配置已动态更新: 白名单=0x%llx, 按下=%dms, 松开=%dms", 
              buttons, presstime, fireinterval);
 }
