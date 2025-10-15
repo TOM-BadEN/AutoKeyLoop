@@ -27,8 +27,8 @@ void MainMenu::UpdateMainMenu() {
     // 获取当前运行程序的Title ID
     u64 currentTitleId = GameMonitor::getCurrentTitleId();
     
-    // 检查是否在游戏中
-    s_TextAreaInfo.isInGame = (currentTitleId != 0);
+    // 检查是否满足运行条件
+    s_TextAreaInfo.isInGame = (currentTitleId != 0) && SysModuleManager::isRunning();
     
     // 将Title ID转换为16位十六进制字符串
     snprintf(s_TextAreaInfo.gameId, sizeof(s_TextAreaInfo.gameId), "%016lX", currentTitleId);
@@ -214,7 +214,7 @@ tsl::elm::Element* MainMenu::createUI()
 
         } else {
             // 不在游戏中，绘制相关信息（使用红色，水平和垂直居中）
-            const char* noGameText = "未检测到游戏，功能不可用！";
+            const char* noGameText = SysModuleManager::isRunning() ? "未检测到游戏，功能不可用！" : "未启动系统模块，功能不可用！";
             const s32 fontSize = 26;
             
             // 动态计算垂直居中位置
@@ -244,7 +244,7 @@ tsl::elm::Element* MainMenu::createUI()
                 }
             }
             
-            s32 centeredX = x + (w - textLength * fontSize) / 2;
+            s32 centeredX = x + (w - textLength * fontSize) / 2 + 5;
             
             renderer->drawString(noGameText, false, centeredX, centeredY, fontSize, tsl::Color(0xF, 0x5, 0x5, 0xF));
         }
