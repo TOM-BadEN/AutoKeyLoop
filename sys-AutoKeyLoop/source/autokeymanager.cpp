@@ -254,11 +254,16 @@ void AutoKeyManager::HijackAndModifyState() {
     // 获取物理按键
     u64 physical_buttons = physical_state.buttons;
     
-    // 过滤出白名单中的按键（允许连发的）
-    u64 autokey_buttons = physical_buttons & m_AutoKeyWhitelistMask;
+    // 定义掩码：排除摇杆伪按键位 (BIT16-23)
+    // 这些位在物理输入中代表摇杆方向，但在HDLS中BIT(18)=Home, BIT(19)=Capture
+    // 必须过滤以避免误触发系统按键
+    const u64 STICK_PSEUDO_BUTTON_MASK = 0xFF0000ULL;  // BIT(16) ~ BIT(23)
     
-    // 其他按键（不连发，直接透传）
-    u64 normal_buttons = physical_buttons & ~m_AutoKeyWhitelistMask;
+    // 过滤出白名单中的按键（允许连发的），同时排除摇杆伪按键位
+    u64 autokey_buttons = physical_buttons & m_AutoKeyWhitelistMask & ~STICK_PSEUDO_BUTTON_MASK;
+    
+    // 其他按键（不连发，直接透传），同时排除摇杆伪按键位
+    u64 normal_buttons = physical_buttons & ~m_AutoKeyWhitelistMask & ~STICK_PSEUDO_BUTTON_MASK;
 
     if (autokey_buttons != 0) {
         // 有白名单按键被按住
