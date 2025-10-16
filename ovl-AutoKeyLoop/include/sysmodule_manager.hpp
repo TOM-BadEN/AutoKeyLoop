@@ -35,5 +35,11 @@ public:
      * @note 如果系统模块未运行，直接返回成功
      */
     static Result restartModule();
+    
+    /**
+     * 切换系统模块开关（运行中则停止，未运行则启动）
+     * @return Result 0=成功，其他=失败
+     */
+    static Result toggleModule();
 };
 

@@ -22,7 +22,7 @@ include $(DEVKITPRO)/libnx/switch_rules
 # 按键连发            
 
 APP_TITLE	:=	ovl-AutoKeyLoop
-APP_VERSION :=	1.0.0
+APP_VERSION :=	1.0.1
 
 TARGET		:=	$(APP_TITLE)
 BUILD		:=	build

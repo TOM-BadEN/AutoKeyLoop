@@ -518,8 +518,8 @@ tsl::elm::Element* AutoKeySetting::createUI()
         if (keys & HidNpadButton_A) {
             bool autoEnabled = IniHelper::getBool("AUTOFIRE", "autoenable", false, CONFIG_PATH);
             IniHelper::setBool("AUTOFIRE", "autoenable", !autoEnabled, CONFIG_PATH);
-            listItemDefaultAuto->setValue(!autoEnabled ? "开" : "关");
-            SysModuleManager::restartModule();
+            Result rc = SysModuleManager::restartModule();
+            if (R_SUCCEEDED(rc)) listItemDefaultAuto->setValue(!autoEnabled ? "开" : "关");
             return true;
         }
         return false;
@@ -532,11 +532,10 @@ tsl::elm::Element* AutoKeySetting::createUI()
         if (keys & HidNpadButton_A) {
             bool logEnabled = IniHelper::getBool("LOG", "log", false, CONFIG_PATH);
             IniHelper::setBool("LOG", "log", !logEnabled, CONFIG_PATH);
-            listItemLogEnable->setValue(!logEnabled ? "开" : "关");
-            SysModuleManager::restartModule();
+            Result rc = SysModuleManager::restartModule();
+            if (R_SUCCEEDED(rc)) listItemLogEnable->setValue(!logEnabled ? "开" : "关");
             return true;
         }
-        
         return false;
     });
     list->addItem(listItemLogEnable);
@@ -550,21 +549,10 @@ tsl::elm::Element* AutoKeySetting::createUI()
     auto listItemModule = new tsl::elm::ListItem("连发模块", isModuleRunning ? "开" : "关");
     listItemModule->setClickListener([listItemModule](u64 keys) {
         if (keys & HidNpadButton_A) {
-            if (SysModuleManager::isRunning()) {
-                // 关闭系统模块
-                Result rc = SysModuleManager::stopModule();
-                if (R_SUCCEEDED(rc)) {
-                    listItemModule->setValue("关");
-                    MainMenu::UpdateMainMenu();
-                }
-            } else {
-                // 启动系统模块
-                Result rc = SysModuleManager::startModule();
-                if (R_SUCCEEDED(rc)) {
-                    listItemModule->setValue("开");
-                    MainMenu::UpdateMainMenu();
-                }
-            }
+            Result rc = SysModuleManager::toggleModule();
+            if (R_FAILED(rc)) return false;
+            listItemModule->setValue(SysModuleManager::isRunning() ? "开" : "关");
+            MainMenu::UpdateMainMenu(); // 更新主菜单状态
             return true;
         }
         return false;

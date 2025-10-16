@@ -123,36 +123,40 @@ App::~App() {
 }
 
 void App::Loop() {
-    // 主程序循环 - 监控游戏状态，自动启动/停止连发模块
+
+    int check_counter = 0;
+    
     while (!m_loop_error) {
-        // 获取当前游戏 Title ID
+        check_counter++;
+        // 每次只睡眠100ms，快速检查退出标志
+        svcSleepThread(100000000ULL);
+        
+        // 提前跳过，减少嵌套
+        if (check_counter < 10) continue;
+        
+        // 执行游戏TID检测
+        check_counter = 0;  // 重置计数器
         u64 current_tid = GetCurrentGameTitleId();
         
-        // 检测 Title ID 是否发生变化
-        if (current_tid != m_last_game_tid) {
-            log_info("检测到游戏状态变化: 0x%016lX -> 0x%016lX", m_last_game_tid, current_tid);
-            if (current_tid != 0) {
-                // 检测到游戏启动
-                log_info("检测到游戏启动，加载配置文件！");
-                // 加载游戏配置
-                LoadGameConfig(current_tid);
-                if (m_CurrentAutoEnable) {
-                    log_info("配置要求自动启动，开启连发模块！");
-                    StartAutoKey();
-                } else log_info("配置不要求自动启动，等待手动开启！");
-                
-            } else {
-                // 检测到游戏退出
-                log_info("检测到游戏退出，自动关闭连发模块");
-                StopAutoKey();
-            }
-            
-            // 更新上次检测的 Title ID
-            m_last_game_tid = current_tid;
-        }
+        // 程序为改变，跳过
+        if (current_tid == m_last_game_tid) continue;
         
-        // 每1秒检测一次
-        svcSleepThread(1000000000ULL);
+        // 检测到游戏状态变化
+        log_info("检测到游戏状态变化: 0x%016lX -> 0x%016lX", m_last_game_tid, current_tid);
+        m_last_game_tid = current_tid;
+        
+        if (current_tid != 0) {
+            // 加载新的连发配置
+            LoadGameConfig(current_tid);
+            if (m_CurrentAutoEnable) {
+                log_info("配置要求自动启动，开启连发模块！");
+                StartAutoKey();
+            } else log_info("配置不要求自动启动，等待手动开启！");
+        } else {
+            // 游戏退出
+            log_info("检测到游戏退出，自动关闭连发模块");
+            StopAutoKey();
+        }
     }
 }
 
