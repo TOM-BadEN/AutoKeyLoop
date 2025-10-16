@@ -224,17 +224,52 @@ void AutoKeyManager::ReadPhysicalInput(HidNpadHandheldState* out_state) {
         return;
     }
     
-    // 掌机模式无数据，尝试Pro手柄/分离模式（Fallback）
-    HidNpadFullKeyState fullkey_states[8];
-    count = hidGetNpadStatesFullKey(HidNpadIdType_No1, fullkey_states, 8);
-    
-    // 如果Pro手柄有数据，转换为掌机格式
-    if (count > 0) {
-        // 只复制兼容的字段（按键+摇杆）
-        out_state->buttons = fullkey_states[count - 1].buttons;
-        out_state->analog_stick_l = fullkey_states[count - 1].analog_stick_l;
-        out_state->analog_stick_r = fullkey_states[count - 1].analog_stick_r;
+    // 掌机模式无数据，遍历所有玩家手柄 (No1-No8)
+    // 支持：Pro手柄、分体Joy-Con、第三方手柄
+    for (int i = HidNpadIdType_No1; i <= HidNpadIdType_No8; i++) {
+        HidNpadIdType npad_id = (HidNpadIdType)i;
+        
+        // 获取该手柄位置支持的样式类型
+        u32 style_set = hidGetNpadStyleSet(npad_id);
+        if (style_set == 0) {
+            continue;  // 该位置没有手柄，检查下一个位置
+        }
+        
+        // 准备通用状态结构（所有State类型都基于HidNpadCommonState）
+        HidNpadCommonState common_state;
+        
+        // 根据样式类型选择正确的读取函数（按优先级）
+        if (style_set & HidNpadStyleTag_NpadSystemExt) {
+            // 泛用外部控制器
+            count = hidGetNpadStatesSystemExt(npad_id, (HidNpadSystemExtState*)&common_state, 1);
+        } else if (style_set & HidNpadStyleTag_NpadFullKey) {
+            // Pro手柄/第三方Pro手柄
+            count = hidGetNpadStatesFullKey(npad_id, (HidNpadFullKeyState*)&common_state, 1);
+        } else if (style_set & HidNpadStyleTag_NpadJoyDual) {
+            // 分体Joy-Con双手柄模式/第三方分体手柄（关键：这里解决第三方分体手柄问题）
+            count = hidGetNpadStatesJoyDual(npad_id, (HidNpadJoyDualState*)&common_state, 1);
+        } else if (style_set & HidNpadStyleTag_NpadJoyLeft) {
+            // 左Joy-Con单手柄
+            count = hidGetNpadStatesJoyLeft(npad_id, (HidNpadJoyLeftState*)&common_state, 1);
+        } else if (style_set & HidNpadStyleTag_NpadJoyRight) {
+            // 右Joy-Con单手柄
+            count = hidGetNpadStatesJoyRight(npad_id, (HidNpadJoyRightState*)&common_state, 1);
+        } else {
+            continue;  // 不支持的类型（如Gc、Palma等），跳过
+        }
+        
+        // 检查是否读取成功且手柄已连接
+        if (count > 0 && (common_state.attributes & HidNpadAttribute_IsConnected)) {
+            // 找到有效输入，复制数据并返回
+            out_state->buttons = common_state.buttons;
+            out_state->analog_stick_l = common_state.analog_stick_l;
+            out_state->analog_stick_r = common_state.analog_stick_r;
+            out_state->attributes = common_state.attributes;
+            return;
+        }
     }
+    
+    // 所有手柄位置都没有有效输入，返回空状态（已在函数开头memset清零）
 }
 
 // 获取共享的物理输入（为了线程安全）
