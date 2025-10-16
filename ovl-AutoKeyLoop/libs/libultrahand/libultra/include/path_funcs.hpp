@@ -22,25 +22,30 @@
 #ifndef PATH_FUNCS_HPP
 #define PATH_FUNCS_HPP
 
-#if NO_FSTREAM_DIRECTIVE // For not using fstream (needs implementing)
+#if !USING_FSTREAM_DIRECTIVE // For not using fstream (needs implementing)
 #include <stdio.h>
 #else
 #include <fstream>
 #endif
 
+#include <memory>
 #include <dirent.h>
 #include <sys/stat.h>
 #include "global_vars.hpp"
 #include "string_funcs.hpp"
 #include "get_funcs.hpp"
 #include <queue>
+#include <mutex>
 
 
 namespace ult {
     extern std::atomic<bool> abortFileOp;
     
-    extern size_t COPY_BUFFER_SIZE; // Increase buffer size to 128 KB
+    extern size_t COPY_BUFFER_SIZE; // Made const for thread safety
     extern std::atomic<int> copyPercentage;
+    
+    // Mutex for thread-safe logging operations
+    extern std::mutex logMutex;
     
     /**
      * @brief Checks if a path points to a directory.
@@ -76,6 +81,7 @@ namespace ult {
     bool isFileOrDirectory(const std::string& path);
     
     
+    bool isDirectoryEmpty(const std::string& dirPath);
     
     /**
      * @brief Creates a single directory if it doesn't exist.
@@ -98,7 +104,7 @@ namespace ult {
     void createDirectory(const std::string& directoryPath);
     
     
-    #if NO_FSTREAM_DIRECTIVE
+    #if !USING_FSTREAM_DIRECTIVE
     void writeLog(FILE* logFile, const std::string& line);
     #else
     void writeLog(std::ofstream& logFile, const std::string& line);
@@ -145,7 +151,7 @@ namespace ult {
     
     
     
-    void moveFile(const std::string& sourcePath, const std::string& destinationPath,
+    bool moveFile(const std::string& sourcePath, const std::string& destinationPath,
                   const std::string& logSource = "", const std::string& logDestination = "");
     
     
@@ -248,7 +254,7 @@ namespace ult {
     /**
      * @brief For each match of the wildcard pattern, creates an empty text file
      *        named basename.txt inside the output directory.
-     *        Uses FILE* if NO_FSTREAM_DIRECTIVE is defined, otherwise uses std::ofstream.
+     *        Uses FILE* if !USING_FSTREAM_DIRECTIVE is defined, otherwise uses std::ofstream.
      *
      * @param wildcardPattern A path with a wildcard, such as /some/path/[*].
      *                        Each match results in a file named after the basename.
@@ -256,6 +262,18 @@ namespace ult {
      *                        Created if it doesn't already exist.
      */
     void createFlagFiles(const std::string& wildcardPattern, const std::string& outputDir);
+
+
+    /**
+     * @brief Removes all files starting with "._" from a directory and its subdirectories.
+     *
+     * This function recursively scans the specified directory and removes all files
+     * whose names start with "._" (commonly macOS metadata files). It processes
+     * all subdirectories recursively.
+     *
+     * @param sourcePath The path of the directory to clean.
+     */
+    void dotCleanDirectory(const std::string& sourcePath);
 }
 
 #endif

@@ -202,7 +202,7 @@ tsl::elm::Element* MainMenu::createUI()
     frame->setHeader(new tsl::elm::CustomDrawer([](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
         // 左侧：标题和版本（参考 EdiZon 坐标）
         renderer->drawString("按键连发", false, 20, 50+2, 32, renderer->a(tsl::defaultOverlayColor));
-        renderer->drawString(APP_VERSION_STRING, false, 20, 50+23, 15, renderer->a(tsl::versionTextColor));
+        renderer->drawString(APP_VERSION_STRING, false, 20, 50+23, 15, renderer->a(tsl::bannerVersionTextColor));
         
         // 右侧：两行信息（往左移，避免截断，屏幕可见宽度约615px）
         // 垂直居中：高度97，行间距25，第一行Y=36，第二行Y=61

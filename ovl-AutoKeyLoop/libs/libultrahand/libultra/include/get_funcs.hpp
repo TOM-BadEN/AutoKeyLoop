@@ -22,17 +22,10 @@
 #ifndef GET_FUNCS_HPP
 #define GET_FUNCS_HPP
 
-//#include <sys/stat.h>
-#if NO_FSTREAM_DIRECTIVE // For not using fstream (needs implementing)
-#include <stdio.h>
-#else
-#include <fstream>
-#endif
 
 #include <cstring>
 #include <dirent.h>
 #include <fnmatch.h>
-//#include <jansson.h>
 #include "debug_funcs.hpp"
 #include "string_funcs.hpp"
 
@@ -52,7 +45,7 @@ namespace ult {
      * @param filePath The path to the file to be read.
      * @return The content of the file as a string with line endings normalized to '\n'.
      */
-    std::string getFileContents(const std::string& filePath);
+    //std::string getFileContents(const std::string& filePath);
     
     
     /**
@@ -129,9 +122,9 @@ namespace ult {
     
     // Cache to store directory status
     // Assuming a very simple cache implementation
-    extern std::vector<std::pair<std::string, bool>> directoryCache;
+    //extern std::vector<std::pair<std::string, bool>> directoryCache;
     
-    bool isDirectoryCached(struct dirent* entry, const std::string& path);
+    bool isDirectory(struct dirent* entry, const std::string& path);
     
     /**
      * @brief Recursively retrieves a list of files from a directory.
@@ -148,9 +141,9 @@ namespace ult {
     //    return S_ISDIR(st.st_mode);
     //}
     
-    // Recursive function to handle wildcard directories and file patterns
-    void handleDirectory(const std::string& basePath, const std::vector<std::string>& parts, size_t partIndex, std::vector<std::string>& results, bool directoryOnly);
     
+
+    void handleDirectory(const std::string& basePath, const std::vector<std::string>& parts, size_t partIndex, std::vector<std::string>& results, bool directoryOnly, size_t maxLines=0);
     /**
      * @brief Gets a list of files and folders based on a wildcard pattern.
      *
@@ -160,7 +153,7 @@ namespace ult {
      * @param pathPattern The wildcard pattern to match files and folders.
      * @return A vector of strings containing the paths of matching files and folders.
      */
-    std::vector<std::string> getFilesListByWildcards(const std::string& pathPattern);
+    std::vector<std::string> getFilesListByWildcards(const std::string& pathPattern, size_t maxLines=0);
     
 }
 

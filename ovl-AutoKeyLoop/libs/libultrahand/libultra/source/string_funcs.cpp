@@ -21,7 +21,8 @@
 #include "string_funcs.hpp"
 
 namespace ult {
-    
+
+
     // Custom string conversion methods in place of std::
     std::string to_string(int value) {
         char buffer[12]; // Sufficient for 32-bit int
@@ -31,7 +32,7 @@ namespace ult {
     
     int stoi(const std::string& str, std::size_t* pos, int base) {
         char* end;
-        long result = std::strtol(str.c_str(), &end, base);
+        const long result = std::strtol(str.c_str(), &end, base);
     
         if (pos) {
             *pos = end - str.c_str();  // Set the position to the last character processed
@@ -50,17 +51,17 @@ namespace ult {
     // Mimics std::getline() with a delimiter
     bool StringStream::getline(std::string& output, char delimiter) {
         if (position >= data.size()) {
-            return false;  // End of string
+            return false;
         }
         
-        size_t nextPos = data.find(delimiter, position);
+        const size_t nextPos = data.find(delimiter, position);
         
         if (nextPos != std::string::npos) {
-            output = data.substr(position, nextPos - position);  // Extract the token
-            position = nextPos + 1;  // Move past the delimiter
+            output.assign(data, position, nextPos - position);  // No temporary string creation
+            position = nextPos + 1;
         } else {
-            output = data.substr(position);  // Last segment with no more delimiters
-            position = data.size();  // Reached the end
+            output.assign(data, position, data.size() - position);  // No temporary string creation
+            position = data.size();
         }
     
         return true;
@@ -75,7 +76,7 @@ namespace ult {
     
         if (position >= data.size()) {
             output.clear();
-            validState = false;  // Set the stream to an invalid state if we reach the end
+            validState = false;
             return *this;
         }
     
@@ -84,10 +85,10 @@ namespace ult {
             ++nextPos;
         }
     
-        output = data.substr(position, nextPos - position);
+        output.assign(data, position, nextPos - position);  // Replace substr() with assign()
         position = nextPos;
     
-        validState = true;  // Successfully extracted a word
+        validState = true;
         return *this;
     }
     
@@ -144,20 +145,27 @@ namespace ult {
      * @return The trimmed string.
      */
     void trim(std::string& str) {
-        size_t first = str.find_first_not_of(" \t\n\r\f\v");
+        const size_t first = str.find_first_not_of(" \t\n\r\f\v");
         if (first == std::string::npos) {
+            str.clear(); // Fix: clear all-whitespace strings
             return;
         }
     
-        size_t last = str.find_last_not_of(" \t\n\r\f\v");
-        str = str.substr(first, last - first + 1);  // Modify the original string in place
+        const size_t last = str.find_last_not_of(" \t\n\r\f\v");
+        
+        // True in-place modification - no temporary string creation
+        if (last + 1 < str.length()) {
+            str.erase(last + 1);  // Remove trailing whitespace
+        }
+        if (first > 0) {
+            str.erase(0, first);  // Remove leading whitespace  
+        }
     }
-    
     
     
     // Function to trim newline characters from the end of a string
     void trimNewline(std::string& str) {
-        size_t end = str.find_last_not_of("\n");
+        const size_t end = str.find_last_not_of("\n");
         if (end == std::string::npos) {
             str.clear();  // If the string consists entirely of newlines, clear it
         } else {
@@ -198,11 +206,11 @@ namespace ult {
      */
     void removeQuotes(std::string& str) {
         if (str.size() >= 2) {
-            char frontQuote = str.front();
-            char backQuote = str.back();
-            if ((frontQuote == '\'' && backQuote == '\'') || (frontQuote == '"' && backQuote == '"')) {
-                str.erase(0, 1);  // Remove the first character (front quote)
-                str.pop_back();   // Remove the last character (back quote)
+            const char front = str[0];
+            const char back = str[str.size() - 1];
+            if ((front == '\'' && back == '\'') || (front == '"' && back == '"')) {
+                str.erase(0, 1);
+                str.pop_back();
             }
         }
     }
@@ -248,16 +256,35 @@ namespace ult {
      */
     void preprocessPath(std::string& path, const std::string& packagePath) {
         removeQuotes(path);
-        path = replaceMultipleSlashes(path);
-    
-        // Replace "./" at the beginning of the path with the packagePath
-        if (!packagePath.empty() && path.substr(0, 2) == "./") {
-            path = packagePath + path.substr(2);
+        
+        // In-place multiple slash removal - no temporary string creation
+        if (!path.empty()) {
+            size_t writePos = 0;
+            bool previousSlash = false;
+            
+            for (size_t i = 0; i < path.length(); ++i) {
+                if (path[i] == '/') {
+                    if (!previousSlash) {
+                        path[writePos++] = path[i];
+                    }
+                    previousSlash = true;
+                } else {
+                    path[writePos++] = path[i];
+                    previousSlash = false;
+                }
+            }
+            path.resize(writePos);
         }
     
-        // Ensure all paths start with "sdmc:"
-        if (path.substr(0, 5) != "sdmc:") {
-            path = "sdmc:" + path;
+        // Direct character comparison instead of substr()
+        if (!packagePath.empty() && path.length() >= 2 && path[0] == '.' && path[1] == '/') {
+            path.replace(0, 2, packagePath);
+        }
+    
+        // Direct character comparison instead of substr()
+        if (path.length() < 5 || 
+            path[0] != 's' || path[1] != 'd' || path[2] != 'm' || path[3] != 'c' || path[4] != ':') {
+            path.insert(0, "sdmc:");
         }
     }
     
@@ -285,9 +312,9 @@ namespace ult {
      * @param filename The input filename from which to drop the extension, passed by reference and modified in-place.
      */
     void dropExtension(std::string& filename) {
-        size_t lastDotPos = filename.find_last_of(".");
+        const size_t lastDotPos = filename.find_last_of('.');  // Single char instead of string
         if (lastDotPos != std::string::npos) {
-            filename.resize(lastDotPos); // Resize the string to remove the extension
+            filename.resize(lastDotPos);
         }
     }
     
@@ -397,16 +424,17 @@ namespace ult {
      * @return A formatted priority string.
      */
     std::string formatPriorityString(const std::string& priority, int desiredWidth) {
-        std::string formattedString;
-        int priorityLength = priority.length();
+        const int priorityLength = priority.length();
         
         if (priorityLength > desiredWidth) {
-            formattedString = std::string(desiredWidth, '9'); // Set to 9's if too long
+            // FASTEST: Single allocation with direct fill
+            return std::string(desiredWidth, '9');
         } else {
-            formattedString = std::string(desiredWidth - priorityLength, '0') + priority;
+            // FASTEST: Single allocation + direct memory copy
+            std::string result(desiredWidth, '0');  // Pre-fill with zeros
+            memcpy(&result[desiredWidth - priorityLength], priority.data(), priorityLength);
+            return result;
         }
-        
-        return formattedString;
     }
     
     
@@ -420,7 +448,7 @@ namespace ult {
      * @param input The input string from which to remove the tag, passed by reference and modified in-place.
      */
     void removeTag(std::string &input) {
-        size_t pos = input.find('?');
+        const size_t pos = input.find('?');
         if (pos != std::string::npos) {
             input.resize(pos); // Modify the string in-place to remove everything after the '?'
         }
@@ -446,38 +474,37 @@ namespace ult {
     
     // This will take a string like "v1.3.5-abasdfasdfa" and output "1.3.5". string could also look like "test-1.3.5-1" or "v1.3.5" and we will only want "1.3.5"
     std::string cleanVersionLabel(const std::string& input) {
-        std::string versionLabel;
-        std::string prefix; // To store the preceding characters
-        versionLabel.reserve(input.size()); // Reserve space for the output string
-    
-        bool foundDigit = false;
-        for (char c : input) {
-            if (std::isdigit(c) || c == '.') {
-                if (!foundDigit) {
-                    // Include the prefix in the version label before adding digits
-                    if (!prefix.empty() && prefix.back() != 'v') {
-                        versionLabel += prefix;
-                    }
-                    prefix.clear();
-                }
-                versionLabel += c;
-                foundDigit = true;
+        std::string result;
+        result.reserve(input.size());
+        
+        size_t start = 0;
+        
+        // Find the start of the version number (first digit)
+        while (start < input.size() && !std::isdigit(input[start])) {
+            start++;
+        }
+        
+        if (start == input.size()) {
+            return ""; // No digits found
+        }
+        
+        
+        // Extract version number with dots and plus signs
+        for (size_t i = start; i < input.size(); ++i) {
+            const char c = input[i];
+            if (std::isdigit(c) || c == '.' || c == '+') {
+                result += c;
             } else {
-                if (!foundDigit) {
-                    prefix += c; // Add to prefix until a digit is found
-                } else {
-                    // Stop at the first non-digit character after encountering digits
-                    break;
-                }
+                break; // Stop at first character that's not digit, dot, or plus
             }
         }
         
-        return versionLabel;
+        return result;
     }
     
     
     std::string extractTitle(const std::string& input) {
-        size_t spacePos = input.find(' '); // Find the position of the first space
+        const size_t spacePos = input.find(' '); // Find the position of the first space
         
         if (spacePos != std::string::npos) {
             // Extract the substring before the first space
@@ -491,22 +518,30 @@ namespace ult {
     
     std::vector<std::string> splitString(const std::string& str, const std::string& delimiter) {
         std::vector<std::string> tokens;
+        
+        // OPTIMIZATION: Pre-allocate space to avoid reallocations
+        tokens.reserve(str.length() / (delimiter.length() + 1) + 1);
+        
         size_t start = 0;
         size_t end = str.find(delimiter);
+        
         while (end != std::string::npos) {
-            tokens.push_back(str.substr(start, end - start));
+            // OPTIMIZATION: Direct construction instead of substr() - no temporary string
+            tokens.emplace_back(str, start, end - start);
             start = end + delimiter.length();
             end = str.find(delimiter, start);
         }
-        tokens.push_back(str.substr(start));
-    
+        
+        // OPTIMIZATION: Direct construction for last token
+        tokens.emplace_back(str, start);
+        
         return tokens;
     }
     
     
     // Function to split a string by a delimiter and return a specific index
     std::string splitStringAtIndex(const std::string& str, const std::string& delimiter, size_t index) {
-        std::vector<std::string> tokens = splitString(str, delimiter);
+        const std::vector<std::string> tokens = splitString(str, delimiter);
     
         if (index < tokens.size()) {
             return tokens[index];
@@ -517,18 +552,23 @@ namespace ult {
     
     
     std::string customAlign(int number) {
-        std::string numStr = ult::to_string(number);
-        int missingDigits = 4 - numStr.length();
-        return std::string(missingDigits * 2, ' ') + numStr;
+        const std::string numStr = ult::to_string(number);
+        const int paddingSpaces = (4 - numStr.length()) * 2;
+        
+        // FASTEST: Single allocation + direct memory operations
+        std::string result(paddingSpaces + numStr.length(), ' ');
+        memcpy(&result[paddingSpaces], numStr.data(), numStr.length());
+        
+        return result;
     }
 
-    #if IS_LAUNCHER_DIRECTIVE
-    std::string inputExists(const std::string& input) {
-        std::string e;
-        for (char c : input) {
-            e += (c + 5);
-        }
-        return e;
-    }
-    #endif
+    //#if IS_LAUNCHER_DIRECTIVE
+    //std::string inputExists(const std::string& input) {
+    //    std::string e;
+    //    for (char c : input) {
+    //        e += (c + 5);
+    //    }
+    //    return e;
+    //}
+    //#endif
 }

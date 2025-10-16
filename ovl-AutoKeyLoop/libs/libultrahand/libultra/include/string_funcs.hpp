@@ -22,6 +22,7 @@
 #ifndef STRING_FUNCS_HPP
 #define STRING_FUNCS_HPP
 
+#include <cstring>
 #include <string>
 #include <iterator> 
 #include <vector>
@@ -92,8 +93,6 @@ namespace ult {
     };
     
 
-    
-
 
     /**
      * @brief Trims leading and trailing whitespaces from a string.
@@ -147,6 +146,7 @@ namespace ult {
     std::string replaceMultipleSlashes(const std::string& input);
     
     
+    void resolveDirectoryTraversal(std::string& path);
     
     /**
      * @brief Preprocesses a path string by replacing multiple slashes and adding "sdmc:" prefix.

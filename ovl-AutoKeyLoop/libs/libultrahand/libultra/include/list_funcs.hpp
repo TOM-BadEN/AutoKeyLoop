@@ -23,7 +23,7 @@
 #ifndef LIST_FUNCS_HPP
 #define LIST_FUNCS_HPP
 
-#if NO_FSTREAM_DIRECTIVE // For not using fstream (needs implementing)
+#if !USING_FSTREAM_DIRECTIVE // For not using fstream (needs implementing)
 #include <stdio.h>
 #else
 #include <fstream>
@@ -38,6 +38,14 @@
 
 
 namespace ult {
+
+    std::vector<std::string> splitIniList(const std::string& value);
+    
+    
+    std::string joinIniList(const std::vector<std::string>& list);
+
+
+
     /**
      * @brief Removes entries from a vector of strings that match a specified entry.
      *
@@ -62,7 +70,7 @@ namespace ult {
     
     
     // Function to read file into a vector of strings
-    std::vector<std::string> readListFromFile(const std::string& filePath);
+    std::vector<std::string> readListFromFile(const std::string& filePath, size_t maxLines=0);
 
     
     // Function to get an entry from the list based on the index

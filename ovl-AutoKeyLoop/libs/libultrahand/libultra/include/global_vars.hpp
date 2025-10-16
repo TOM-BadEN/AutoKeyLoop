@@ -22,6 +22,14 @@
 #include <string>
 #include <vector>
 #include <atomic>
+#include <set>
+
+// Auto-detect constexpr std::string support based on C++ version
+#if __cplusplus >= 202400L
+    #define CONSTEXPR_STRING constexpr
+#else
+    #define CONSTEXPR_STRING const
+#endif
 
 namespace ult {
     extern const std::string CONFIG_FILENAME;
@@ -36,6 +44,9 @@ namespace ult {
     extern const std::string LANG_PATH;
     extern const std::string THEMES_PATH;
     extern const std::string WALLPAPERS_PATH;
+    extern const std::string FLAGS_PATH;
+    extern const std::string PAYLOADS_PATH;
+    extern const std::string HB_APPSTORE_JSON;
     
     // Can be overriden with APPEARANCE_OVERRIDE_PATH directive
     extern std::string THEME_CONFIG_INI_PATH;
@@ -56,6 +67,9 @@ namespace ult {
     extern const std::string OVERLAY_PATH;
     extern const std::string OVERLAYS_INI_FILEPATH;
     extern const std::string PACKAGES_INI_FILEPATH;
+
+    extern const std::set<std::string> PROTECTED_FILES;
+
     extern const std::string ULTRAHAND_REPO_URL;
     extern const std::string INCLUDED_THEME_FOLDER_URL;
     extern const std::string LATEST_RELEASE_INFO_URL;
@@ -63,9 +77,11 @@ namespace ult {
     extern const std::string NX_OVLLOADER_PLUS_ZIP_URL;
     extern const std::string OLD_NX_OVLLOADER_ZIP_URL;
     extern const std::string OLD_NX_OVLLOADER_PLUS_ZIP_URL;
+    extern const std::string UPDATER_PAYLOAD_URL;
     
     extern const std::string LAUNCH_ARGS_STR;
     extern const std::string USE_LAUNCH_ARGS_STR;
+    extern const std::string USE_QUICK_LAUNCH_STR;
     extern const std::string USE_BOOT_PACKAGE_STR;
     extern const std::string USE_EXIT_PACKAGE_STR;
     extern const std::string USE_LOGGING_STR;
@@ -95,6 +111,7 @@ namespace ult {
     extern const std::string OVERLAYS_STR;
     extern const std::string IN_OVERLAY_STR;
     extern const std::string IN_HIDDEN_OVERLAY_STR;
+    extern const std::string IN_HIDDEN_PACKAGE_STR;
     extern const std::string FILE_STR;
     extern const std::string SYSTEM_STR;
     extern const std::string MODE_STR;
@@ -126,7 +143,7 @@ namespace ult {
     extern const std::string NULL_STR;
     extern const std::string THEME_STR;
     extern const std::string NOT_AVAILABLE_STR;
-    extern const std::string BUFFERS;
+    extern const std::string MEMORY_STR;
 
     // Pre-defined symbols
     extern const std::string OPTION_SYMBOL;
@@ -138,12 +155,14 @@ namespace ult {
     extern const std::string COPY_SYMBOL;
     extern const std::string INPROGRESS_SYMBOL;
     extern const std::string STAR_SYMBOL;
+    extern const std::string DIVIDER_SYMBOL;
 
     extern const std::vector<std::string> THROBBER_SYMBOLS;
 
     extern std::atomic<int> downloadPercentage;
     extern std::atomic<int> unzipPercentage;
     extern std::atomic<int> copyPercentage;
+    extern std::atomic<int> displayPercentage;
     
     void resetPercentages();
 }

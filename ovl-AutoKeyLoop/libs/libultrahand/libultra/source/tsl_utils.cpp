@@ -27,7 +27,6 @@ extern "C" { // assertion override
     }
 }
 
-
 namespace ult {
     bool correctFrameSize; // for detecting the correct Overlay display size
 
@@ -36,14 +35,15 @@ namespace ult {
 
     std::unordered_map<std::string, std::string> translationCache;
     
-    std::map<u64, std::string> overlayKeyCombos;
-    bool launchingOverlay = false;
-    bool currentForeground = false;
-
+    std::unordered_map<u64, OverlayCombo> g_entryCombos;
+    std::atomic<bool> launchingOverlay(false);
+    std::atomic<bool> settingsInitialized(false);
+    std::atomic<bool> currentForeground(false);
+    //std::mutex simulatedNextPageMutex;
 
     // Helper function to read file content into a string
     bool readFileContent(const std::string& filePath, std::string& content) {
-        #if NO_FSTREAM_DIRECTIVE
+        #if !USING_FSTREAM_DIRECTIVE
             FILE* file = fopen(filePath.c_str(), "r");
             if (!file) {
                 #if USING_LOGGING_DIRECTIVE
@@ -92,6 +92,8 @@ namespace ult {
     
             value = content.substr(valueStart + 1, valueEnd - valueStart - 1);
             result[key] = value;
+            key.clear();
+            value.clear();
     
             pos = valueEnd + 1; // Move to the next key-value pair
         }
@@ -103,7 +105,7 @@ namespace ult {
         if (!readFileContent(filePath, content)) {
             return false;
         }
-    
+        
         parseJsonContent(content, result);
         return true;
     }
@@ -202,19 +204,31 @@ namespace ult {
 
     
     std::string lastTitleID;
-    bool resetForegroundCheck = false; // initialize as true
+    std::atomic<bool> resetForegroundCheck(false); // initialize as true
 
 
+    
 
-    bool internalTouchReleased = true;
+    std::atomic<bool> internalTouchReleased(true);
     u32 layerEdge = 0;
     bool useRightAlignment = false;
     bool useSwipeToOpen = true;
-    bool useDynamicLogo = true;
+    bool useLaunchCombos = false;
     bool usePageSwap = false;
-    bool noClickableItems = false;
+    bool useDynamicLogo = true;
+    bool useSelectionBG = true;
+    bool useSelectionText = true;
+    bool useSelectionValue = false;
+
+    std::atomic<bool> noClickableItems{false};
     
-    
+    #if IS_LAUNCHER_DIRECTIVE
+    std::atomic<bool> overlayLaunchRequested{false};
+    std::string requestedOverlayPath;
+    std::string requestedOverlayArgs;
+    std::mutex overlayLaunchMutex;
+    #endif
+
     // Define the duration boundaries (for smooth scrolling)
     //const std::chrono::milliseconds initialInterval = std::chrono::milliseconds(67);  // Example initial interval
     //const std::chrono::milliseconds shortInterval = std::chrono::milliseconds(10);    // Short interval after long hold
@@ -232,10 +246,13 @@ namespace ult {
     //#include <filesystem> // Comment out filesystem
     
     // CUSTOM SECTION START
-    float backWidth, selectWidth, nextPageWidth;
-    bool inMainMenu = false;
-    bool inOverlaysPage = false;
-    bool inPackagesPage = false;
+    //float backWidth, selectWidth, nextPageWidth;
+    std::atomic<float> backWidth;
+    std::atomic<float> selectWidth;
+    std::atomic<float> nextPageWidth;
+    std::atomic<bool> inMainMenu{false};
+    std::atomic<bool> inOverlaysPage{false};
+    std::atomic<bool> inPackagesPage{false};
     
     bool firstBoot = true; // for detecting first boot
     
@@ -247,6 +264,7 @@ namespace ult {
     std::atomic<bool> shakingProgress(true);
     
     std::atomic<bool> isHidden(false);
+    std::atomic<bool> externalAbortCommands(false);
     
     //bool progressAnimation = false;
     bool disableTransparency = false;
@@ -254,11 +272,25 @@ namespace ult {
     bool useMemoryExpansion = false;
     bool useOpaqueScreenshots = false;
     
-    bool onTrackBar = false;
-    bool allowSlide = false;
-    bool unlockedSlide = false;
+    std::atomic<bool> onTrackBar(false);
+    std::atomic<bool> allowSlide(false);
+    std::atomic<bool> unlockedSlide(false);
     
     
+
+    void atomicToggle(std::atomic<bool>& b) {
+        bool expected = b.load(std::memory_order_relaxed);
+        for (;;) {
+            const bool desired = !expected;
+            if (b.compare_exchange_weak(expected, desired,
+                                        std::memory_order_acq_rel,
+                                        std::memory_order_relaxed)) {
+                break; // success
+            }
+            // expected has been updated with the current value on failure; loop continues
+        }
+    }
+
     
     bool updateMenuCombos = false;
     
@@ -303,7 +335,7 @@ namespace ult {
         std::string unicodeCombo;
         bool modified = false;
         size_t start = 0;
-        size_t length = combo.length();
+        const size_t length = combo.length();
         size_t end = 0;  // Moved outside the loop
         std::string token;  // Moved outside the loop
         auto it = buttonCharMap.end();  // Initialize iterator once outside the loop
@@ -341,9 +373,11 @@ namespace ult {
     }
     
     
-    //const std::string whiteColor = "#FFFFFF";
-    //const std::string blackColor = "#000000";
+    CONSTEXPR_STRING std::string whiteColor = "#FFFFFF";
+    CONSTEXPR_STRING std::string blackColor = "#000000";
     
+    std::atomic<bool> languageWasChanged{false};
+
     #if IS_LAUNCHER_DIRECTIVE
     std::string ENGLISH = "English";
     std::string SPANISH = "Spanish";
@@ -355,10 +389,12 @@ namespace ult {
     std::string DUTCH = "Dutch";
     std::string PORTUGUESE = "Portuguese";
     std::string RUSSIAN = "Russian";
+    std::string UKRAINIAN = "Ukrainian";
     std::string POLISH = "Polish";
     std::string SIMPLIFIED_CHINESE = "Simplified Chinese";
     std::string TRADITIONAL_CHINESE = "Traditional Chinese";
     std::string OVERLAYS = "Overlays"; //defined in libTesla now
+    std::string OVERLAYS_ABBR = "Overlays";
     std::string OVERLAY = "Overlay";
     std::string HIDDEN_OVERLAYS = "Hidden Overlays";
     std::string PACKAGES = "Packages"; //defined in libTesla now
@@ -368,6 +404,7 @@ namespace ult {
     std::string HIDE_OVERLAY = "Hide Overlay";
     std::string HIDE_PACKAGE = "Hide Package";
     std::string LAUNCH_ARGUMENTS = "Launch Arguments";
+    std::string QUICK_LAUNCH = "Quick Launch";
     std::string BOOT_COMMANDS = "Boot Commands";
     std::string EXIT_COMMANDS = "Exit Commands";
     std::string ERROR_LOGGING = "Error Logging";
@@ -377,15 +414,30 @@ namespace ult {
     std::string UI_SETTINGS = "UI Settings";
 
     std::string WIDGET = "Widget";
+    std::string WIDGET_ITEMS = "Widget Items";
+    std::string WIDGET_SETTINGS = "Widget Settings";
     std::string CLOCK = "Clock";
     std::string BATTERY = "Battery";
     std::string SOC_TEMPERATURE = "SOC Temperature";
     std::string PCB_TEMPERATURE = "PCB Temperature";
+    std::string BACKDROP = "Backdrop";
+    std::string DYNAMIC_COLORS = "Dynamic Colors";
+    std::string CENTER_ALIGNMENT = "Center Alignment";
+    std::string EXTENDED_BACKDROP = "Extended Backdrop";
     std::string MISCELLANEOUS = "Miscellaneous";
-    std::string MENU_ITEMS = "Menu Items";
+    //std::string MENU_ITEMS = "Menu Items";
+    std::string MENU_SETTINGS = "Menu Settings";
     std::string USER_GUIDE = "User Guide";
-    std::string VERSION_LABELS = "Version Labels";
+    std::string SHOW_HIDDEN = "Show Hidden";
+    std::string PAGE_SWAP = "Page Swap";
+    std::string RIGHT_SIDE_MODE = "Right-side Mode";
+    std::string OVERLAY_VERSIONS = "Overlay Versions";
+    std::string PACKAGE_VERSIONS = "Package Versions";
+    std::string CLEAN_VERSIONS = "Clean Versions";
+    //std::string VERSION_LABELS = "Version Labels";
     std::string KEY_COMBO = "Key Combo";
+    std::string MODE = "Mode";
+    std::string MODES = "Modes";
     std::string LANGUAGE = "Language";
     std::string OVERLAY_INFO = "Overlay Info";
     std::string SOFTWARE_UPDATE = "Software Update";
@@ -412,12 +464,8 @@ namespace ult {
     std::string ROOT_PACKAGE = "Root Package";
     std::string SORT_PRIORITY = "Sort Priority";
     std::string FAILED_TO_OPEN = "Failed to open file";
-    std::string CLEAN_VERSIONS = "Clean Versions";
-    std::string OVERLAY_VERSIONS = "Overlay Versions";
-    std::string PACKAGE_VERSIONS = "Package Versions";
+    std::string LAUNCH_COMBOS = "Launch Combos";
     std::string OPAQUE_SCREENSHOTS = "Opaque Screenshots";
-    std::string PAGE_SWAP = "Page Swap";
-    std::string DYNAMIC_LOGO = "Dynamic Logo";
 
     std::string PACKAGE_INFO = "Package Info";
     std::string _TITLE = "Title";
@@ -426,7 +474,7 @@ namespace ult {
     std::string _ABOUT = "About";
     std::string _CREDITS = "Credits";
 
-    std::string USERGUIDE_OFFSET = "175";
+    std::string USERGUIDE_OFFSET = "176";
     std::string SETTINGS_MENU = "Settings Menu";
     std::string SCRIPT_OVERLAY = "Script Overlay";
     std::string STAR_FAVORITE = "Star/Favorite";
@@ -434,10 +482,20 @@ namespace ult {
     std::string ON_MAIN_MENU = "on Main Menu";
     std::string ON_A_COMMAND = "on a command";
     std::string ON_OVERLAY_PACKAGE = "on overlay/package";
-    std::string EFFECTS = "Effects";
+    std::string FEATURES = "Features";
     std::string SWIPE_TO_OPEN = "Swipe to Open";
-    std::string RIGHT_SIDE_MODE = "Right-side Mode";
-    std::string PROGRESS_ANIMATION = "Progress Animation";
+
+    std::string THEME_SETTINGS = "Theme Settings";
+    std::string DYNAMIC_LOGO = "Dynamic Logo";
+    std::string SELECTION_BACKGROUND = "Selection Background";
+    std::string SELECTION_TEXT = "Selection Text";
+    std::string SELECTION_VALUE = "Selection Value";
+    std::string LIBULTRAHAND_TITLES = "libultrahand Titles";
+    std::string LIBULTRAHAND_VERSIONS = "libultrahand Versions";
+    std::string PACKAGE_TITLES = "Package Titles";
+    //std::string PACKAGE_VERSIONS = "Package Versions";
+
+    //std::string PROGRESS_ANIMATION = "Progress Animation";
 
     std::string REBOOT_TO = "Reboot To";
     std::string REBOOT = "Reboot";
@@ -456,9 +514,13 @@ namespace ult {
 
     std::string OK = "OK";
     std::string BACK = "Back";
+    std::string HIDE = "Hide";
+    std::string CANCEL = "Cancel";
 
     std::string GAP_1 = "     ";
     std::string GAP_2 = "  ";
+
+    std::atomic<float> halfGap = 0.0f;
     
 
     std::string EMPTY = "Empty";
@@ -521,12 +583,14 @@ namespace ult {
         DUTCH = "Dutch";
         PORTUGUESE = "Portuguese";
         RUSSIAN = "Russian";
+        UKRAINIAN = "Ukrainian";
         POLISH = "Polish";
         SIMPLIFIED_CHINESE = "Simplified Chinese";
         TRADITIONAL_CHINESE = "Traditional Chinese";
         DEFAULT_CHAR_WIDTH = "0.33";
         UNAVAILABLE_SELECTION = "Not available";
         OVERLAYS = "Overlays"; //defined in libTesla now
+        OVERLAYS_ABBR = "Overlays";
         OVERLAY = "Overlay";
         HIDDEN_OVERLAYS = "Hidden Overlays";
         PACKAGES = "Packages"; //defined in libTesla now
@@ -536,6 +600,7 @@ namespace ult {
         HIDE_OVERLAY = "Hide Overlay";
         HIDE_PACKAGE = "Hide Package";
         LAUNCH_ARGUMENTS = "Launch Arguments";
+        QUICK_LAUNCH = "Quick Launch";
         BOOT_COMMANDS = "Boot Commands";
         EXIT_COMMANDS = "Exit Commands";
         ERROR_LOGGING = "Error Logging";
@@ -544,15 +609,30 @@ namespace ult {
         MAIN_SETTINGS = "Main Settings";
         UI_SETTINGS = "UI Settings";
         WIDGET = "Widget";
+        WIDGET_ITEMS = "Widget Items";
+        WIDGET_SETTINGS = "Widget Settings";
         CLOCK = "Clock";
         BATTERY = "Battery";
         SOC_TEMPERATURE = "SOC Temperature";
         PCB_TEMPERATURE = "PCB Temperature";
+        BACKDROP = "Backdrop";
+        DYNAMIC_COLORS = "Dynamic Colors";
+        CENTER_ALIGNMENT = "Center Alignment";
+        EXTENDED_BACKDROP = "Extended Backdrop";
         MISCELLANEOUS = "Miscellaneous";
-        MENU_ITEMS = "Menu Items";
+        //MENU_ITEMS = "Menu Items";
+        MENU_SETTINGS = "Menu Settings";
         USER_GUIDE = "User Guide";
-        VERSION_LABELS = "Version Labels";
+        SHOW_HIDDEN = "Show Hidden";
+        PAGE_SWAP = "Page Swap";
+        RIGHT_SIDE_MODE = "Right-side Mode";
+        OVERLAY_VERSIONS = "Overlay Versions";
+        PACKAGE_VERSIONS = "Package Versions";
+        CLEAN_VERSIONS = "Clean Versions";
+        //VERSION_LABELS = "Version Labels";
         KEY_COMBO = "Key Combo";
+        MODE = "Mode";
+        MODES = "Modes";
         LANGUAGE = "Language";
         OVERLAY_INFO = "Overlay Info";
         SOFTWARE_UPDATE = "Software Update";
@@ -579,12 +659,9 @@ namespace ult {
         ROOT_PACKAGE = "Root Package";
         SORT_PRIORITY = "Sort Priority";
         FAILED_TO_OPEN = "Failed to open file";
-        CLEAN_VERSIONS = "Clean Versions";
-        OVERLAY_VERSIONS = "Overlay Versions";
-        PACKAGE_VERSIONS = "Package Versions";
+
+        LAUNCH_COMBOS = "Launch Combos";
         OPAQUE_SCREENSHOTS = "Opaque Screenshots";
-        PAGE_SWAP = "Page Swap";
-        DYNAMIC_LOGO = "Dynamic Logo";
         ON = "On";
         OFF = "Off";
         PACKAGE_INFO = "Package Info";
@@ -595,6 +672,9 @@ namespace ult {
         _CREDITS = "Credits";
         OK = "OK";
         BACK = "Back";
+        HIDE = "Hide";
+        CANCEL = "Cancel";
+
         REBOOT_TO = "Reboot To";
         REBOOT = "Reboot";
         SHUTDOWN = "Shutdown";
@@ -602,7 +682,7 @@ namespace ult {
         GAP_1 = "     ";
         GAP_2 = "  ";
 
-        USERGUIDE_OFFSET = "175";
+        USERGUIDE_OFFSET = "176";
         SETTINGS_MENU = "Settings Menu";
         SCRIPT_OVERLAY = "Script Overlay";
         STAR_FAVORITE = "Star/Favorite";
@@ -610,10 +690,21 @@ namespace ult {
         ON_MAIN_MENU = "on Main Menu";
         ON_A_COMMAND = "on a command";
         ON_OVERLAY_PACKAGE = "on overlay/package";
-        EFFECTS = "Effects";
+        FEATURES = "Features";
         SWIPE_TO_OPEN = "Swipe to Open";
-        RIGHT_SIDE_MODE = "Right-side Mode";
-        PROGRESS_ANIMATION = "Progress Animation";
+        //PROGRESS_ANIMATION = "Progress Animation";
+
+        THEME_SETTINGS = "Theme Settings";
+        DYNAMIC_LOGO = "Dynamic Logo";
+        SELECTION_BACKGROUND = "Selection Background";
+        SELECTION_TEXT = "Selection Text";
+        SELECTION_VALUE = "Selection Value";
+        LIBULTRAHAND_TITLES = "libultrahand Titles";
+        LIBULTRAHAND_VERSIONS = "libultrahand Versions";
+        PACKAGE_TITLES = "Package Titles";
+        //PACKAGE_VERSIONS = "Package Versions";
+
+
         EMPTY = "Empty";
     
         SUNDAY = "Sunday";
@@ -692,9 +783,12 @@ namespace ult {
             {"DUTCH", &DUTCH},
             {"PORTUGUESE", &PORTUGUESE},
             {"RUSSIAN", &RUSSIAN},
+            {"UKRAINIAN", &UKRAINIAN},
+            {"POLISH", &POLISH},
             {"SIMPLIFIED_CHINESE", &SIMPLIFIED_CHINESE},
             {"TRADITIONAL_CHINESE", &TRADITIONAL_CHINESE},
             {"OVERLAYS", &OVERLAYS},
+            {"OVERLAYS_ABBR", &OVERLAYS_ABBR},
             {"OVERLAY", &OVERLAY},
             {"HIDDEN_OVERLAYS", &HIDDEN_OVERLAYS},
             {"PACKAGES", &PACKAGES},
@@ -704,6 +798,7 @@ namespace ult {
             {"HIDE_PACKAGE", &HIDE_PACKAGE},
             {"HIDE_OVERLAY", &HIDE_OVERLAY},
             {"LAUNCH_ARGUMENTS", &LAUNCH_ARGUMENTS},
+            {"QUICK_LAUNCH", &QUICK_LAUNCH},
             {"BOOT_COMMANDS", &BOOT_COMMANDS},
             {"EXIT_COMMANDS", &EXIT_COMMANDS},
             {"ERROR_LOGGING", &ERROR_LOGGING},
@@ -713,15 +808,30 @@ namespace ult {
             {"UI_SETTINGS", &UI_SETTINGS},
 
             {"WIDGET", &WIDGET},
+            {"WIDGET_ITEMS", &WIDGET_ITEMS},
+            {"WIDGET_SETTINGS", &WIDGET_SETTINGS},
             {"CLOCK", &CLOCK},
             {"BATTERY", &BATTERY},
             {"SOC_TEMPERATURE", &SOC_TEMPERATURE},
             {"PCB_TEMPERATURE", &PCB_TEMPERATURE},
+            {"BACKDROP", &BACKDROP},
+            {"DYNAMIC_COLORS", &DYNAMIC_COLORS},
+            {"CENTER_ALIGNMENT", &CENTER_ALIGNMENT},
+            {"EXTENDED_BACKDROP", &EXTENDED_BACKDROP},
             {"MISCELLANEOUS", &MISCELLANEOUS},
-            {"MENU_ITEMS", &MENU_ITEMS},
+            //{"MENU_ITEMS", &MENU_ITEMS},
+            {"MENU_SETTINGS", &MENU_SETTINGS},
             {"USER_GUIDE", &USER_GUIDE},
-            {"VERSION_LABELS", &VERSION_LABELS},
+            {"SHOW_HIDDEN", &SHOW_HIDDEN},
+            {"PAGE_SWAP", &PAGE_SWAP},
+            {"RIGHT_SIDE_MODE", &RIGHT_SIDE_MODE},
+            {"OVERLAY_VERSIONS", &OVERLAY_VERSIONS},
+            {"PACKAGE_VERSIONS", &PACKAGE_VERSIONS},
+            {"CLEAN_VERSIONS", &CLEAN_VERSIONS},
+            //{"VERSION_LABELS", &VERSION_LABELS},
             {"KEY_COMBO", &KEY_COMBO},
+            {"MODE", &MODE},
+            {"MODES", &MODES},
             {"LANGUAGE", &LANGUAGE},
             {"OVERLAY_INFO", &OVERLAY_INFO},
             {"SOFTWARE_UPDATE", &SOFTWARE_UPDATE},
@@ -748,12 +858,9 @@ namespace ult {
             {"ROOT_PACKAGE", &ROOT_PACKAGE},
             {"SORT_PRIORITY", &SORT_PRIORITY},
             {"FAILED_TO_OPEN", &FAILED_TO_OPEN},
-            {"CLEAN_VERSIONS", &CLEAN_VERSIONS},
-            {"OVERLAY_VERSIONS", &OVERLAY_VERSIONS},
-            {"PACKAGE_VERSIONS", &PACKAGE_VERSIONS},
+
+            {"LAUNCH_COMBOS", &LAUNCH_COMBOS},
             {"OPAQUE_SCREENSHOTS", &OPAQUE_SCREENSHOTS},
-            {"PAGE_SWAP", &PAGE_SWAP},
-            {"DYNAMIC_LOGO", &DYNAMIC_LOGO},
 
             {"PACKAGE_INFO", &PACKAGE_INFO},
             {"TITLE", &_TITLE},
@@ -770,10 +877,19 @@ namespace ult {
             {"ON_MAIN_MENU", &ON_MAIN_MENU},
             {"ON_A_COMMAND", &ON_A_COMMAND},
             {"ON_OVERLAY_PACKAGE", &ON_OVERLAY_PACKAGE},
-            {"EFFECTS", &EFFECTS},
+            {"FEATURES", &FEATURES},
             {"SWIPE_TO_OPEN", &SWIPE_TO_OPEN},
-            {"RIGHT_SIDE_MODE", &RIGHT_SIDE_MODE},
-            {"PROGRESS_ANIMATION", &PROGRESS_ANIMATION},
+
+            {"THEME_SETTINGS", &THEME_SETTINGS},
+            {"DYNAMIC_LOGO", &DYNAMIC_LOGO},
+            {"SELECTION_BACKGROUND", &SELECTION_BACKGROUND},
+            {"SELECTION_TEXT", &SELECTION_TEXT},
+            {"SELECTION_VALUE", &SELECTION_VALUE},
+            {"LIBULTRAHAND_TITLES", &LIBULTRAHAND_TITLES},
+            {"LIBULTRAHAND_VERSIONS", &LIBULTRAHAND_VERSIONS},
+            {"PACKAGE_TITLES", &PACKAGE_TITLES},
+            //{"PACKAGE_VERSIONS", &PACKAGE_VERSIONS},
+            //{"PROGRESS_ANIMATION", &PROGRESS_ANIMATION},
 
             {"REBOOT_TO", &REBOOT_TO},
             {"REBOOT", &REBOOT},
@@ -791,6 +907,8 @@ namespace ult {
 
             {"OK", &OK},
             {"BACK", &BACK},
+            {"HIDE", &HIDE},
+            {"CANCEL", &CANCEL},
 
             {"GAP_1", &GAP_1},
             {"GAP_2", &GAP_2},
@@ -975,16 +1093,22 @@ namespace ult {
     
     
     // Prepare a map of default settings
-    std::map<std::string, std::string> defaultThemeSettingsMap = {
-        {"default_overlay_color", "FFFFFF"},
+    std::map<const std::string, std::string> defaultThemeSettingsMap = {
+        {"default_overlay_color", whiteColor},
         {"default_package_color", "00FF00"},
         {"default_script_color", "FF33FF"},
         {"clock_color", whiteColor},
+        {"temperature_color", whiteColor},
+        {"battery_color", "ffff45"},
+        {"battery_charging_color", "00FF00"},
+        {"battery_low_color", "FF0000"},
+        {"widget_backdrop_alpha", "15"},
+        {"widget_backdrop_color", blackColor},
         {"bg_alpha", "13"},
         {"bg_color", blackColor},
         {"separator_alpha", "15"},
         {"separator_color", "404040"},
-        {"battery_color", "ffff45"},
+        {"text_separator_color", "404040"},
         {"text_color", whiteColor},
         {"header_text_color", whiteColor},
         {"header_separator_color", whiteColor},
@@ -993,11 +1117,12 @@ namespace ult {
         {"bottom_button_color", whiteColor},
         {"bottom_text_color", whiteColor},
         {"bottom_separator_color", whiteColor},
-        {"table_bg_color", "303030"},
-        {"table_bg_alpha", "10"},
+        {"top_separator_color", "404040"},
+        {"table_bg_color", "2C2C2C"},
+        {"table_bg_alpha", "14"},
         {"table_section_text_color", whiteColor},
         //{"table_info_text_color", "00FFDD"},
-        {"table_info_text_color", "85c4ff"},
+        {"table_info_text_color", "9ed0ff"},
         {"warning_text_color", "FF7777"},
         {"healthy_ram_text_color", "00FF00"},
         {"neutral_ram_text_color", "FFAA00"},
@@ -1007,14 +1132,23 @@ namespace ult {
         {"trackbar_slider_malleable_color", "A0A0A0"},
         {"trackbar_full_color", "00FFDD"},
         {"trackbar_empty_color", "404040"},
-        {"version_text_color", "AAAAAA"},
+        {"overlay_text_color", whiteColor},
+        {"ult_overlay_text_color", "9ed0ff"},
+        {"package_text_color", whiteColor},
+        {"ult_package_text_color", "9ed0ff"},
+        {"banner_version_text_color", "AAAAAA"},
+        {"overlay_version_text_color", "AAAAAA"},
+        {"ult_overlay_version_text_color", "00FFDD"},
+        {"package_version_text_color", "AAAAAA"},
+        {"ult_package_version_text_color", "00FFDD"},
         {"on_text_color", "00FFDD"},
         {"off_text_color", "AAAAAA"},
         {"invalid_text_color", "FF0000"},
         {"inprogress_text_color", "FFFF45"},
-        {"selection_text_color", whiteColor},
+        {"selection_text_color", "9ed0ff"},
+        {"selection_value_text_color", "FF7777"},
         {"selection_bg_color", blackColor},
-        {"selection_bg_alpha", "13"},
+        {"selection_bg_alpha", "11"},
         {"trackbar_color", "555555"},
         {"highlight_color_1", "2288CC"},
         {"highlight_color_2", "88FFFF"},
@@ -1026,8 +1160,9 @@ namespace ult {
         {"progress_alpha", "7"},
         {"progress_color", "253EF7"},
         {"invert_bg_click_color", FALSE_STR},
-        {"disable_selection_bg", FALSE_STR},
-        {"disable_colorful_logo", FALSE_STR},
+        //{"disable_selection_bg", FALSE_STR},
+        //{"disable_selection_value_color", FALSE_STR},
+        //{"disable_colorful_logo", FALSE_STR},
         {"logo_color_1", whiteColor},
         {"logo_color_2", "FF0000"},
         {"dynamic_logo_color_1", "00E669"},
@@ -1056,10 +1191,10 @@ namespace ult {
     
     
     float calculateAmplitude(float x, float peakDurationFactor) {
-        const float phasePeriod = 360.0f * peakDurationFactor;  // One full phase period
+        //const float phasePeriod = 360.0f * peakDurationFactor;  // One full phase period
     
         // Convert x from radians to degrees and calculate phase within the period
-        int phase = static_cast<int>(x * RAD_TO_DEG) % static_cast<int>(phasePeriod);
+        const int phase = static_cast<int>(x * RAD_TO_DEG) % static_cast<int>(360.0f * peakDurationFactor);
     
         // Check if the phase is odd using bitwise operation
         if (phase & 1) {
@@ -1082,8 +1217,8 @@ namespace ult {
     
     // Function to load the RGBA file into memory and modify wallpaperData directly
     void loadWallpaperFile(const std::string& filePath, s32 width, s32 height) {
-        size_t originalDataSize = width * height * 4; // Original size in bytes (4 bytes per pixel)
-        size_t compressedDataSize = originalDataSize / 2; // RGBA4444 uses half the space
+        const size_t originalDataSize = width * height * 4; // Original size in bytes (4 bytes per pixel)
+        const size_t compressedDataSize = originalDataSize / 2; // RGBA4444 uses half the space
         
         wallpaperData.resize(compressedDataSize);
     
@@ -1092,7 +1227,7 @@ namespace ult {
             return;
         }
     
-        #if NO_FSTREAM_DIRECTIVE
+        #if !USING_FSTREAM_DIRECTIVE
             FILE* file = fopen(filePath.c_str(), "rb");
             if (!file) {
                 wallpaperData.clear();
@@ -1100,7 +1235,7 @@ namespace ult {
             }
     
             std::vector<uint8_t> buffer(originalDataSize);
-            size_t bytesRead = fread(buffer.data(), 1, originalDataSize, file);
+            const size_t bytesRead = fread(buffer.data(), 1, originalDataSize, file);
             fclose(file);
     
             if (bytesRead != originalDataSize) {
@@ -1194,27 +1329,29 @@ namespace ult {
     //float fps = 0.0f;
     //double elapsedTime = 0.0;
     
-    bool themeIsInitialized = false; // for loading the theme once in OverlayFrame / HeaderOverlayFrame
+    std::atomic<bool> themeIsInitialized(false); // for loading the theme once in OverlayFrame / HeaderOverlayFrame
     
     // Variables for touch commands
-    bool touchingBack = false;
-    bool touchingSelect = false;
-    bool touchingNextPage = false;
-    bool touchingMenu = false;
-    bool simulatedBack = false;
-    bool simulatedBackComplete = true;
-    bool simulatedSelect = false;
-    bool simulatedSelectComplete = true;
-    bool simulatedNextPage = false;
-    bool simulatedNextPageComplete = true;
-    bool simulatedMenu = false;
-    bool simulatedMenuComplete = true;
-    bool stillTouching = false;
-    bool interruptedTouch = false;
-    bool touchInBounds = false;
+    std::atomic<bool> touchingBack(false);
+    std::atomic<bool> touchingSelect(false);
+    std::atomic<bool> touchingNextPage(false);
+    std::atomic<bool> touchingMenu(false);
+    std::atomic<bool> shortTouchAndRelease(false);
+    std::atomic<bool> longTouchAndRelease(false);
+    std::atomic<bool> simulatedBack(false);
+    //bool simulatedBackComplete = true;
+    std::atomic<bool> simulatedSelect(false);
+    //bool simulatedSelectComplete = true;
+    std::atomic<bool> simulatedNextPage(false);
+    //std::atomic<bool> simulatedNextPageComplete(true);
+    std::atomic<bool> simulatedMenu(false);
+    //bool simulatedMenuComplete = true;
+    std::atomic<bool> stillTouching(false);
+    std::atomic<bool> interruptedTouch(false);
+    std::atomic<bool> touchInBounds(false);
     
     
-    #if USING_WIDGET_DIRECTIVE
+#if USING_WIDGET_DIRECTIVE
     // Battery implementation
     bool powerInitialized = false;
     bool powerCacheInitialized;
@@ -1224,17 +1361,17 @@ namespace ult {
     PsmSession powerSession;
     
     // Define variables to store previous battery charge and time
-    uint32_t prevBatteryCharge = 0;
+    //uint32_t prevBatteryCharge = 0;
     //s64 timeOut = 0;
     
     
-    uint32_t batteryCharge;
-    bool isCharging;
+    std::atomic<uint32_t> batteryCharge{0};
+    std::atomic<bool> isCharging{false};
     //bool validPower;
     
     
     
-    bool powerGetDetails(uint32_t *batteryCharge, bool *isCharging) {
+    bool powerGetDetails(uint32_t *_batteryCharge, bool *_isCharging) {
         static uint64_t last_call_ns = 0;
         
         // Ensure power system is initialized
@@ -1243,27 +1380,27 @@ namespace ult {
         }
         
         // Get the current time in nanoseconds
-        uint64_t now_ns = armTicksToNs(armGetSystemTick());
+        const uint64_t now_ns = armTicksToNs(armGetSystemTick());
         
         // 3 seconds in nanoseconds
-        constexpr uint64_t min_delay_ns = 3000000000ULL;
+        static constexpr uint64_t min_delay_ns = 3000000000ULL;
         
         // Check if enough time has elapsed or if cache is not initialized
-        bool useCache = (now_ns - last_call_ns <= min_delay_ns) && powerCacheInitialized;
+        const bool useCache = (now_ns - last_call_ns <= min_delay_ns) && powerCacheInitialized;
         if (!useCache) {
             PsmChargerType charger = PsmChargerType_Unconnected;
-            Result rc = psmGetBatteryChargePercentage(batteryCharge);
+            Result rc = psmGetBatteryChargePercentage(_batteryCharge);
             bool hwReadsSucceeded = R_SUCCEEDED(rc);
     
             if (hwReadsSucceeded) {
                 rc = psmGetChargerType(&charger);
                 hwReadsSucceeded &= R_SUCCEEDED(rc);
-                *isCharging = (charger != PsmChargerType_Unconnected);
+                *_isCharging = (charger != PsmChargerType_Unconnected);
     
                 if (hwReadsSucceeded) {
                     // Update cache
-                    powerCacheCharge = *batteryCharge;
-                    powerCacheIsCharging = *isCharging;
+                    powerCacheCharge = *_batteryCharge;
+                    powerCacheIsCharging = *_isCharging;
                     powerCacheInitialized = true;
                     last_call_ns = now_ns; // Update last call time after successful hardware read
                     return true;
@@ -1272,8 +1409,8 @@ namespace ult {
     
             // Use cached values if the hardware read fails
             if (powerCacheInitialized) {
-                *batteryCharge = powerCacheCharge;
-                *isCharging = powerCacheIsCharging;
+                *_batteryCharge = powerCacheCharge;
+                *_isCharging = powerCacheIsCharging;
                 return hwReadsSucceeded; // Return false if hardware read failed but cache is valid
             }
     
@@ -1282,32 +1419,34 @@ namespace ult {
         }
     
         // Use cached values if not enough time has passed
-        *batteryCharge = powerCacheCharge;
-        *isCharging = powerCacheIsCharging;
+        *_batteryCharge = powerCacheCharge;
+        *_isCharging = powerCacheIsCharging;
         return true; // Return true as cache is used
     }
     
     
     void powerInit(void) {
         uint32_t charge = 0;
-        isCharging = 0;
-        
+        bool charging = false;
+    
         powerCacheInitialized = false;
         powerCacheCharge = 0;
         powerCacheIsCharging = false;
-        
+    
         if (!powerInitialized) {
             Result rc = psmInitialize();
             if (R_SUCCEEDED(rc)) {
                 rc = psmBindStateChangeEvent(&powerSession, 1, 1, 1);
-                
-                if (R_FAILED(rc)) psmExit();
+    
+                if (R_FAILED(rc))
+                    psmExit();
+    
                 if (R_SUCCEEDED(rc)) {
                     powerInitialized = true;
-                    powerGetDetails(&charge, &isCharging);
-                    
-                    // Initialize prevBatteryCharge here with a non-zero value if needed.
-                    prevBatteryCharge = charge;
+                    ult::powerGetDetails(&charge, &charging);
+                    ult::batteryCharge.store(charge, std::memory_order_release);
+                    ult::isCharging.store(charging, std::memory_order_release);
+                    //prevBatteryCharge = charge; // if needed
                 }
             }
         }
@@ -1321,11 +1460,12 @@ namespace ult {
             powerCacheInitialized = false;
         }
     }
-    #endif
+#endif
     
     
     // Temperature Implementation
-    float PCB_temperature, SOC_temperature;
+    std::atomic<float> PCB_temperature{0.0f};
+    std::atomic<float> SOC_temperature{0.0f};
     
     /*
     I2cReadRegHandler was taken from Switch-OC-Suite source code made by KazushiMe
@@ -1418,41 +1558,72 @@ namespace ult {
     
     
     // Time implementation
-    const std::string DEFAULT_DT_FORMAT = "'%a %T'";
+    CONSTEXPR_STRING std::string DEFAULT_DT_FORMAT = "'%a %T'";
     std::string datetimeFormat = "%a %T";
     
     
     // Widget settings
     //std::string hideClock, hideBattery, hidePCBTemp, hideSOCTemp;
-    bool hideClock, hideBattery, hidePCBTemp, hideSOCTemp;
-    
+    bool hideClock, hideBattery, hidePCBTemp, hideSOCTemp, dynamicWidgetColors;
+    bool hideWidgetBackdrop, centerWidgetAlignment, extendedWidgetBackdrop;
+
     #if IS_LAUNCHER_DIRECTIVE
     void reinitializeWidgetVars() {
+        // Load INI data once instead of 8 separate file reads
+        auto ultrahandSection = getKeyValuePairsFromSection(ULTRAHAND_CONFIG_INI_PATH, ULTRAHAND_PROJECT_NAME);
         
-        hideClock = (parseValueFromIniSection(ULTRAHAND_CONFIG_INI_PATH, ULTRAHAND_PROJECT_NAME, "hide_clock") != FALSE_STR);
-        hideBattery = (parseValueFromIniSection(ULTRAHAND_CONFIG_INI_PATH, ULTRAHAND_PROJECT_NAME, "hide_battery") != FALSE_STR);
-        hideSOCTemp = (parseValueFromIniSection(ULTRAHAND_CONFIG_INI_PATH, ULTRAHAND_PROJECT_NAME, "hide_soc_temp") != FALSE_STR);
-        hidePCBTemp = (parseValueFromIniSection(ULTRAHAND_CONFIG_INI_PATH, ULTRAHAND_PROJECT_NAME, "hide_pcb_temp") != FALSE_STR);
+        // Helper lambda to safely get boolean values with proper defaults
+        auto getBoolValue = [&](const std::string& key, bool defaultValue = false) -> bool {
+            if (ultrahandSection.count(key) > 0) {
+                return (ultrahandSection.at(key) != FALSE_STR);
+            }
+            return defaultValue;
+        };
         
+        // Set all values from the loaded section with correct defaults (matching initialization)
+        hideClock = getBoolValue("hide_clock", false);                           // FALSE_STR default
+        hideBattery = getBoolValue("hide_battery", true);                        // TRUE_STR default
+        hideSOCTemp = getBoolValue("hide_soc_temp", true);                       // TRUE_STR default  
+        hidePCBTemp = getBoolValue("hide_pcb_temp", true);                       // TRUE_STR default
+        dynamicWidgetColors = getBoolValue("dynamic_widget_colors", true);       // TRUE_STR default
+        hideWidgetBackdrop = getBoolValue("hide_widget_backdrop", false);        // FALSE_STR default
+        centerWidgetAlignment = getBoolValue("center_widget_alignment", true);   // TRUE_STR default
+        extendedWidgetBackdrop = getBoolValue("extended_widget_backdrop", false); // FALSE_STR default
     }
     #endif
     
-    bool cleanVersionLabels, hideOverlayVersions, hidePackageVersions;
+    bool cleanVersionLabels, hideOverlayVersions, hidePackageVersions, useLibultrahandTitles, useLibultrahandVersions, usePackageTitles, usePackageVersions;
     
-    std::string loaderInfo = envGetLoaderInfo();
-    std::string loaderTitle = extractTitle(loaderInfo);
-    bool expandedMemory = (loaderTitle == "nx-ovlloader+");
+    const std::string loaderInfo = envGetLoaderInfo();
+    const std::string loaderTitle = extractTitle(loaderInfo);
+    const bool expandedMemory = (loaderTitle == "nx-ovlloader+");
     
     std::string versionLabel;
     
     #if IS_LAUNCHER_DIRECTIVE
     void reinitializeVersionLabels() {
-        cleanVersionLabels = (parseValueFromIniSection(ULTRAHAND_CONFIG_INI_PATH, ULTRAHAND_PROJECT_NAME, "clean_version_labels") != FALSE_STR);
-        hideOverlayVersions = (parseValueFromIniSection(ULTRAHAND_CONFIG_INI_PATH, ULTRAHAND_PROJECT_NAME, "hide_overlay_versions") != FALSE_STR);
-        hidePackageVersions = (parseValueFromIniSection(ULTRAHAND_CONFIG_INI_PATH, ULTRAHAND_PROJECT_NAME, "hide_package_versions") != FALSE_STR);
-        #ifdef APP_VERSION
-        versionLabel = std::string(APP_VERSION) + "   (" + loaderTitle + " " + (cleanVersionLabels ? "" : "v") + cleanVersionLabel(loaderInfo) + ")";
-        #endif
+        // Load INI data once instead of 6 separate file reads
+        auto ultrahandSection = getKeyValuePairsFromSection(ULTRAHAND_CONFIG_INI_PATH, ULTRAHAND_PROJECT_NAME);
+        
+        // Helper lambda to safely get boolean values with proper defaults
+        auto getBoolValue = [&](const std::string& key, bool defaultValue = false) -> bool {
+            if (ultrahandSection.count(key) > 0) {
+                return (ultrahandSection.at(key) != FALSE_STR);
+            }
+            return defaultValue;
+        };
+        
+        // Set all values from the loaded section with correct defaults (matching initialization)
+        cleanVersionLabels = getBoolValue("clean_version_labels", false);        // FALSE_STR default
+        hideOverlayVersions = getBoolValue("hide_overlay_versions", false);      // FALSE_STR default  
+        hidePackageVersions = getBoolValue("hide_package_versions", false);      // FALSE_STR default
+        //libultrahandTitles = getBoolValue("libultrahand_titles", false);               // FALSE_STR default
+        //useLibultrahandVersions = getBoolValue("libultrahand_versions", true);            // TRUE_STR default
+        //matchPackages = getBoolValue("match_packages", true);            // TRUE_STR default
+        
+        //#ifdef APP_VERSION
+        //versionLabel = cleanVersionLabel(APP_VERSION) + "  (" + loaderTitle + " " + cleanVersionLabel(loaderInfo) + ")";
+        //#endif
         //versionLabel = (cleanVersionLabels) ? std::string(APP_VERSION) : (std::string(APP_VERSION) + "   (" + extractTitle(loaderInfo) + " v" + cleanVersionLabel(loaderInfo) + ")");
     }
     #endif
@@ -1460,8 +1631,8 @@ namespace ult {
     
     // Number of renderer threads to use
     const unsigned numThreads = expandedMemory ? 4 : 0;
-    std::vector<std::thread> threads(numThreads);
-    s32 bmpChunkSize = (720 + numThreads - 1) / numThreads;
+    std::vector<std::thread> renderThreads(numThreads);
+    const s32 bmpChunkSize = (numThreads > 0) ? ((720 + numThreads - 1) / numThreads) : 0;
     std::atomic<s32> currentRow;
     
     //std::atomic<unsigned int> barrierCounter{0};

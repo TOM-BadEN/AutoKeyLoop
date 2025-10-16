@@ -21,7 +21,7 @@
 #ifndef HEX_FUNCS_HPP
 #define HEX_FUNCS_HPP
 
-#if NO_FSTREAM_DIRECTIVE // For not using fstream (needs implementing)
+#if !USING_FSTREAM_DIRECTIVE // For not using fstream (needs implementing)
 #include <stdio.h>
 #else
 #include <fstream>
@@ -33,6 +33,8 @@
 #include <functional>
 //#include <cstdio> // Added for FILE and fopen
 #include <cstring> // Added for std::memcmp
+#include <mutex>
+#include <shared_mutex>
 
 #include <global_vars.hpp>
 #include <debug_funcs.hpp>
@@ -47,8 +49,25 @@ namespace ult {
     extern std::unordered_map<std::string, std::string> hexSumCache; // MOVED TO main.cpp
     
     // Lookup table for hex characters
-    extern const char hexLookup[];
+    inline constexpr char hexLookup[] = "0123456789ABCDEF";
     
+
+    // ULTRA-FAST hex conversion with lookup table
+    inline constexpr unsigned char hexTable[256] = {
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,2,3,4,5,6,7,8,9,0,0,0,0,0,0,
+        0,10,11,12,13,14,15,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,10,11,12,13,14,15,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+    };
+
+
+    extern void clearHexSumCache();
+    extern size_t getHexSumCacheSize();
+
     /**
      * @brief Converts an ASCII string to a hexadecimal string.
      *

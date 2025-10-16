@@ -26,9 +26,9 @@ APP_VERSION :=	1.0.0
 
 TARGET		:=	$(APP_TITLE)
 BUILD		:=	build
-SOURCES		:=	source libs/libultrahand/libultra/source
+SOURCES		:=	source libs/libultrahand/libultra/source libs/libultrahand/common
 DATA		:=	data
-INCLUDES	:=	include libs/libultrahand/libultra/include libs/libultrahand/libtesla/include
+INCLUDES	:=	include libs/libultrahand/libultra/include libs/libultrahand/libtesla/include libs/libultrahand/common
 
 NO_ICON		:=  1
 

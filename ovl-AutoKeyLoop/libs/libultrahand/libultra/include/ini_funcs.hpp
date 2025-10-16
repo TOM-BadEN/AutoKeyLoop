@@ -21,10 +21,11 @@
 #ifndef INI_FUNCS_HPP
 #define INI_FUNCS_HPP
 
-#if NO_FSTREAM_DIRECTIVE // For not using fstream (needs implementing)
+#if !USING_FSTREAM_DIRECTIVE // For not using fstream (needs implementing)
 #include <stdio.h>
 #else
 #include <fstream>
+//#include "nx_fstream.hpp"
 #endif
 
 #include <cstring>  // For std::string, strlen(), etc.
@@ -34,10 +35,21 @@
 //#include <sstream>  // For std::istringstream
 #include <algorithm> // For std::remove_if
 //#include <cctype>   // For ::isspace
+
+#include <shared_mutex>
+#include <unordered_map>
+#include <mutex>
+
 #include "get_funcs.hpp"
 #include "path_funcs.hpp"
 
 namespace ult {
+
+    extern void clearIniMutexCache();
+
+    extern size_t INI_BUFFER_SIZE;
+    extern size_t INI_BUFFER_LARGE;
+
     /**
      * @brief Represents a package header structure.
      *
@@ -52,6 +64,7 @@ namespace ult {
         std::string credits;
         std::string color;
         std::string show_version;
+        std::string show_widget;
         
         void clear() {
             title.clear();
@@ -61,6 +74,7 @@ namespace ult {
             credits.clear();
             color.clear();
             show_version.clear();
+            show_widget.clear();
         }
     };
     
@@ -274,7 +288,7 @@ namespace ult {
     //}
     
     
-    void updateIniData(const std::map<std::string, std::map<std::string, std::string>>& packageConfigData,
+    void syncIniValue(std::map<std::string, std::map<std::string, std::string>>& packageConfigData,
                        const std::string& packageConfigIniPath,
                        const std::string& optionName,
                        const std::string& key,
@@ -311,6 +325,18 @@ namespace ult {
      */
     std::vector<std::vector<std::string>> loadSpecificSectionFromIni(const std::string& packageIniPath, const std::string& sectionName);
     
+
+
+    /**
+     * @brief Saves INI data structure to a file.
+     *
+     * This function writes a complete INI data structure to the specified file path.
+     * The data structure should be organized as sections containing key-value pairs.
+     *
+     * @param filePath The path to the INI file to write.
+     * @param data The complete INI data structure to save.
+     */
+    void saveIniFileData(const std::string& filePath, const std::map<std::string, std::map<std::string, std::string>>& data);
 }
 
 #endif

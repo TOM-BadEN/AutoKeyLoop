@@ -484,8 +484,8 @@ int main(int arg, char **argv)
 
    #ifndef STBTT_memcpy
    #include <string.h>
-   #define STBTT_memcpy       __builtin_memcpy
-   #define STBTT_memset       __builtin_memset
+   #define STBTT_memcpy       memcpy
+   #define STBTT_memset       memset
    #endif
 #endif
 
@@ -2950,7 +2950,7 @@ typedef struct stbtt__active_edge
 static stbtt__active_edge *stbtt__new_active(stbtt__hheap *hh, stbtt__edge *e, int off_x, float start_point, void *userdata)
 {
    stbtt__active_edge *z = (stbtt__active_edge *) stbtt__hheap_alloc(hh, sizeof(*z), userdata);
-   float dxdy = (e->x1 - e->x0) / (e->y1 - e->y0);
+   const float dxdy = (e->x1 - e->x0) / (e->y1 - e->y0);
    //STBTT_assert(z != NULL);
    if (!z) return z;
 
@@ -2972,7 +2972,7 @@ static stbtt__active_edge *stbtt__new_active(stbtt__hheap *hh, stbtt__edge *e, i
 static stbtt__active_edge *stbtt__new_active(stbtt__hheap *hh, stbtt__edge *e, int off_x, float start_point, void *userdata)
 {
    stbtt__active_edge *z = (stbtt__active_edge *) stbtt__hheap_alloc(hh, sizeof(*z), userdata);
-   float dxdy = (e->x1 - e->x0) / (e->y1 - e->y0);
+   const float dxdy = (e->x1 - e->x0) / (e->y1 - e->y0);
    //STBTT_assert(z != NULL);
    //STBTT_assert(e->y0 <= start_point);
    if (!z) return z;
