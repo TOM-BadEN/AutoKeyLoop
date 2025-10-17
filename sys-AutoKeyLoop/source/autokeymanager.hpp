@@ -37,9 +37,6 @@ private:
     bool m_AutoKeyIsPressed;
     u64 m_AutoKeyLastSwitchTime;
     
-    // 松开防抖动计时器
-    u64 m_AutoKeyReleaseStartTime;
-    
     // 连发按键池（白名单）- 只有这些按键允许连发
     u64 m_AutoKeyWhitelistMask;
     
@@ -49,7 +46,6 @@ private:
     
     // 线程参数（固定）
     static const u64 UPDATE_INTERVAL_NS = 1000000ULL;         // 1ms线程更新
-    static const u64 RELEASE_DEBOUNCE_NS = 15000000ULL;       // 15ms松开防抖动时间
 
 public:
     // 构造函数
@@ -88,4 +84,7 @@ private:
     
     // 获取共享的物理输入（线程安全）
     void GetSharedPhysicalState(HidNpadHandheldState* out_state);
+    
+    // 时间窗口检测：仅在"按下周期"检测真松开（避免污染）
+    bool CheckReleaseInWindow(u64 autokey_buttons);
 };

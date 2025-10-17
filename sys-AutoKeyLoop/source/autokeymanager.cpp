@@ -39,7 +39,6 @@ AutoKeyManager::AutoKeyManager(u64 buttons, int presstime, int fireinterval) {
     m_ShouldExit = false;
     m_AutoKeyIsPressed = false;
     m_AutoKeyLastSwitchTime = 0;
-    m_AutoKeyReleaseStartTime = 0;
     memset(&m_SharedPhysicalState, 0, sizeof(m_SharedPhysicalState));
     
     // 初始化线程状态
@@ -110,7 +109,6 @@ void AutoKeyManager::UpdateConfig(u64 buttons, int presstime, int fireinterval) 
     // 重置连发状态，让新配置立即生效（下次按键时重新计时）
     m_AutoKeyLastSwitchTime = 0;
     m_AutoKeyIsPressed = false;
-    m_AutoKeyReleaseStartTime = 0;
     log_info("配置已动态更新: 白名单=0x%llx, 按下=%dms, 松开=%dms", 
              buttons, presstime, fireinterval);
 }
@@ -279,10 +277,7 @@ void AutoKeyManager::ReadPhysicalInput(HidNpadHandheldState* out_state) {
                 out_state->analog_stick_r = right_state.analog_stick_r;
                 out_state->attributes |= right_state.attributes;
             }
-            // 只要有一个手柄连接就返回
-            if (left_count > 0 || right_count > 0) {
-                return;
-            }
+            
         }
     }
 
@@ -293,6 +288,33 @@ void AutoKeyManager::ReadPhysicalInput(HidNpadHandheldState* out_state) {
 void AutoKeyManager::GetSharedPhysicalState(HidNpadHandheldState* out_state) {
     std::lock_guard<std::mutex> lock(m_InputMutex);
     *out_state = m_SharedPhysicalState;
+}
+
+// 时间窗口检测：仅在"按下周期"检测真松开（避免污染）
+bool AutoKeyManager::CheckReleaseInWindow(u64 autokey_buttons) {
+    // 核心：只在注入"按下"时检测（此时注入的是非0）
+    if (!m_AutoKeyIsPressed) {
+        // 当前是松开周期（注入0），读到0可能是污染 → 跳过检测
+        return false;  // 不算真松开
+    }
+    
+    // 安全期检查：距离上次状态切换 < 10ms 时，跳过检测（避免HDLS异步写入延迟导致误判）
+    u64 current_time = armGetSystemTick();
+    u64 time_since_last_switch_ns = armTicksToNs(current_time - m_AutoKeyLastSwitchTime);
+    if (time_since_last_switch_ns < 10000000ULL) {  // 10ms 安全边距
+        // 刚切换状态，HDLS可能还未完成异步写入，跳过检测
+        return false;
+    }
+    
+    // 当前是按下周期（注入autokey_buttons，非0）且已过安全期
+    // 如果读到的 autokey_buttons == 0 → 一定是真松开！
+    if (autokey_buttons == 0) {
+        log_info("[窗口检测] 检测到真松开（按下周期读到0，距离切换%.1fms）", 
+                 time_since_last_switch_ns / 1000000.0);
+        return true;
+    }
+    
+    return false;
 }
 
 // 劫持并修改控制器状态（只对白名单中的按键连发）
@@ -317,15 +339,33 @@ void AutoKeyManager::HijackAndModifyState() {
     // 其他按键（不连发，直接透传），同时排除摇杆伪按键位
     u64 normal_buttons = physical_buttons & ~m_AutoKeyWhitelistMask & ~STICK_PSEUDO_BUTTON_MASK;
 
-    if (autokey_buttons != 0) {
-        // 有白名单按键被按住
+    // ★ 窗口检测：如果连发进行中，且在"按下周期"检测到真松开 → 立即结束连发
+    if (m_AutoKeyLastSwitchTime != 0) {  // 连发进行中
+        if (CheckReleaseInWindow(autokey_buttons)) {
+            // 检测到真松开 → 立即结束连发
+            log_info("[窗口检测] 连发结束（检测到真松开）");
+            m_AutoKeyLastSwitchTime = 0;
+            m_AutoKeyIsPressed = false;
+            
+            // 清空注入，透传真实状态
+            for (int i = 0; i < m_StateList.total_entries; i++) {
+                memset(&m_StateList.entries[i].state, 0, sizeof(HiddbgHdlsState));
+                m_StateList.entries[i].state.buttons = physical_buttons & ~STICK_PSEUDO_BUTTON_MASK;
+                m_StateList.entries[i].state.analog_stick_l = physical_state.analog_stick_l;
+                m_StateList.entries[i].state.analog_stick_r = physical_state.analog_stick_r;
+            }
+            hiddbgApplyHdlsStateList(m_HdlsSessionId, &m_StateList);
+            return;
+        }
+    }
+
+    // 连发状态机 
+    // 条件：有按键（autokey_buttons != 0）或 连发进行中（m_AutoKeyLastSwitchTime != 0）
+    if (autokey_buttons != 0 || m_AutoKeyLastSwitchTime != 0) {
         u64 current_time = armGetSystemTick();
         
-        // 重置松开计时器（因为有按键，不是松开状态）
-        m_AutoKeyReleaseStartTime = 0;
-        
-        // 初始化：第一次获取设备列表
-        if (m_AutoKeyLastSwitchTime == 0) {
+        // 初始化：第一次启动连发（只有真实按键才能启动）
+        if (m_AutoKeyLastSwitchTime == 0 && autokey_buttons != 0) {
             Result rc = hiddbgDumpHdlsStates(m_HdlsSessionId, &m_StateList);
             if (R_FAILED(rc) || m_StateList.total_entries == 0) {
                 log_error("获取HDLS设备列表失败: 0x%x", rc);
@@ -336,62 +376,37 @@ void AutoKeyManager::HijackAndModifyState() {
             log_info("连发开始: 连发键=0x%llx, 普通键=0x%llx", autokey_buttons, normal_buttons);
         }
 
-        // 计算经过的时间
-        u64 elapsed_ns = armTicksToNs(current_time - m_AutoKeyLastSwitchTime);
-        
-        // 检查是否到达切换时间（按下和松开时间不同）
-        u64 threshold = m_AutoKeyIsPressed ? m_PressDurationNs : m_ReleaseDurationNs;
-        if (elapsed_ns >= threshold) {
-            // 切换连发状态
-            m_AutoKeyIsPressed = !m_AutoKeyIsPressed;
-            m_AutoKeyLastSwitchTime = current_time;
-        }
-        
-        // 构建最终状态：其他按键直接透传 + 白名单按键连发 + 摇杆数据
-        for (int i = 0; i < m_StateList.total_entries; i++) {
-            memset(&m_StateList.entries[i].state, 0, sizeof(HiddbgHdlsState));
-            
-            // ★ 复制摇杆数据（保留摇杆输入）
-            m_StateList.entries[i].state.analog_stick_l = physical_state.analog_stick_l;
-            m_StateList.entries[i].state.analog_stick_r = physical_state.analog_stick_r;
-            
-            // 合并：普通按键（直接透传）+ 连发按键（按状态）
-            if (m_AutoKeyIsPressed) {
-                m_StateList.entries[i].state.buttons = normal_buttons | autokey_buttons;
-            } else {
-                m_StateList.entries[i].state.buttons = normal_buttons;
-            }
-        }
-        
-        // 应用状态列表
-        Result rc = hiddbgApplyHdlsStateList(m_HdlsSessionId, &m_StateList);
-        if (R_FAILED(rc)) {
-            log_error("[连发] ApplyHdlsStateList失败: 0x%x", rc);
-        }
-    } else {
-        // 没有白名单按键被按住，进入松开防抖动流程
+        // 如果连发已启动，继续状态机
         if (m_AutoKeyLastSwitchTime != 0) {
-            // 之前在连发中
-            u64 current_time = armGetSystemTick();
+            // 计算经过的时间
+            u64 elapsed_ns = armTicksToNs(current_time - m_AutoKeyLastSwitchTime);
             
-            if (m_AutoKeyReleaseStartTime == 0) {
-                // 第一次检测到没按键，开始计时
-                m_AutoKeyReleaseStartTime = current_time;
-                // 不输出日志，不结束连发，继续观察
-            } else {
-                // 持续没按键，检查持续了多久
-                u64 release_duration_ns = armTicksToNs(current_time - m_AutoKeyReleaseStartTime);
-                
-                if (release_duration_ns >= RELEASE_DEBOUNCE_NS) {
-                    // 持续松开超过15ms，确认是真松开
-                    log_info("连发结束 (松开持续%llums)", release_duration_ns / 1000000ULL);
-                    m_AutoKeyLastSwitchTime = 0;
-                    m_AutoKeyIsPressed = false;
-                    m_AutoKeyReleaseStartTime = 0;
-                }
-                // else: 还在15ms内，可能是抖动，保持连发状态，继续观察
+            // 检查是否到达切换时间（按下和松开时间不同）
+            u64 threshold = m_AutoKeyIsPressed ? m_PressDurationNs : m_ReleaseDurationNs;
+            if (elapsed_ns >= threshold) {
+                // 切换连发状态
+                m_AutoKeyIsPressed = !m_AutoKeyIsPressed;
+                m_AutoKeyLastSwitchTime = current_time;
             }
+            
+            // 构建最终状态：其他按键直接透传 + 白名单按键连发 + 摇杆数据
+            for (int i = 0; i < m_StateList.total_entries; i++) {
+                memset(&m_StateList.entries[i].state, 0, sizeof(HiddbgHdlsState));
+                
+                // ★ 复制摇杆数据（保留摇杆输入）
+                m_StateList.entries[i].state.analog_stick_l = physical_state.analog_stick_l;
+                m_StateList.entries[i].state.analog_stick_r = physical_state.analog_stick_r;
+                
+                // 合并：普通按键（直接透传）+ 连发按键（按状态）
+                // ★ autokey_buttons 可能为0（松开周期污染），但状态机继续运行保持节奏
+                if (m_AutoKeyIsPressed) m_StateList.entries[i].state.buttons = normal_buttons | autokey_buttons;
+                else m_StateList.entries[i].state.buttons = normal_buttons;
+            }
+
+            // 应用状态列表
+            hiddbgApplyHdlsStateList(m_HdlsSessionId, &m_StateList);
         }
     }
 
 }
+
