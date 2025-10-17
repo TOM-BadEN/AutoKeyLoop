@@ -14,7 +14,7 @@ private:
     
     // 物理输入读取线程
     Thread m_InputReaderThread;
-    alignas(0x1000) static char input_reader_thread_stack[1 * 1024];
+    alignas(0x1000) static char input_reader_thread_stack[4 * 1024];
     bool m_InputThreadCreated = false;
     bool m_InputThreadRunning = false;
     

@@ -172,7 +172,6 @@ void AutoKeyManager::autokey_thread_func(void* arg) {
 
 // 物理输入读取循环
 void AutoKeyManager::ProcessInputReading() {
-    log_info("输入读取线程开始运行");
     // 临时状态
     HidNpadHandheldState temp_state;
     // 当析构函数运行时退出
@@ -187,15 +186,12 @@ void AutoKeyManager::ProcessInputReading() {
             m_SharedPhysicalState = temp_state;
         }
         
-        // 每5ms读取一次（比连发线程慢，避免过度轮询）
-        svcSleepThread(5000000ULL);
+        svcSleepThread(UPDATE_INTERVAL_NS);
     }
-    log_info("输入读取线程函数结束运行");
 }
 
 // 连发处理函数
 void AutoKeyManager::ProcessAutoKey() {
-    log_info("连发线程开始运行");
     
     // 当析构函数运行时退出
     while (!m_ShouldExit) {
@@ -206,70 +202,91 @@ void AutoKeyManager::ProcessAutoKey() {
 
     }
     
-    log_info("连发线程函数结束运行");
 }
 
 // 读取物理输入（直接从HID读取真实手柄状态，绕过HDLS虚拟层）
 void AutoKeyManager::ReadPhysicalInput(HidNpadHandheldState* out_state) {
     // 清空输出状态
     memset(out_state, 0, sizeof(HidNpadHandheldState));
+
+    // 先检测No1的SystemExt（第三方最常见在No1） 只检查NO,1
+    HidNpadIdType npad_id = HidNpadIdType_No1;
+    u32 style_set = hidGetNpadStyleSet(npad_id);
+    // 准备通用状态结构（所有State类型都基于HidNpadCommonState）
+    HidNpadCommonState common_state;
+    size_t count = 0;
     
-    // 尝试读取掌机模式的状态历史（最多8个，最新的在末尾）
-    HidNpadHandheldState handheld_states[8];
-    size_t count = hidGetNpadStatesHandheld(HidNpadIdType_Handheld, handheld_states, 8);
-    
-    // 如果掌机模式有数据，取最新状态返回
-    if (count > 0) {
-        *out_state = handheld_states[count - 1];  // 最新状态在数组末尾
-        return;
-    }
-    
-    // 掌机模式无数据，遍历所有玩家手柄 (No1-No8)
-    // 支持：Pro手柄、分体Joy-Con、第三方手柄
-    for (int i = HidNpadIdType_No1; i <= HidNpadIdType_No8; i++) {
-        HidNpadIdType npad_id = (HidNpadIdType)i;
-        
-        // 获取该手柄位置支持的样式类型
-        u32 style_set = hidGetNpadStyleSet(npad_id);
-        if (style_set == 0) {
-            continue;  // 该位置没有手柄，检查下一个位置
-        }
-        
-        // 准备通用状态结构（所有State类型都基于HidNpadCommonState）
-        HidNpadCommonState common_state;
-        
-        // 根据样式类型选择正确的读取函数（按优先级）
+    if (style_set != 0) {
         if (style_set & HidNpadStyleTag_NpadSystemExt) {
-            // 泛用外部控制器
             count = hidGetNpadStatesSystemExt(npad_id, (HidNpadSystemExtState*)&common_state, 1);
-        } else if (style_set & HidNpadStyleTag_NpadFullKey) {
-            // Pro手柄/第三方Pro手柄
-            count = hidGetNpadStatesFullKey(npad_id, (HidNpadFullKeyState*)&common_state, 1);
-        } else if (style_set & HidNpadStyleTag_NpadJoyDual) {
-            // 分体Joy-Con双手柄模式/第三方分体手柄（关键：这里解决第三方分体手柄问题）
-            count = hidGetNpadStatesJoyDual(npad_id, (HidNpadJoyDualState*)&common_state, 1);
-        } else if (style_set & HidNpadStyleTag_NpadJoyLeft) {
-            // 左Joy-Con单手柄
-            count = hidGetNpadStatesJoyLeft(npad_id, (HidNpadJoyLeftState*)&common_state, 1);
-        } else if (style_set & HidNpadStyleTag_NpadJoyRight) {
-            // 右Joy-Con单手柄
-            count = hidGetNpadStatesJoyRight(npad_id, (HidNpadJoyRightState*)&common_state, 1);
-        } else {
-            continue;  // 不支持的类型（如Gc、Palma等），跳过
+            if (count > 0 && (common_state.attributes & HidNpadAttribute_IsConnected)) {
+                out_state->buttons = common_state.buttons;
+                out_state->analog_stick_l = common_state.analog_stick_l;
+                out_state->analog_stick_r = common_state.analog_stick_r;
+                out_state->attributes = common_state.attributes;
+                return;
+            }
         }
-        
-        // 检查是否读取成功且手柄已连接
-        if (count > 0 && (common_state.attributes & HidNpadAttribute_IsConnected)) {
-            // 找到有效输入，复制数据并返回
-            out_state->buttons = common_state.buttons;
-            out_state->analog_stick_l = common_state.analog_stick_l;
-            out_state->analog_stick_r = common_state.analog_stick_r;
-            out_state->attributes = common_state.attributes;
+    }
+
+    // 再检测Handheld（Lite和掌机状态的其他机型）
+    u32 handheld_style = hidGetNpadStyleSet(HidNpadIdType_Handheld);
+    if (handheld_style & HidNpadStyleTag_NpadHandheld) {
+        HidNpadHandheldState handheld_state;
+        count = hidGetNpadStatesHandheld(HidNpadIdType_Handheld, &handheld_state, 1);
+        if (count > 0 && (handheld_state.attributes & HidNpadAttribute_IsConnected)) {
+            *out_state = handheld_state;
             return;
         }
     }
     
-    // 所有手柄位置都没有有效输入，返回空状态（已在函数开头memset清零）
+    // 检查剩下的类型
+    if (style_set != 0) {
+        if (style_set & HidNpadStyleTag_NpadFullKey) {
+            count = hidGetNpadStatesFullKey(npad_id, (HidNpadFullKeyState*)&common_state, 1);
+            if (count > 0 && (common_state.attributes & HidNpadAttribute_IsConnected)) {
+                out_state->buttons = common_state.buttons;
+                out_state->analog_stick_l = common_state.analog_stick_l;
+                out_state->analog_stick_r = common_state.analog_stick_r;
+                out_state->attributes = common_state.attributes;
+                return;
+            }
+        } else if (style_set & HidNpadStyleTag_NpadJoyDual) {
+            count = hidGetNpadStatesJoyDual(npad_id, (HidNpadJoyDualState*)&common_state, 1);
+            if (count > 0 && (common_state.attributes & HidNpadAttribute_IsConnected)) {
+                out_state->buttons = common_state.buttons;
+                out_state->analog_stick_l = common_state.analog_stick_l;
+                out_state->analog_stick_r = common_state.analog_stick_r;
+                out_state->attributes = common_state.attributes;
+                return;
+            }
+        } else if (style_set & (HidNpadStyleTag_NpadJoyLeft | HidNpadStyleTag_NpadJoyRight)) {
+            // 检测到单独Joy-Con，读取左右手柄并合并
+            HidNpadJoyLeftState left_state;
+            HidNpadJoyRightState right_state;
+            size_t left_count = hidGetNpadStatesJoyLeft(npad_id, &left_state, 1);
+            size_t right_count = hidGetNpadStatesJoyRight(npad_id, &right_state, 1);
+            
+            // 合并左手柄
+            if (left_count > 0 && (left_state.attributes & HidNpadAttribute_IsConnected)) {
+                out_state->buttons |= left_state.buttons;
+                out_state->analog_stick_l = left_state.analog_stick_l;
+                out_state->attributes |= left_state.attributes;
+            }
+            // 合并右手柄
+            if (right_count > 0 && (right_state.attributes & HidNpadAttribute_IsConnected)) {
+                out_state->buttons |= right_state.buttons;
+                out_state->analog_stick_r = right_state.analog_stick_r;
+                out_state->attributes |= right_state.attributes;
+            }
+            // 只要有一个手柄连接就返回
+            if (left_count > 0 || right_count > 0) {
+                return;
+            }
+        }
+    }
+
+    // 所有位置都没找到，返回空状态
 }
 
 // 获取共享的物理输入（为了线程安全）
