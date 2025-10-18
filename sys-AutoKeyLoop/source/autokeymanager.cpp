@@ -1,3 +1,17 @@
+/*
+
+放弃更新维护
+
+未解决的问题
+
+1. 注入后的信息会被读取线程读取到。可以通过修改摇杆的值来传递标记，让读取线程过滤。
+
+2. 非lite机型无法正常使用，因我没有非Lite机型，无法测试。
+
+
+*/
+
+
 #include "autokeymanager.hpp"
 #include <cstring>
 #include "../log/log.h"
