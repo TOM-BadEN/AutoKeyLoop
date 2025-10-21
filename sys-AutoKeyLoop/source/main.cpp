@@ -1,5 +1,4 @@
 #include <switch.h>
-#include "../log/log.h"
 #include <string.h>
 #include <stdio.h>
 #include "app.hpp"

@@ -8,16 +8,19 @@
 # 模块目录
 OVL_DIR := ovl-AutoKeyLoop
 SYS_DIR := sys-AutoKeyLoop
+SYS_NOTIF_DIR := sys-Notification
 
 # 输出目录
 OUT_DIR := out
 OUT_SWITCH := $(OUT_DIR)/switch
 OUT_OVERLAYS := $(OUT_SWITCH)/.overlays
 OUT_ATMOSPHERE := $(OUT_DIR)/atmosphere/contents/4100000002025924
+OUT_ATMOSPHERE_BASE := $(OUT_DIR)/atmosphere/contents
 
 # 编译产物路径
 OVL_OUTPUT := $(OVL_DIR)/ovl-AutoKeyLoop.ovl
 SYS_OUTPUT_DIR := $(SYS_DIR)/out/4100000002025924
+SYS_NOTIF_SOURCE := $(SYS_NOTIF_DIR)/atmosphere/contents
 
 # 状态文件
 BUILD_STATUS := .build_status
@@ -57,9 +60,14 @@ show-result:
 		else \
 			mkdir -p $(OUT_OVERLAYS); \
 			mkdir -p $(OUT_ATMOSPHERE); \
+			mkdir -p $(OUT_ATMOSPHERE_BASE); \
 			mkdir -p $(OUT_SWITCH); \
 			cp -f $(OVL_OUTPUT) $(OUT_OVERLAYS)/; \
 			cp -rf $(SYS_OUTPUT_DIR)/* $(OUT_ATMOSPHERE)/; \
+			if [ -d $(SYS_NOTIF_SOURCE) ]; then \
+				cp -rf $(SYS_NOTIF_SOURCE)/* $(OUT_ATMOSPHERE_BASE)/; \
+				echo "  sys-Notification 已复制到输出目录"; \
+			fi; \
 			echo "========================================"; \
 			echo "  输出目录: $(OUT_DIR)/"; \
 			echo "========================================"; \
@@ -122,6 +130,6 @@ clean:
 	@echo "清理结果："
 	@printf "$(COLOR_GREEN)  模块 ovl-AutoKeyLoop，已清理$(COLOR_RESET)\n"
 	@printf "$(COLOR_GREEN)  模块 sys-AutoKeyLoop，已清理$(COLOR_RESET)\n"
-	@printf "$(COLOR_GREEN)  输出目录 out/，已删除$(COLOR_RESET)\n"
+	@printf "$(COLOR_GREEN)  输出目录 out/（包含 sys-Notification），已删除$(COLOR_RESET)\n"
 	@echo "========================================"
 

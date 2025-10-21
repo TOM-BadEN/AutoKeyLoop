@@ -1,6 +1,5 @@
 #include <switch.h>
 #include "app.hpp"
-#include "../log/log.h"
 #include <errno.h>
 #include <sys/stat.h>
 #include <minIni.h>
@@ -22,28 +21,21 @@ bool App::InitializeConfigPath() {
     // 直接尝试创建目录
     if (mkdir(CONFIG_DIR, 0777) == 0) {
         // 创建成功
-        log_info("创建配置文件目录: %s", CONFIG_DIR);
         return true;
     }
     
     // 如果错误原因是已存在，也算true
     if (errno == EEXIST) {
-        log_info("配置目录已存在: %s", CONFIG_DIR);
         return true;
     }
     
     // 其他错误（如父目录不存在、权限不足等）
-    log_error("配置目录创建失败: %s (errno: %d)", CONFIG_DIR, errno);
     return false;
 }
 
 // App类的实现
 App::App() {
 
-    // 读取日志配置并设置日志开关
-    bool log_enabled = ini_getbool("LOG", "log", 0, CONFIG_PATH);
-    log_set_enabled(log_enabled);
-    
     // 初始化配置路径
     if (!InitializeConfigPath()) {
         // 失败则退出程序
@@ -55,7 +47,6 @@ App::App() {
     ipc_server = new IPCServer();
     
     if (!ipc_server->Start("keyLoop")) {
-        log_error("IPC服务启动失败！");
         delete ipc_server;
         ipc_server = nullptr;
         m_loop_error = true;
@@ -64,27 +55,22 @@ App::App() {
 
     // 设置IPC退出回调：当收到退出命令时，标记主循环退出
     ipc_server->SetExitCallback([this]() {
-        log_info("IPC请求退出连发系统模块！");
         m_loop_error = true;
     });
     
     // 设置IPC开启连发回调
     ipc_server->SetEnableCallback([this]() {
-        log_info("IPC请求开启连发模块！");
         LoadGameConfig(m_CurrentTid);
         StartAutoKey();
     });
     
     // 设置IPC关闭连发回调
     ipc_server->SetDisableCallback([this]() {
-        log_info("IPC请求关闭连发模块！");
         StopAutoKey();
     });
     
     // 设置IPC重载配置回调
     ipc_server->SetReloadConfigCallback([this]() {
-        log_info("IPC请求重载配置！");
-        
         // 重新加载配置到缓存变量
         LoadGameConfig(m_CurrentTid);
         
@@ -96,15 +82,12 @@ App::App() {
                 m_CurrentPressTime,
                 m_CurrentFireInterval
             );
-            log_info("已动态更新连发模块配置");
-        } else log_info("连发模块未运行，配置已缓存，下次启动时生效");
+        }
     });
     
 }
 
 App::~App() {
-
-    log_info("App析构函数开始执行！");
 
     // 清理IPC服务器
     if (ipc_server) {
@@ -118,8 +101,6 @@ App::~App() {
         delete autokey_manager;
         autokey_manager = nullptr;
     }
-
-    log_info("App析构函数执行完毕！");
 }
 
 void App::Loop() {
@@ -142,19 +123,16 @@ void App::Loop() {
         if (current_tid == m_last_game_tid) continue;
         
         // 检测到游戏状态变化
-        log_info("检测到游戏状态变化: 0x%016lX -> 0x%016lX", m_last_game_tid, current_tid);
         m_last_game_tid = current_tid;
         
         if (current_tid != 0) {
             // 加载新的连发配置
             LoadGameConfig(current_tid);
             if (m_CurrentAutoEnable) {
-                log_info("配置要求自动启动，开启连发模块！");
                 StartAutoKey();
-            } else log_info("配置不要求自动启动，等待手动开启！");
+            }
         } else {
             // 游戏退出
-            log_info("检测到游戏退出，自动关闭连发模块");
             StopAutoKey();
         }
     }
@@ -178,13 +156,11 @@ void App::LoadGameConfig(u64 tid) {
         if (!m_CurrentGlobConfig) {
             // 使用游戏独立配置
             config_to_use = game_config_path;
-            log_info("使用游戏独立配置: %s", game_config_path);
-        } else log_info("游戏配置文件存在，但使用全局配置");
+        }
     } else {
         // 游戏配置文件不存在，使用全局配置
         m_CurrentGlobConfig = true;
         m_CurrentAutoEnable = ini_getbool("AUTOFIRE", "autoenable", 0, CONFIG_PATH);
-        log_info("游戏配置文件不存在，使用全局配置");
     }
     
     // 读取按键配置（字符串格式）
@@ -198,9 +174,6 @@ void App::LoadGameConfig(u64 tid) {
     
     // 更新当前 TID
     m_CurrentTid = tid;
-    
-    log_info("配置加载完成: TID=0x%016lX, buttons=0x%llx, press=%dms, fire=%dms, auto=%d", 
-             tid, m_CurrentButtons, m_CurrentPressTime, m_CurrentFireInterval, m_CurrentAutoEnable);
 }
 
 // 获取当前游戏 Title ID（仅游戏，非游戏返回0）
@@ -232,7 +205,6 @@ bool App::StartAutoKey() {
     
     // 如果已经创建，则不重复创建
     if (autokey_manager != nullptr) {
-        log_warning("连发模块已在运行中，无需重复创建！");
         return true;
     }
     
@@ -244,11 +216,9 @@ bool App::StartAutoKey() {
     );
     
     if (autokey_manager == nullptr) {
-        log_error("连发模块创建失败！");
         return false;
     }
     
-    log_info("连发模块已开启！");
     return true;
 }
 
@@ -258,12 +228,10 @@ void App::StopAutoKey() {
     
     // 如果没有创建，则无需清理
     if (autokey_manager == nullptr) {
-        log_warning("连发模块未运行，无需停止！");
         return;
     }
     
     // 清理连发模块
     delete autokey_manager;
     autokey_manager = nullptr;
-    log_info("连发模块已停止！");
 }
