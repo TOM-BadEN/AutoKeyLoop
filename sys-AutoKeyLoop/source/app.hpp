@@ -25,6 +25,9 @@ private:
     int m_CurrentFireInterval = 160;         // 松开时长（毫秒）
     bool m_CurrentAutoEnable = false;        // 是否自动启动
     bool m_CurrentGlobConfig = true;         // 是否使用全局配置
+
+    // IPC工作标志
+    bool m_IPCWorking = false;
     
     // 初始化配置路径（确保目录存在）
     bool InitializeConfigPath();
@@ -37,6 +40,9 @@ private:
     
     // 获取当前游戏 Title ID（仅游戏，非游戏返回0）
     u64 GetCurrentGameTitleId();
+
+    // 触发弹窗
+    void ShowNotificationAndResetIPCFlag(const char* message);
     
 public:
     // 构造函数
