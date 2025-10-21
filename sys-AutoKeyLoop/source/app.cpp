@@ -59,26 +59,22 @@ App::App() {
 
     // 设置IPC退出回调：当收到退出命令时，标记主循环退出
     ipc_server->SetExitCallback([this]() {
-        m_IPCWorking = true;
         m_loop_error = true;
     });
     
     // 设置IPC开启连发回调
     ipc_server->SetEnableCallback([this]() {
-        m_IPCWorking = true;
         LoadGameConfig(m_CurrentTid);
         StartAutoKey();
     });
     
     // 设置IPC关闭连发回调
     ipc_server->SetDisableCallback([this]() {
-        m_IPCWorking = true;
         StopAutoKey();
     });
     
     // 设置IPC重载配置回调
     ipc_server->SetReloadConfigCallback([this]() {
-        m_IPCWorking = true;
         // 重新加载配置到缓存变量
         LoadGameConfig(m_CurrentTid);
         
@@ -259,7 +255,5 @@ void App::StopAutoKey() {
 
 void App::ShowNotificationAndResetIPCFlag(const char* message) {
     // 只有开启了通知开关，并且IPC工作标志为false时，才触发弹窗
-    if (m_notifEnabled && !m_IPCWorking) createNotification(message, 2, INFO, RIGHT);
-    // 重置IPC工作标志
-    m_IPCWorking = false;
+    if (m_notifEnabled) createNotification(message, 2, INFO, RIGHT);
 }

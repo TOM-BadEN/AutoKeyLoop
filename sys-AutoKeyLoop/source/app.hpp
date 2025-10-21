@@ -25,9 +25,6 @@ private:
     int m_CurrentFireInterval = 160;         // 松开时长（毫秒）
     bool m_CurrentAutoEnable = false;        // 是否自动启动
     bool m_CurrentGlobConfig = true;         // 是否使用全局配置
-
-    // IPC工作标志
-    bool m_IPCWorking = false;
     
     // 初始化配置路径（确保目录存在）
     bool InitializeConfigPath();
