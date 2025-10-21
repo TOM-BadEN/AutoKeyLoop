@@ -14,7 +14,6 @@
 
 #include "autokeymanager.hpp"
 #include <cstring>
-#include "../log/log.h"
 
 // 静态线程栈定义
 alignas(0x1000) char AutoKeyManager::autokey_thread_stack[4 * 1024];
@@ -30,18 +29,12 @@ AutoKeyManager::AutoKeyManager(u64 buttons, int presstime, int fireinterval) {
     m_AutoKeyWhitelistMask = buttons;
     m_PressDurationNs = (u64)presstime * 1000000ULL;    // 毫秒转纳秒
     m_ReleaseDurationNs = (u64)fireinterval * 1000000ULL; // 毫秒转纳秒
-    
-    log_info("连发配置: 白名单=0x%llx, 按下=%dms, 松开=%dms", 
-             buttons, presstime, fireinterval);
 
     // 初始化HDLS工作缓冲区（核心，需要这个来虚拟输入）
     Result rc = hiddbgAttachHdlsWorkBuffer(&m_HdlsSessionId, hdls_work_buffer, sizeof(hdls_work_buffer));
     if (R_FAILED(rc)) {
-        log_error("HDLS工作缓冲区初始化失败: 0x%x", rc);
         return;
     }
-
-    log_info("HDLS工作缓冲区初始化成功，会话_id: 0x%x", m_HdlsSessionId);
     
     // 初始化状态列表
     memset(&m_StateList, 0, sizeof(m_StateList));
@@ -68,7 +61,6 @@ AutoKeyManager::AutoKeyManager(u64 buttons, int presstime, int fireinterval) {
                      input_reader_thread_stack, sizeof(input_reader_thread_stack), 44, 3);
     
     if (R_FAILED(rc)) {
-        log_error("物理输入读取线程创建失败: 0x%x", rc);
         return;
     }
 
@@ -80,7 +72,6 @@ AutoKeyManager::AutoKeyManager(u64 buttons, int presstime, int fireinterval) {
 
     // 启动物理输入读取线程失败
     if (R_FAILED(rc)) {
-        log_error("物理输入读取线程启动失败: 0x%x", rc);
         return;
     }
 
@@ -93,7 +84,6 @@ AutoKeyManager::AutoKeyManager(u64 buttons, int presstime, int fireinterval) {
     
     // 创建连发线程失败
     if (R_FAILED(rc)) {
-        log_error("连发线程创建失败: 0x%x", rc);
         return;
     }
 
@@ -105,7 +95,6 @@ AutoKeyManager::AutoKeyManager(u64 buttons, int presstime, int fireinterval) {
 
     // 启动连发线程失败
     if (R_FAILED(rc)) {
-        log_error("连发线程启动失败: 0x%x", rc);
         return;
     }
     
@@ -123,8 +112,6 @@ void AutoKeyManager::UpdateConfig(u64 buttons, int presstime, int fireinterval) 
     // 重置连发状态，让新配置立即生效（下次按键时重新计时）
     m_AutoKeyLastSwitchTime = 0;
     m_AutoKeyIsPressed = false;
-    log_info("配置已动态更新: 白名单=0x%llx, 按下=%dms, 松开=%dms", 
-             buttons, presstime, fireinterval);
 }
 
 // 析构函数
@@ -136,32 +123,26 @@ AutoKeyManager::~AutoKeyManager() {
     // 等待物理输入读取线程退出
     if (m_InputThreadRunning) {
         threadWaitForExit(&m_InputReaderThread);
-        log_info("输入读取线程已停止");
     }
     
     // 关闭物理输入读取线程
     if (m_InputThreadCreated) {
         threadClose(&m_InputReaderThread);
-        log_info("输入读取线程关闭成功");
     }
     
     // 等待连发线程退出
     if (m_ThreadRunning) {
         threadWaitForExit(&m_AutoKeyThread);
-        log_info("连发线程已停止");
     }
     
     // 关闭连发线程
     if (m_ThreadCreated) {
         threadClose(&m_AutoKeyThread);
-        log_info("连发线程关闭成功");
     }
     
     // 释放HDLS工作缓冲区
     if (m_HdlsInitialized) {
-        Result rc = hiddbgReleaseHdlsWorkBuffer(m_HdlsSessionId);
-        if (R_FAILED(rc)) log_error("HDLS工作缓冲区释放失败: 0x%x", rc);
-        else log_info("HDLS工作缓冲区释放成功");
+        hiddbgReleaseHdlsWorkBuffer(m_HdlsSessionId);
     }
 }
 
@@ -323,8 +304,6 @@ bool AutoKeyManager::CheckReleaseInWindow(u64 autokey_buttons) {
     // 当前是按下周期（注入autokey_buttons，非0）且已过安全期
     // 如果读到的 autokey_buttons == 0 → 一定是真松开！
     if (autokey_buttons == 0) {
-        log_info("[窗口检测] 检测到真松开（按下周期读到0，距离切换%.1fms）", 
-                 time_since_last_switch_ns / 1000000.0);
         return true;
     }
     
@@ -357,7 +336,6 @@ void AutoKeyManager::HijackAndModifyState() {
     if (m_AutoKeyLastSwitchTime != 0) {  // 连发进行中
         if (CheckReleaseInWindow(autokey_buttons)) {
             // 检测到真松开 → 立即结束连发
-            log_info("[窗口检测] 连发结束（检测到真松开）");
             m_AutoKeyLastSwitchTime = 0;
             m_AutoKeyIsPressed = false;
             
@@ -382,12 +360,10 @@ void AutoKeyManager::HijackAndModifyState() {
         if (m_AutoKeyLastSwitchTime == 0 && autokey_buttons != 0) {
             Result rc = hiddbgDumpHdlsStates(m_HdlsSessionId, &m_StateList);
             if (R_FAILED(rc) || m_StateList.total_entries == 0) {
-                log_error("获取HDLS设备列表失败: 0x%x", rc);
                 return;
             }
             m_AutoKeyLastSwitchTime = current_time;
             m_AutoKeyIsPressed = true;
-            log_info("连发开始: 连发键=0x%llx, 普通键=0x%llx", autokey_buttons, normal_buttons);
         }
 
         // 如果连发已启动，继续状态机

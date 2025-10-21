@@ -1,5 +1,4 @@
 #include "ipc.hpp"
-#include "../log/log.h"
 #include <cstring>
 
 // 静态线程栈定义
@@ -40,7 +39,6 @@ bool IPCServer::Start(const char* service_name) {
     Result rc = threadCreate(&m_IpcThread, ThreadEntry, this, 
                            ipc_thread_stack, sizeof(ipc_thread_stack), 44, 3);
     if (R_FAILED(rc)) {
-        log_error("IPC线程创建失败: 0x%x", rc);
         return false;
     }
     
@@ -49,12 +47,10 @@ bool IPCServer::Start(const char* service_name) {
     // 启动线程
     rc = threadStart(&m_IpcThread);
     if (R_FAILED(rc)) {
-        log_error("IPC线程启动失败: 0x%x", rc);
         return false;
     }
     
     m_ThreadRunning = true;
-    log_info("IPC服务启动成功: %s", service_name);
     return true;
 }
 
@@ -62,19 +58,16 @@ bool IPCServer::Start(const char* service_name) {
 void IPCServer::Stop() {
     if (!m_ThreadCreated) return;
     
-    log_info("准备停止IPC服务");
     m_ShouldExit = true;
     
     // 等待线程结束
     if (m_ThreadRunning) {
         threadWaitForExit(&m_IpcThread);
-        log_info("IPC线程已停止");
     }
     
     // 关闭线程
     if (m_ThreadCreated) {
         threadClose(&m_IpcThread);
-        log_info("IPC线程关闭成功");
     }
 }
 
@@ -121,11 +114,9 @@ void IPCServer::StartServer() {
     // ★ 修正：第二个参数传 SmServiceName 值，不是指针
     Result rc = smRegisterService(m_ServerHandle, m_ServerName, false, 1);
     if (R_FAILED(rc)) {
-        log_error("注册IPC服务失败: 0x%x", rc);
         m_ShouldExit = true;
         return;
     }
-    log_info("IPC服务注册成功: %s", m_ServerName.name);
 }
 
 // 停止服务器
@@ -140,12 +131,7 @@ void IPCServer::StopServer() {
     // 关闭服务器句柄并注销服务
     if (*m_ServerHandle != INVALID_HANDLE) {
         svcCloseHandle(*m_ServerHandle);
-        
-        Result rc = smUnregisterService(m_ServerName);
-        if (R_FAILED(rc)) {
-            log_error("注销IPC服务失败: 0x%x", rc);
-        }
-        
+        smUnregisterService(m_ServerName);
         *m_ServerHandle = INVALID_HANDLE;
     }
 }
@@ -157,7 +143,6 @@ void IPCServer::WaitAndProcessRequest() {
     // 等待同步（监听服务器句柄和客户端句柄）
     Result rc = svcWaitSynchronization(&index, m_Handles, m_IsClientConnected ? 2 : 1, UINT64_MAX);
     if (R_FAILED(rc)) {
-        log_error("等待同步失败: 0x%x", rc);
         m_ShouldExit = true;
         return;
     }
@@ -167,25 +152,21 @@ void IPCServer::WaitAndProcessRequest() {
         Handle new_client;
         rc = svcAcceptSession(&new_client, *m_ServerHandle);
         if (R_FAILED(rc)) {
-            log_error("接受会话失败: 0x%x", rc);
             return;
         }
         
         // 如果已经有客户端连接，关闭新连接（最大客户端数限制）
         if (m_IsClientConnected) {
             svcCloseHandle(new_client);
-            log_warning("已有客户端连接，拒绝新连接");
             return;
         }
         
         m_IsClientConnected = true;
         *m_ClientHandle = new_client;
-        log_info("客户端连接成功");
         
     } else if (index == 1) {
         // 处理客户端消息
         if (!m_IsClientConnected) {
-            log_error("客户端未连接但收到消息");
             m_ShouldExit = true;
             return;
         }
@@ -193,7 +174,6 @@ void IPCServer::WaitAndProcessRequest() {
         s32 _idx;
         rc = svcReplyAndReceive(&_idx, m_ClientHandle, 1, 0, UINT64_MAX);
         if (R_FAILED(rc)) {
-            log_error("接收消息失败: 0x%x", rc);
             return;
         }
         
@@ -219,18 +199,11 @@ void IPCServer::WaitAndProcessRequest() {
         // ✅ 先发送响应（此时服务器处于正常运行状态）
         rc = svcReplyAndReceive(&_idx, m_ClientHandle, 0, *m_ClientHandle, 0);
         
-        if (rc != KERNELRESULT(TimedOut)) {
-            if (R_FAILED(rc)) {
-                log_error("发送响应失败: 0x%x", rc);
-            }
-        }
-        
         // 然后关闭连接
         if (should_close) {
             svcCloseHandle(*m_ClientHandle);
             *m_ClientHandle = INVALID_HANDLE;
             m_IsClientConnected = false;
-            log_info("客户端连接关闭");
         }
         
         // 最后才执行回调逻辑（确保响应已成功发送）
@@ -272,28 +245,24 @@ CommandResult IPCServer::HandleCommand(u64 cmd_id) {
     
     switch (cmd_id) {
         case CMD_ENABLE_AUTOKEY:
-            log_info("收到开启连发命令");
             WriteResponseToTLS(0);  // 写入成功响应
             // 通过返回值告诉调用者需要在响应发送后执行回调
             result.should_enable_autokey = true;
             break;
             
         case CMD_DISABLE_AUTOKEY:
-            log_info("收到关闭连发命令");
             WriteResponseToTLS(0);  // 写入成功响应
             // 通过返回值告诉调用者需要在响应发送后执行回调
             result.should_disable_autokey = true;
             break;
             
         case CMD_RELOAD_CONFIG:
-            log_info("收到重载配置命令");
             WriteResponseToTLS(0);  // 写入成功响应
             // 通过返回值告诉调用者需要在响应发送后执行回调
             result.should_reload_config = true;
             break;
             
         case CMD_EXIT:
-            log_info("收到退出命令");
             // 写入成功响应
             WriteResponseToTLS(0);
             // 通过返回值告诉调用者需要做什么（而不是直接修改状态）
@@ -302,7 +271,6 @@ CommandResult IPCServer::HandleCommand(u64 cmd_id) {
             break;
             
         default:
-            log_warning("未知命令: %llu", cmd_id);
             WriteResponseToTLS(1);
             // 默认值 {false, false, false, false, false}，不做任何额外操作
             break;
@@ -325,15 +293,12 @@ IPCServer::Request IPCServer::ParseRequestFromTLS() {
         size_t data_size = hipc.meta.num_data_words * 4;
         
         if (!header) {
-            log_error("无效的请求头");
             return req;
         }
         if (data_size < sizeof(CmifInHeader)) {
-            log_error("数据大小不足");
             return req;
         }
         if (header->magic != CMIF_IN_HEADER_MAGIC) {
-            log_error("请求头魔数错误");
             return req;
         }
         
