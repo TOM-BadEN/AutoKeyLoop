@@ -1,6 +1,7 @@
 
 ![AutoKeyLoop 演示](image/demo-autokey.gif)
 
+[通知模块](https://github.com/TOM-BadEN/NX-Notification) NX-Notification
 
 # 注意
 
