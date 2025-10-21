@@ -42,9 +42,11 @@ void __appInit(void) {
   hiddbgInitialize();
   hidsysInitialize();
   pmdmntInitialize();
+  pmshellInitialize();
 }
 
 void __appExit(void) {
+  pmshellExit();
   pmdmntExit();     // 8. 进程管理服务（最后初始化的，最先退出）
   hidsysExit();     // 7. hidsys清理
   hiddbgExit();     // 6. hiddbg清理
