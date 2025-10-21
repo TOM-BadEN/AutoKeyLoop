@@ -61,6 +61,7 @@ private:
     std::string m_gameName;            // 当前游戏 Name
     bool m_logEnabled;        // 日志开关
     bool m_autoEnabled;       // 自动开启连发
+    bool m_notifEnabled;      // 通知开关
     
 public:
     AutoKeySetting(std::string titleId);  // 构造函数

@@ -18,6 +18,7 @@ private:
     u64 m_last_game_tid = 0;
     
     // 当前游戏的配置缓存
+    bool m_notifEnabled = false;             // 通知开关
     u64 m_CurrentTid = 0;                    // 当前游戏 TID
     u64 m_CurrentButtons = 0;                // 白名单按键
     int m_CurrentPressTime = 60;             // 按下时长（毫秒）

@@ -4,6 +4,7 @@
 #include <sys/stat.h>
 #include <minIni.h>
 #include <cstdlib>
+#include "libnotification.h"
 
 #define CONFIG_DIR "/config/AutoKeyLoop"
 #define CONFIG_PATH "/config/AutoKeyLoop/config.ini"
@@ -35,6 +36,9 @@ bool App::InitializeConfigPath() {
 
 // App类的实现
 App::App() {
+
+    // // 读取日志配置并设置日志开关(日志调用全部删掉了，这个暂时没删，如果需要再添加)
+    // bool log_enabled = ini_getbool("LOG", "log", 0, CONFIG_PATH);
 
     // 初始化配置路径
     if (!InitializeConfigPath()) {
@@ -129,10 +133,12 @@ void App::Loop() {
             // 加载新的连发配置
             LoadGameConfig(current_tid);
             if (m_CurrentAutoEnable) {
+                if (m_notifEnabled) createNotification("连发功能已开启", 2, INFO, RIGHT);
                 StartAutoKey();
             }
         } else {
             // 游戏退出
+            if (m_notifEnabled) createNotification("连发功能已关闭", 2, INFO, RIGHT);
             StopAutoKey();
         }
     }
@@ -140,6 +146,11 @@ void App::Loop() {
 
 // 加载游戏配置（读取并缓存配置参数）
 void App::LoadGameConfig(u64 tid) {
+
+    // 实际上这个不应该在这个函数中，但是懒得再弄了，就放这个里面了
+    // 读取通知开关配置（默认值：false）
+    m_notifEnabled = ini_getbool("NOTIFICATION", "notif", false, CONFIG_PATH);
+
     // 构建游戏配置文件路径 (固定长度: 55字符)
     char game_config_path[64];
     snprintf(game_config_path, sizeof(game_config_path), 

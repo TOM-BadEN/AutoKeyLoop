@@ -458,8 +458,11 @@ tsl::elm::Element* ButtonSetting::createUI()
 AutoKeySetting::AutoKeySetting(std::string titleId)
     : m_titleId(titleId)
 {
-    // 读取日志开关配置（默认值：false）
-    m_logEnabled = IniHelper::getBool("LOG", "log", false, CONFIG_PATH);
+    // 读取日志开关配置（默认值：false） 暂时注释掉，不删，留着备用
+    // m_logEnabled = IniHelper::getBool("LOG", "log", false, CONFIG_PATH);
+
+    // 读取通知开关配置（默认值：false）
+    m_notifEnabled = IniHelper::getBool("NOTIFICATION", "notif", false, CONFIG_PATH);
     
     // 读取自动开启连发配置（默认值：false）
     m_autoEnabled = IniHelper::getBool("AUTOFIRE", "autoenable", false, CONFIG_PATH);
@@ -518,27 +521,41 @@ tsl::elm::Element* AutoKeySetting::createUI()
         if (keys & HidNpadButton_A) {
             bool autoEnabled = IniHelper::getBool("AUTOFIRE", "autoenable", false, CONFIG_PATH);
             IniHelper::setBool("AUTOFIRE", "autoenable", !autoEnabled, CONFIG_PATH);
-            Result rc = SysModuleManager::restartModule();
-            if (R_SUCCEEDED(rc)) listItemDefaultAuto->setValue(!autoEnabled ? "开" : "关");
+            if (SysModuleManager::isRunning()) g_ipcManager.sendReloadConfigCommand();
+            listItemDefaultAuto->setValue(!autoEnabled ? "开" : "关");
             return true;
         }
         return false;
     });
     list->addItem(listItemDefaultAuto);
     
-    // 添加调试日志
-    auto listItemLogEnable = new tsl::elm::ListItem("调试日志", m_logEnabled ? "开" : "关");
-    listItemLogEnable->setClickListener([listItemLogEnable](u64 keys) {
+    // 添加调试日志 暂时注释掉，不删，留着备用
+    // auto listItemLogEnable = new tsl::elm::ListItem("调试日志", m_logEnabled ? "开" : "关");
+    // listItemLogEnable->setClickListener([listItemLogEnable](u64 keys) {
+    //     if (keys & HidNpadButton_A) {
+    //         bool logEnabled = IniHelper::getBool("LOG", "log", false, CONFIG_PATH);
+    //         IniHelper::setBool("LOG", "log", !logEnabled, CONFIG_PATH);
+    //         Result rc = SysModuleManager::restartModule();
+    //         if (R_SUCCEEDED(rc)) listItemLogEnable->setValue(!logEnabled ? "开" : "关");
+    //         return true;
+    //     }
+    //     return false;
+    // });
+    // list->addItem(listItemLogEnable);
+
+    // 添加通知开关
+    auto listItemNotifEnable = new tsl::elm::ListItem("通知弹窗", m_notifEnabled ? "开" : "关");
+    listItemNotifEnable->setClickListener([listItemNotifEnable](u64 keys) {
         if (keys & HidNpadButton_A) {
-            bool logEnabled = IniHelper::getBool("LOG", "log", false, CONFIG_PATH);
-            IniHelper::setBool("LOG", "log", !logEnabled, CONFIG_PATH);
-            Result rc = SysModuleManager::restartModule();
-            if (R_SUCCEEDED(rc)) listItemLogEnable->setValue(!logEnabled ? "开" : "关");
+            bool notifEnabled = IniHelper::getBool("NOTIFICATION", "notif", false, CONFIG_PATH);
+            IniHelper::setBool("NOTIFICATION", "notif", !notifEnabled, CONFIG_PATH);
+            if (SysModuleManager::isRunning()) g_ipcManager.sendReloadConfigCommand();
+            listItemNotifEnable->setValue(!notifEnabled ? "开" : "关");
             return true;
         }
         return false;
     });
-    list->addItem(listItemLogEnable);
+    list->addItem(listItemNotifEnable);
 
     // 添加分类标题
     auto categoryHeader1 = new tsl::elm::CategoryHeader(" 彻底关闭/开启系统模块");
