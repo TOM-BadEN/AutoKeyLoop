@@ -1,3 +1,7 @@
+
+![AutoKeyLoop 演示](image/demo-autokey.gif)
+
+
 # 注意
 
 该项目停止维护，非LITE机型无法正常使用，因我没有相关机型，无法测试修改。
