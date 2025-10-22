@@ -1,14 +1,15 @@
 #---------------------------------------------------------------------------------
 # AutoKeyLoop 主 Makefile
-# 用于编译 ovl 和 sys 模块，并将编译产物复制到 out 目录
+# 用于编译 ovl、sys 和 sys-Notification 模块，并将编译产物复制到 out 目录
 #---------------------------------------------------------------------------------
 
-.PHONY: all clean ovl sys prepare-out show-result
+.PHONY: all clean ovl sys notif prepare-out show-result check update
 
 # 模块目录
 OVL_DIR := ovl-AutoKeyLoop
 SYS_DIR := sys-AutoKeyLoop
-SYS_NOTIF_DIR := sys-Notification
+SUBMODULE_DIR := sys-AutoKeyLoop/lib/libnotification
+SYS_NOTIF_DIR := $(SUBMODULE_DIR)/sys-Notification
 
 # 输出目录
 OUT_DIR := out
@@ -20,7 +21,7 @@ OUT_ATMOSPHERE_BASE := $(OUT_DIR)/atmosphere/contents
 # 编译产物路径
 OVL_OUTPUT := $(OVL_DIR)/ovl-AutoKeyLoop.ovl
 SYS_OUTPUT_DIR := $(SYS_DIR)/out/4100000002025924
-SYS_NOTIF_SOURCE := $(SYS_NOTIF_DIR)/atmosphere/contents
+SYS_NOTIF_OUTPUT_DIR := $(SYS_NOTIF_DIR)/out/atmosphere/contents
 
 # 状态文件
 BUILD_STATUS := .build_status
@@ -35,7 +36,7 @@ COLOR_RESET := \033[0m
 #---------------------------------------------------------------------------------
 all:
 	@rm -f $(BUILD_STATUS)
-	@$(MAKE) --no-print-directory ovl sys || true
+	@$(MAKE) --no-print-directory ovl sys notif || true
 	@$(MAKE) --no-print-directory show-result
 
 #---------------------------------------------------------------------------------
@@ -58,22 +59,21 @@ show-result:
 			rm -f $(BUILD_STATUS); \
 			exit 1; \
 		else \
-			mkdir -p $(OUT_OVERLAYS); \
-			mkdir -p $(OUT_ATMOSPHERE); \
-			mkdir -p $(OUT_ATMOSPHERE_BASE); \
-			mkdir -p $(OUT_SWITCH); \
-			cp -f $(OVL_OUTPUT) $(OUT_OVERLAYS)/; \
-			cp -rf $(SYS_OUTPUT_DIR)/* $(OUT_ATMOSPHERE)/; \
-			if [ -d $(SYS_NOTIF_SOURCE) ]; then \
-				cp -rf $(SYS_NOTIF_SOURCE)/* $(OUT_ATMOSPHERE_BASE)/; \
-				echo "  sys-Notification 已复制到输出目录"; \
-			fi; \
-			echo "========================================"; \
-			echo "  输出目录: $(OUT_DIR)/"; \
-			echo "========================================"; \
-			rm -f $(BUILD_STATUS); \
+		mkdir -p $(OUT_OVERLAYS); \
+		mkdir -p $(OUT_ATMOSPHERE); \
+		mkdir -p $(OUT_ATMOSPHERE_BASE); \
+		mkdir -p $(OUT_SWITCH); \
+		cp -f $(OVL_OUTPUT) $(OUT_OVERLAYS)/; \
+		cp -rf $(SYS_OUTPUT_DIR)/* $(OUT_ATMOSPHERE)/; \
+		if [ -d $(SYS_NOTIF_OUTPUT_DIR) ]; then \
+			cp -rf $(SYS_NOTIF_OUTPUT_DIR)/* $(OUT_ATMOSPHERE_BASE)/; \
 		fi; \
-	fi
+		echo "========================================"; \
+		echo "  输出目录: $(OUT_DIR)/"; \
+		echo "========================================"; \
+		rm -f $(BUILD_STATUS); \
+	fi; \
+fi
 
 #---------------------------------------------------------------------------------
 # 编译 overlay 模块
@@ -104,6 +104,20 @@ sys:
 	fi
 
 #---------------------------------------------------------------------------------
+# 编译 sys-Notification 模块
+#---------------------------------------------------------------------------------
+notif:
+	@echo "========================================"
+	@echo "编译 sys-Notification 模块..."
+	@echo "========================================"
+	@if $(MAKE) --no-print-directory -C $(SYS_NOTIF_DIR); then \
+		echo "  模块 sys-Notification，编译完成" >> $(BUILD_STATUS); \
+	else \
+		echo "  模块 sys-Notification，编译失败" >> $(BUILD_STATUS); \
+		exit 1; \
+	fi
+
+#---------------------------------------------------------------------------------
 # 准备输出目录
 #---------------------------------------------------------------------------------
 prepare-out:
@@ -123,6 +137,8 @@ clean:
 	@$(MAKE) --no-print-directory -C $(OVL_DIR) clean
 	@echo "清理 sysmodule 模块..."
 	@$(MAKE) --no-print-directory -C $(SYS_DIR) clean
+	@echo "清理 sys-Notification 模块..."
+	@$(MAKE) --no-print-directory -C $(SYS_NOTIF_DIR) clean
 	@echo "清理 out 目录..."
 	@rm -rf $(OUT_DIR)
 	@rm -f $(BUILD_STATUS)
@@ -130,6 +146,53 @@ clean:
 	@echo "清理结果："
 	@printf "$(COLOR_GREEN)  模块 ovl-AutoKeyLoop，已清理$(COLOR_RESET)\n"
 	@printf "$(COLOR_GREEN)  模块 sys-AutoKeyLoop，已清理$(COLOR_RESET)\n"
-	@printf "$(COLOR_GREEN)  输出目录 out/（包含 sys-Notification），已删除$(COLOR_RESET)\n"
+	@printf "$(COLOR_GREEN)  模块 sys-Notification，已清理$(COLOR_RESET)\n"
+	@printf "$(COLOR_GREEN)  输出目录 out/，已删除$(COLOR_RESET)\n"
+	@echo "========================================"
+
+#---------------------------------------------------------------------------------
+# 检查子模块是否是最新版本
+#---------------------------------------------------------------------------------
+check:
+	@echo "========================================"
+	@echo "检查 libnotification 子模块状态..."
+	@echo "========================================"
+	@if git -C $(CURDIR)/$(SUBMODULE_DIR) fetch origin main 2>/dev/null; then \
+		LOCAL=$$(git -C $(CURDIR)/$(SUBMODULE_DIR) rev-parse HEAD); \
+		REMOTE=$$(git -C $(CURDIR)/$(SUBMODULE_DIR) rev-parse origin/main); \
+		if [ "$$LOCAL" = "$$REMOTE" ]; then \
+			printf "$(COLOR_GREEN)✓ 已是最新版本$(COLOR_RESET)\n"; \
+		else \
+			printf "$(COLOR_RED)⚠ 有新版本可用$(COLOR_RESET)\n"; \
+			echo "  当前: $${LOCAL:0:8}"; \
+			echo "  最新: $${REMOTE:0:8}"; \
+			echo "  运行 'make update' 更新"; \
+		fi; \
+	else \
+		printf "$(COLOR_RED)✗ 网络错误，无法连接 GitHub$(COLOR_RESET)\n"; \
+	fi
+	@echo "========================================"
+
+#---------------------------------------------------------------------------------
+# 更新子模块
+#---------------------------------------------------------------------------------
+update:
+	@echo "========================================"
+	@echo "更新 libnotification 子模块..."
+	@echo "========================================"
+	@if git -C $(CURDIR)/$(SUBMODULE_DIR) fetch origin main 2>/dev/null; then \
+		LOCAL=$$(git -C $(CURDIR)/$(SUBMODULE_DIR) rev-parse HEAD); \
+		REMOTE=$$(git -C $(CURDIR)/$(SUBMODULE_DIR) rev-parse origin/main); \
+		if [ "$$LOCAL" = "$$REMOTE" ]; then \
+			printf "$(COLOR_GREEN)✓ 已是最新版本，无需更新$(COLOR_RESET)\n"; \
+		else \
+			echo "  正在更新..."; \
+			git submodule update --remote $(SUBMODULE_DIR); \
+			printf "$(COLOR_GREEN)✓ 更新完成$(COLOR_RESET)\n"; \
+			echo "  版本: $${REMOTE:0:8}"; \
+		fi; \
+	else \
+		printf "$(COLOR_RED)✗ 更新失败，无法连接 GitHub$(COLOR_RESET)\n"; \
+	fi
 	@echo "========================================"
 
