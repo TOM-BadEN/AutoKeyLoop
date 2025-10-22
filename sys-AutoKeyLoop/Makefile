@@ -23,7 +23,7 @@ BUILD		:=	build
 OUTDIR := out
 SOURCES		:=	source log lib/minIni-nx/source
 DATA		:=	data
-INCLUDES	:=	include log lib/minIni-nx/include lib/libnotification
+INCLUDES	:=	include log lib/minIni-nx/include lib/libnotification/libnotification
 EXEFS_SRC	:=	exefs_src
 
 #---------------------------------------------------------------------------------
