@@ -1,3 +1,0 @@
-[submodule "sys-AutoKeyLoop/lib/libnotification"]
-	path = sys-AutoKeyLoop/lib/libnotification
-	url = https://github.com/TOM-BadEN/NX-Notification.git
