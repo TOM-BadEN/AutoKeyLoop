@@ -13,11 +13,22 @@ SYS_NOTIF_DIR := $(SUBMODULE_DIR)/sys-Notification
 
 # 输出目录
 OUT_DIR := out
-OUT_SWITCH := $(OUT_DIR)/switch
-OUT_OVERLAYS := $(OUT_SWITCH)/.overlays
-OUT_LANG := $(OUT_OVERLAYS)/lang/AutoKeyLoop
-OUT_ATMOSPHERE := $(OUT_DIR)/atmosphere/contents/4100000002025924
-OUT_ATMOSPHERE_BASE := $(OUT_DIR)/atmosphere/contents
+OUT_EN := $(OUT_DIR)/EN
+OUT_CN := $(OUT_DIR)/CN
+
+# EN 版本路径（英文标题）
+OUT_EN_SWITCH := $(OUT_EN)/switch
+OUT_EN_OVERLAYS := $(OUT_EN_SWITCH)/.overlays
+OUT_EN_LANG := $(OUT_EN_OVERLAYS)/lang/AutoKeyLoop
+OUT_EN_ATMOSPHERE := $(OUT_EN)/atmosphere/contents/4100000002025924
+OUT_EN_ATMOSPHERE_BASE := $(OUT_EN)/atmosphere/contents
+
+# CN 版本路径（中文标题）
+OUT_CN_SWITCH := $(OUT_CN)/switch
+OUT_CN_OVERLAYS := $(OUT_CN_SWITCH)/.overlays
+OUT_CN_LANG := $(OUT_CN_OVERLAYS)/lang/AutoKeyLoop
+OUT_CN_ATMOSPHERE := $(OUT_CN)/atmosphere/contents/4100000002025924
+OUT_CN_ATMOSPHERE_BASE := $(OUT_CN)/atmosphere/contents
 
 # 编译产物路径
 OVL_OUTPUT := $(OVL_DIR)/ovl-AutoKeyLoop.ovl
@@ -61,21 +72,21 @@ show-result:
 			rm -f $(BUILD_STATUS); \
 			exit 1; \
 		else \
-		mkdir -p $(OUT_OVERLAYS); \
-		mkdir -p $(OUT_ATMOSPHERE); \
-		mkdir -p $(OUT_ATMOSPHERE_BASE); \
-		mkdir -p $(OUT_SWITCH); \
-		mkdir -p $(OUT_LANG); \
-		cp -f $(OVL_OUTPUT) $(OUT_OVERLAYS)/; \
-		if [ -d $(OVL_RESOURCE_LANG) ]; then \
-			cp -f $(OVL_RESOURCE_LANG)/* $(OUT_LANG)/; \
-		fi; \
-		cp -rf $(SYS_OUTPUT_DIR)/* $(OUT_ATMOSPHERE)/; \
-		if [ -d $(SYS_NOTIF_OUTPUT_DIR) ]; then \
-			cp -rf $(SYS_NOTIF_OUTPUT_DIR)/* $(OUT_ATMOSPHERE_BASE)/; \
-		fi; \
+		mkdir -p $(OUT_EN_OVERLAYS) $(OUT_EN_ATMOSPHERE) $(OUT_EN_LANG); \
+		mkdir -p $(OUT_CN_OVERLAYS) $(OUT_CN_ATMOSPHERE) $(OUT_CN_LANG); \
+		cp -f $(OVL_OUTPUT) $(OUT_EN_OVERLAYS)/; \
+		[ -d $(OVL_RESOURCE_LANG) ] && cp -f $(OVL_RESOURCE_LANG)/* $(OUT_EN_LANG)/ || true; \
+		cp -rf $(SYS_OUTPUT_DIR)/* $(OUT_EN_ATMOSPHERE)/; \
+		[ -d $(SYS_NOTIF_OUTPUT_DIR) ] && cp -rf $(SYS_NOTIF_OUTPUT_DIR)/* $(OUT_EN_ATMOSPHERE_BASE)/ || true; \
+		cp -f $(OVL_OUTPUT) $(OUT_CN_OVERLAYS)/; \
+		python $(OVL_DIR)/ChineseTitle.py $(OUT_CN_OVERLAYS)/ovl-AutoKeyLoop.ovl > /dev/null 2>&1 && \
+		printf "$(COLOR_GREEN)  模块 ovl-AutoKeyLoop，改名成功$(COLOR_RESET)\n" || printf "$(COLOR_RED)    模块 ovl-AutoKeyLoop，改名失败$(COLOR_RESET)\n"; \
+		[ -d $(OVL_RESOURCE_LANG) ] && cp -f $(OVL_RESOURCE_LANG)/* $(OUT_CN_LANG)/ || true; \
+		cp -rf $(SYS_OUTPUT_DIR)/* $(OUT_CN_ATMOSPHERE)/; \
+		[ -d $(SYS_NOTIF_OUTPUT_DIR) ] && cp -rf $(SYS_NOTIF_OUTPUT_DIR)/* $(OUT_CN_ATMOSPHERE_BASE)/ || true; \
 		echo "========================================"; \
-		echo "  输出目录: $(OUT_DIR)/"; \
+		echo "输出目录："; \
+		printf "$(COLOR_GREEN)     $(OUT_DIR)/$(COLOR_RESET)\n"; \
 		echo "========================================"; \
 		rm -f $(BUILD_STATUS); \
 	fi; \
@@ -151,10 +162,10 @@ clean:
 	@rm -f $(BUILD_STATUS)
 	@echo "========================================"
 	@echo "清理结果："
-	@printf "$(COLOR_GREEN)  模块 ovl-AutoKeyLoop，已清理$(COLOR_RESET)\n"
-	@printf "$(COLOR_GREEN)  模块 sys-AutoKeyLoop，已清理$(COLOR_RESET)\n"
+	@printf "$(COLOR_GREEN)  模块 ovl-AutoKeyLoop， 已清理$(COLOR_RESET)\n"
+	@printf "$(COLOR_GREEN)  模块 sys-AutoKeyLoop， 已清理$(COLOR_RESET)\n"
 	@printf "$(COLOR_GREEN)  模块 sys-Notification，已清理$(COLOR_RESET)\n"
-	@printf "$(COLOR_GREEN)  输出目录 out/，已删除$(COLOR_RESET)\n"
+	@printf "$(COLOR_GREEN)  输出 out/            ，已删除$(COLOR_RESET)\n"
 	@echo "========================================"
 
 #---------------------------------------------------------------------------------

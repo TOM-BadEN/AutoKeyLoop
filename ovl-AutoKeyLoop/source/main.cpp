@@ -12,12 +12,15 @@ public:
         fsdevMountSdmc();     // 挂载SD卡
         pmdmntInitialize();   // 进程管理服务
         pmshellInitialize();  // 进程Shell服务（用于启动/停止系统模块）
+        setInitialize();      // 初始化set服务（获取系统语言）
         LanguageManager::initialize();  // 初始化语言系统
+        setExit();            // 退出set服务
     }
     
     // 退出系统服务
     virtual void exitServices() override 
     {
+        
         pmshellExit();        // 退出进程Shell服务
         pmdmntExit();         // 退出进程管理服务
         fsdevUnmountAll();    // 卸载所有文件系统

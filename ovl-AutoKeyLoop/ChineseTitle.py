@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-自动将 ovl-AutoKeyLoop 标题替换为中文
+自动将 AutoKeyLoop 标题替换为中文 "按键连发"
 """
 import sys
 
@@ -10,16 +10,16 @@ def patch_ovl(ovl_file):
     with open(ovl_file, 'rb') as f:
         data = f.read()
     
-    # 原始标题: "ovl-AutoKeyLoop" (15字节)
-    old_bytes = bytes.fromhex('6F766C2D4175746F4B65794C6F6F70')
+    # 原始标题: "AutoKeyLoop " (12字节，含空格)
+    old_bytes = bytes.fromhex('4175746F4B65794C6F6F7020')
     
-    # 新标题: "按键连发" + 补零 (15字节)
-    new_bytes = bytes.fromhex('E68C89E994AEE8BF9EE58F91000000')
+    # 新标题: "按键连发" (12字节)
+    new_bytes = bytes.fromhex('E68C89E994AEE8BF9EE58F91')
     
     # 检查是否找到
     if old_bytes not in data:
         print("========================================")
-        print("\033[91m警告: 未找到 'ovl-AutoKeyLoop' 字节序列\033[0m")
+        print("\033[91m警告: 未找到 'AutoKeyLoop ' 字节序列\033[0m")
         return False
     
     # 替换

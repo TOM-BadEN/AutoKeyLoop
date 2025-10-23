@@ -16,15 +16,15 @@ include $(DEVKITPRO)/libnx/switch_rules
 # DATA is a list of directories containing data files
 # INCLUDES is a list of directories containing header files
 #---------------------------------------------------------------------------------
-# ovl-AutoKeyLoop
-# 6F766C2D4175746F4B65794C6F6F70
-# E68C89E994AEE8BF9EE58F91000000    
-# 按键连发            
+# AutoKeyLoop  (12 bytes, with trailing space)
+# 4175746F4B65794C6F6F7020
+# E68C89E994AEE8BF9EE58F91
+# 按键连发 (12 bytes)
 
-APP_TITLE	:=	ovl-AutoKeyLoop
+APP_TITLE	:=	AutoKeyLoop 
 APP_VERSION :=	1.0.3
 
-TARGET		:=	$(APP_TITLE)
+TARGET		:=	ovl-AutoKeyLoop
 BUILD		:=	build
 SOURCES		:=	source libs/libultrahand/libultra/source libs/libultrahand/common
 DATA		:=	data
@@ -181,10 +181,9 @@ DEPENDS	:=	$(OFILES:.o=.d)
 #---------------------------------------------------------------------------------
 all	:	 $(OUTPUT).ovl
 
-$(OUTPUT).ovl		:	$(OUTPUT).elf $(OUTPUT).nacp 
+$(OUTPUT).ovl	:	$(OUTPUT).elf $(OUTPUT).nacp 
 	@elf2nro $< $@ $(NROFLAGS)
 	@echo "built ... $(notdir $(OUTPUT).ovl)"
-	@python $(TOPDIR)/ChineseTitle.py $(OUTPUT).ovl || echo "警告: 标题修改失败"
 
 $(OUTPUT).elf	:	$(OFILES)
 
