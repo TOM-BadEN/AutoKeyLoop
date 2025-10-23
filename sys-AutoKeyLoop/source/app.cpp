@@ -9,6 +9,9 @@
 #define CONFIG_DIR "/config/AutoKeyLoop"
 #define CONFIG_PATH "/config/AutoKeyLoop/config.ini"
 
+extern const char* g_NOTIF_AUTOFIRE_ON;
+extern const char* g_NOTIF_AUTOFIRE_OFF;
+
 
 // 检查文件是否存在
 bool App::FileExists(const char* path) {
@@ -132,7 +135,7 @@ void App::Loop() {
 
         // 如果当前TID为0，则认为游戏退出，关闭连发模块
         if (current_tid == 0) {
-            ShowNotificationAndResetIPCFlag("连发功能已关闭");
+            ShowNotificationAndResetIPCFlag(g_NOTIF_AUTOFIRE_OFF);
             StopAutoKey();
             continue;
         }
@@ -144,7 +147,7 @@ void App::Loop() {
         if (!m_CurrentAutoEnable) continue;
 
         // 需要自动启动连发
-        ShowNotificationAndResetIPCFlag("连发功能已开启");
+        ShowNotificationAndResetIPCFlag(g_NOTIF_AUTOFIRE_ON);
         // 开启连发功能
         StartAutoKey();
     }

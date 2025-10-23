@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "app.hpp"
+#include "system_language.hpp"
 
 // libnx fake heap initialization
 extern "C" {
@@ -35,6 +36,11 @@ void __appInit(void) {
   if (R_SUCCEEDED(setsysGetFirmwareVersion(&fw)))
       hosversionSet(MAKEHOSVERSION(fw.major, fw.minor, fw.micro));
   setsysExit();
+  
+  // 初始化 set 服务，设置多语言，立即退出
+  setInitialize();
+  getSetNotifLanguage();
+  setExit();
   
   fsInitialize();
   fsdevMountSdmc();
