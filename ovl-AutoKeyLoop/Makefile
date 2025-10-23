@@ -42,8 +42,8 @@ CFLAGS	:=	-g -Wall -O2 -ffunction-sections \
 
 CFLAGS	+=	$(INCLUDE) -D__SWITCH__
 
-# Enable appearance overriding
-UI_OVERRIDE_PATH := /config/AutoKeyLoop/
+# Enable translation cache (actual language files loaded from /switch/.overlays/lang/AutoKeyLoop/)
+UI_OVERRIDE_PATH := /switch/.overlays/lang/AutoKeyLoop/
 CFLAGS += -DUI_OVERRIDE_PATH="\"$(UI_OVERRIDE_PATH)\""
 
 # Define version macro for use in source code

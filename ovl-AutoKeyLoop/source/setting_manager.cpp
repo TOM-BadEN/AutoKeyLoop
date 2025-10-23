@@ -418,8 +418,15 @@ tsl::elm::Element* ButtonSetting::createUI()
     
     for (const auto& btn : buttons) {
         bool isSelected = (m_selectedButtons & btn.flag) != 0;
+        
+        // 先翻译文字部分
+        std::string translatedName = btn.name;
+        auto it = ult::translationCache.find(translatedName);
+        if (it != ult::translationCache.end()) translatedName = it->second;
+        
+        // 再拼接图标
         auto item = new tsl::elm::ToggleListItem(
-            std::string(btn.name) + "  " + btn.unicode, 
+            translatedName + "  " + btn.unicode, 
             isSelected
         );
         
@@ -494,7 +501,7 @@ tsl::elm::Element* AutoKeySetting::createUI()
     // 检查是否在游戏中
     bool isInGame = (m_titleId != "0000000000000000");
 
-    auto listItemIndependentSetting = new tsl::elm::ListItemV2("独立配置", isInGame ? ">" : "不可用");
+    auto listItemIndependentSetting = new tsl::elm::ListItemV2("独立配置", isInGame ? ">" : "\uE14C");
     
     // 如果不在游戏中，设置值为红色
     if (!isInGame) {

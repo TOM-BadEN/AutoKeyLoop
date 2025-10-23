@@ -12,17 +12,11 @@ void LanguageManager::initialize() {
     
     // 尝试加载系统语言对应的翻译文件
     std::string langFile = LANG_PATH + langFileName;
-    if (ult::isFile(langFile)) {
-        ult::parseLanguage(langFile);
-        return;
-    }
+    if (ult::loadTranslationsFromJSON(langFile)) return;
     
     // 如果没有对应语言，尝试加载英文
     std::string enFile = LANG_PATH + "en.json";
-    if (ult::isFile(enFile)) {
-        ult::parseLanguage(enFile);
-        return;
-    }
+    if (ult::loadTranslationsFromJSON(enFile)) return;
     
     // 否则不翻译，使用硬编码的中文
 }

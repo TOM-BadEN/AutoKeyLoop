@@ -28,15 +28,15 @@ tsl::elm::Element* AboutPlugin::createUI()
             " • 1051287661",
             "",
             "功能介绍：",
-            " • 支持按键自动连发功能",
+            " • 只支持LITE机型使用",
             " • 可自定义连发速度和间隔",
             " • 提供全局和游戏专用配置",
             "",
-            "使用说明：",
-            " • 进入游戏后打开本插件",
-            " • 游戏设置调整连发参数",
-            " • 点击保存设置",
-            " • 点击开启连发",
+            "内存占用：",
+            " • 待机占用 450 KB",
+            " • 开启连发功能占用 706 KB",
+            " • 通知占用 688 KB",
+            " • 通知只有触发时占用内存",
             "",
             "感谢使用本插件！"
         };
@@ -51,7 +51,7 @@ tsl::elm::Element* AboutPlugin::createUI()
         s32 totalTextHeight = lineCount * lineHeight;
         
         // 计算垂直居中的起始位置
-        s32 startY = y + (h - totalTextHeight) / 2;
+        s32 startY = y + (h - totalTextHeight) / 2 + 10;
         
         // 绘制文本内容
         for (size_t i = 0; i < lineCount; i++) {
@@ -80,7 +80,7 @@ tsl::elm::Element* AboutPlugin::createUI()
     });
     
     // 设置文本区域高度（占满整个内容区域）
-    mainList->addItem(aboutText, 550);
+    mainList->addItem(aboutText, 520);
 
     // 将主列表设置为框架的内容
     frame->setContent(mainList);
