@@ -1,8 +1,5 @@
 
-
-
-https://github.com/user-attachments/assets/6be24f91-d7a7-4b01-839e-6708008d4b50
-
+https://github.com/user-attachments/assets/2540f1d5-5294-489f-b85a-4b96806365bc
 
 **如果你对通知模块感兴趣，可以访问 [通知模块](https://github.com/TOM-BadEN/NX-Notification) NX-Notification**
 
