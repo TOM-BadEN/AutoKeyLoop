@@ -1,6 +1,7 @@
 #define TESLA_INIT_IMPL
 #include <tesla.hpp>
 #include "main_menu.hpp"
+#include "language_manager.hpp"
 
 // AutoKeyLoop 特斯拉覆盖层主类
 class AutoKeyLoopOverlay : public tsl::Overlay {
@@ -11,6 +12,7 @@ public:
         fsdevMountSdmc();     // 挂载SD卡
         pmdmntInitialize();   // 进程管理服务
         pmshellInitialize();  // 进程Shell服务（用于启动/停止系统模块）
+        LanguageManager::initialize();  // 初始化语言系统
     }
     
     // 退出系统服务

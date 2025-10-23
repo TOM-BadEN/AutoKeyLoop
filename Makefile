@@ -15,11 +15,13 @@ SYS_NOTIF_DIR := $(SUBMODULE_DIR)/sys-Notification
 OUT_DIR := out
 OUT_SWITCH := $(OUT_DIR)/switch
 OUT_OVERLAYS := $(OUT_SWITCH)/.overlays
+OUT_LANG := $(OUT_OVERLAYS)/lang/AutoKeyLoop
 OUT_ATMOSPHERE := $(OUT_DIR)/atmosphere/contents/4100000002025924
 OUT_ATMOSPHERE_BASE := $(OUT_DIR)/atmosphere/contents
 
 # 编译产物路径
 OVL_OUTPUT := $(OVL_DIR)/ovl-AutoKeyLoop.ovl
+OVL_RESOURCE_LANG := $(OVL_DIR)/resource/lang/AutoKeyLoop
 SYS_OUTPUT_DIR := $(SYS_DIR)/out/4100000002025924
 SYS_NOTIF_OUTPUT_DIR := $(SYS_NOTIF_DIR)/out/atmosphere/contents
 
@@ -63,7 +65,11 @@ show-result:
 		mkdir -p $(OUT_ATMOSPHERE); \
 		mkdir -p $(OUT_ATMOSPHERE_BASE); \
 		mkdir -p $(OUT_SWITCH); \
+		mkdir -p $(OUT_LANG); \
 		cp -f $(OVL_OUTPUT) $(OUT_OVERLAYS)/; \
+		if [ -d $(OVL_RESOURCE_LANG) ]; then \
+			cp -f $(OVL_RESOURCE_LANG)/* $(OUT_LANG)/; \
+		fi; \
 		cp -rf $(SYS_OUTPUT_DIR)/* $(OUT_ATMOSPHERE)/; \
 		if [ -d $(SYS_NOTIF_OUTPUT_DIR) ]; then \
 			cp -rf $(SYS_NOTIF_OUTPUT_DIR)/* $(OUT_ATMOSPHERE_BASE)/; \
@@ -123,6 +129,7 @@ notif:
 prepare-out:
 	@mkdir -p $(OUT_DIR)
 	@mkdir -p $(OUT_OVERLAYS)
+	@mkdir -p $(OUT_LANG)
 	@mkdir -p $(OUT_ATMOSPHERE)
 	@mkdir -p $(OUT_SWITCH)
 

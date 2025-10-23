@@ -1,8 +1,7 @@
 #include "language_manager.hpp"
 #include <tesla.hpp>
 
-
-#define LANG_PATH "/switch/.overlays/lang/AutoKeyLoop/"
+const std::string LANG_PATH = "/switch/.overlays/lang/AutoKeyLoop/";
 
 // 初始化语言系统
 void LanguageManager::initialize() {

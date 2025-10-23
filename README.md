@@ -5,7 +5,7 @@
 
 # 注意
 
-该项目停止维护，非LITE机型无法正常使用，因我没有相关机型，无法测试修改。
+非LITE机型无法正常使用，因我没有相关机型，无法测试修改。
 如果是LITE机型，可以正常使用。
 
 # AutoKeyLoop
@@ -35,6 +35,29 @@ Nintendo Switch 按键连发插件，支持全局和游戏独立配置。
 ```
 /atmosphere/contents/4100000002025924/
 /switch/.overlays/ovl-AutoKeyLoop.ovl
+```
+
+## 多语言
+
+- Chinese is hardcoded, no need to add
+- I used AI to translate the English language file. 
+- I don't understand other languages, and AI is even worse at it
+- You can refer to en.json to add support for other languages
+
+```
+SUPPORTED LANGUAGES:
+  - en.json       (English)
+  - zh-cn.json    (No need to add, already hardcoded)
+  - zh-tw.json    (Traditional Chinese)
+  - ja.json       (Japanese)
+  - ko.json       (Korean)
+  - fr.json       (French)
+  - de.json       (German)
+  - it.json       (Italian)
+  - es.json       (Spanish)
+  - pt.json       (Portuguese)
+  - ru.json       (Russian)
+  - nl.json       (Dutch)
 ```
 
 ## 编译
