@@ -34,7 +34,7 @@ Nintendo Switch 按键连发插件，支持全局和游戏独立配置。
 将文件复制到 SD 卡根目录：
 ```
 /atmosphere/contents/4100000002025924/
-/switch/.overlays/ovl-AutoKeyLoop.ovl
+make/switch/.overlays/ovl-AutoKeyLoop.ovl
 ```
 
 ## 多语言

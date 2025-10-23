@@ -22,7 +22,7 @@ include $(DEVKITPRO)/libnx/switch_rules
 # 按键连发            
 
 APP_TITLE	:=	ovl-AutoKeyLoop
-APP_VERSION :=	1.0.2
+APP_VERSION :=	1.0.3
 
 TARGET		:=	$(APP_TITLE)
 BUILD		:=	build
@@ -184,6 +184,7 @@ all	:	 $(OUTPUT).ovl
 $(OUTPUT).ovl		:	$(OUTPUT).elf $(OUTPUT).nacp 
 	@elf2nro $< $@ $(NROFLAGS)
 	@echo "built ... $(notdir $(OUTPUT).ovl)"
+	@python $(TOPDIR)/ChineseTitle.py $(OUTPUT).ovl || echo "警告: 标题修改失败"
 
 $(OUTPUT).elf	:	$(OFILES)
 
