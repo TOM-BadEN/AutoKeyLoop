@@ -135,7 +135,7 @@ void App::Loop() {
 
         // 如果当前TID为0，则认为游戏退出，关闭连发模块
         if (current_tid == 0) {
-            ShowNotificationAndResetIPCFlag(g_NOTIF_AUTOFIRE_OFF);
+            if (m_CurrentAutoEnable) ShowNotificationAndResetIPCFlag(g_NOTIF_AUTOFIRE_OFF);
             StopAutoKey();
             continue;
         }
