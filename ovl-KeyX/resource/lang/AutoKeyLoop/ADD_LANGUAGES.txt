@@ -1,0 +1,37 @@
+================================================================================
+  AutoKeyLoop - Language Files
+================================================================================
+
+LOCATION:
+  /switch/.overlays/lang/AutoKeyLoop/
+
+SUPPORTED LANGUAGES:
+  - en.json       (English)
+  - zh-cn.json    (No need to add, already hardcoded)
+  - zh-tw.json    (Traditional Chinese)
+  - ja.json       (Japanese)
+  - ko.json       (Korean)
+  - fr.json       (French)
+  - de.json       (German)
+  - it.json       (Italian)
+  - es.json       (Spanish)
+  - pt.json       (Portuguese)
+  - ru.json       (Russian)
+  - nl.json       (Dutch)
+
+HOW TO ADD A NEW LANGUAGE:
+  1. Copy en.json and rename it to your language code (e.g., ja.json for Japanese)
+  2. Translate the values (NOT the keys) in the JSON file
+  3. Place the file in: /switch/.overlays/lang/AutoKeyLoop/
+  4. Restart the overlay to load the new language
+
+NOTES:
+  - The overlay automatically detects your Switch system language
+  - If no language file is found, it will fall back to English (en.json)
+  - If en.json is missing, it will use hardcoded Simplified Chinese
+  - Only translate the text values, keep the JSON keys unchanged
+
+================================================================================
+  github: https://github.com/TOM-BadEN/AutoKeyLoop
+================================================================================
+

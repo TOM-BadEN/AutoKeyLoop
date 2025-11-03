@@ -1,14 +1,14 @@
 #---------------------------------------------------------------------------------
-# AutoKeyLoop 主 Makefile
+# KeyX 主 Makefile
 # 用于编译 ovl、sys 和 sys-Notification 模块，并将编译产物复制到 out 目录
 #---------------------------------------------------------------------------------
 
 .PHONY: all clean ovl sys notif prepare-out show-result check update
 
 # 模块目录
-OVL_DIR := ovl-AutoKeyLoop
-SYS_DIR := sys-AutoKeyLoop
-SUBMODULE_DIR := sys-AutoKeyLoop/lib/libnotification
+OVL_DIR := ovl-KeyX
+SYS_DIR := sys-KeyX
+SUBMODULE_DIR := sys-KeyX/lib/libnotification
 SYS_NOTIF_DIR := $(SUBMODULE_DIR)/sys-Notification
 
 # 输出目录
@@ -19,20 +19,20 @@ OUT_CN := $(OUT_DIR)/CN
 # EN 版本路径（英文标题）
 OUT_EN_SWITCH := $(OUT_EN)/switch
 OUT_EN_OVERLAYS := $(OUT_EN_SWITCH)/.overlays
-OUT_EN_LANG := $(OUT_EN_OVERLAYS)/lang/AutoKeyLoop
+OUT_EN_LANG := $(OUT_EN_OVERLAYS)/lang/KeyX
 OUT_EN_ATMOSPHERE := $(OUT_EN)/atmosphere/contents/4100000002025924
 OUT_EN_ATMOSPHERE_BASE := $(OUT_EN)/atmosphere/contents
 
 # CN 版本路径（中文标题）
 OUT_CN_SWITCH := $(OUT_CN)/switch
 OUT_CN_OVERLAYS := $(OUT_CN_SWITCH)/.overlays
-OUT_CN_LANG := $(OUT_CN_OVERLAYS)/lang/AutoKeyLoop
+OUT_CN_LANG := $(OUT_CN_OVERLAYS)/lang/KeyX
 OUT_CN_ATMOSPHERE := $(OUT_CN)/atmosphere/contents/4100000002025924
 OUT_CN_ATMOSPHERE_BASE := $(OUT_CN)/atmosphere/contents
 
 # 编译产物路径
-OVL_OUTPUT := $(OVL_DIR)/ovl-AutoKeyLoop.ovl
-OVL_RESOURCE_LANG := $(OVL_DIR)/resource/lang/AutoKeyLoop
+OVL_OUTPUT := $(OVL_DIR)/ovl-KeyX.ovl
+OVL_RESOURCE_LANG := $(OVL_DIR)/resource/lang/KeyX
 SYS_OUTPUT_DIR := $(SYS_DIR)/out/4100000002025924
 SYS_NOTIF_OUTPUT_DIR := $(SYS_NOTIF_DIR)/out/atmosphere/contents
 
@@ -79,8 +79,8 @@ show-result:
 		cp -rf $(SYS_OUTPUT_DIR)/* $(OUT_EN_ATMOSPHERE)/; \
 		[ -d $(SYS_NOTIF_OUTPUT_DIR) ] && cp -rf $(SYS_NOTIF_OUTPUT_DIR)/* $(OUT_EN_ATMOSPHERE_BASE)/ || true; \
 		cp -f $(OVL_OUTPUT) $(OUT_CN_OVERLAYS)/; \
-		python $(OVL_DIR)/ChineseTitle.py $(OUT_CN_OVERLAYS)/ovl-AutoKeyLoop.ovl > /dev/null 2>&1 && \
-		printf "$(COLOR_GREEN)  模块 ovl-AutoKeyLoop，改名成功$(COLOR_RESET)\n" || printf "$(COLOR_RED)    模块 ovl-AutoKeyLoop，改名失败$(COLOR_RESET)\n"; \
+		python $(OVL_DIR)/ChineseTitle.py $(OUT_CN_OVERLAYS)/ovl-KeyX.ovl > /dev/null 2>&1 && \
+		printf "$(COLOR_GREEN)  模块 ovl-KeyX，改名成功$(COLOR_RESET)\n" || printf "$(COLOR_RED)  模块 ovl-KeyX，改名失败$(COLOR_RESET)\n"; \
 		[ -d $(OVL_RESOURCE_LANG) ] && cp -f $(OVL_RESOURCE_LANG)/* $(OUT_CN_LANG)/ || true; \
 		cp -rf $(SYS_OUTPUT_DIR)/* $(OUT_CN_ATMOSPHERE)/; \
 		[ -d $(SYS_NOTIF_OUTPUT_DIR) ] && cp -rf $(SYS_NOTIF_OUTPUT_DIR)/* $(OUT_CN_ATMOSPHERE_BASE)/ || true; \
@@ -100,9 +100,9 @@ ovl:
 	@echo "编译 overlay 模块..."
 	@echo "========================================"
 	@if $(MAKE) --no-print-directory -C $(OVL_DIR); then \
-		echo "  模块 ovl-AutoKeyLoop，编译完成" >> $(BUILD_STATUS); \
+		echo "  模块 ovl-KeyX，编译完成" >> $(BUILD_STATUS); \
 	else \
-		echo "  模块 ovl-AutoKeyLoop，编译失败" >> $(BUILD_STATUS); \
+		echo "  模块 ovl-KeyX，编译失败" >> $(BUILD_STATUS); \
 		exit 1; \
 	fi
 
@@ -114,9 +114,9 @@ sys:
 	@echo "编译 sysmodule 模块..."
 	@echo "========================================"
 	@if $(MAKE) --no-print-directory -C $(SYS_DIR); then \
-		echo "  模块 sys-AutoKeyLoop，编译完成" >> $(BUILD_STATUS); \
+		echo "  模块 sys-KeyX，编译完成" >> $(BUILD_STATUS); \
 	else \
-		echo "  模块 sys-AutoKeyLoop，编译失败" >> $(BUILD_STATUS); \
+		echo "  模块 sys-KeyX，编译失败" >> $(BUILD_STATUS); \
 		exit 1; \
 	fi
 
@@ -162,8 +162,8 @@ clean:
 	@rm -f $(BUILD_STATUS)
 	@echo "========================================"
 	@echo "清理结果："
-	@printf "$(COLOR_GREEN)  模块 ovl-AutoKeyLoop， 已清理$(COLOR_RESET)\n"
-	@printf "$(COLOR_GREEN)  模块 sys-AutoKeyLoop， 已清理$(COLOR_RESET)\n"
+	@printf "$(COLOR_GREEN)  模块 ovl-KeyX， 已清理$(COLOR_RESET)\n"
+	@printf "$(COLOR_GREEN)  模块 sys-KeyX， 已清理$(COLOR_RESET)\n"
 	@printf "$(COLOR_GREEN)  模块 sys-Notification，已清理$(COLOR_RESET)\n"
 	@printf "$(COLOR_GREEN)  输出 out/            ，已删除$(COLOR_RESET)\n"
 	@echo "========================================"
