@@ -107,8 +107,7 @@ MIT License
 - [libultrahand](https://github.com/ppkantorski/libultrahand) - Tesla Overlay 框架
 - [minIni-nx](https://github.com/ITotalJustice/minIni-nx) - INI 配置文件解析库
 
----
-[🇨🇳 中文](#中文) | [EN English](#english)
+
 ---
 
 <a name="english"></a>
