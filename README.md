@@ -5,8 +5,8 @@ https://github.com/user-attachments/assets/2540f1d5-5294-489f-b85a-4b96806365bc
 
 # 注意
 
-非LITE机型无法正常使用，因我没有相关机型，无法测试修改。
-如果是LITE机型，可以正常使用。
+- 映射功能全机型支持
+- <span style="color: red;">**连发功能仅支持LITE机型**</span>
 
 # AutoKeyLoop
 
@@ -15,26 +15,43 @@ Nintendo Switch 按键连发插件，支持全局和游戏独立配置。
 
 ## 功能
 
+![Tesla界面](image/tesla.jpg)
+
+- 美观现代的特斯拉插件
+- 特斯拉插件可动态修改连发与映射按键
+- 可选择开启的现代UI设计的通知弹窗
+
+### 按键映射
+
+- 支持 16 个按键互相映射 (A/B/X/Y/L/R/ZL/ZR/十字键/SELECT/START/L3/R3)
+- 与连发功能可同时启用，不会有冲突
+- <span style="color: red;">**完美避开系统关于按键修改后的警告弹窗**</span>
+- 全局配置和游戏独立配置
+- 自动记忆开关状态
+
+### 按键连发
+
 - 支持 12 个按键连发（A/B/X/Y/L/R/ZL/ZR/十字键）
 - 支持多个按键同时连发
 - 连发时支持非连发键正常使用
 - 可设置按下和松开时长
 - 全局配置和游戏独立配置
-- 美观现代的特斯拉插件
+- 自动记忆开关状态
+
 
 ## 内存占用
 
-- 待机占用 450 KB
-- 开启连发功能占用 706 KB
-- 弹窗占用 688 KB
-- 弹窗只有触发的时候才有内存占用
+- 系统模块仅占用 297 KB
+- 弹窗额外占用 688 KB
+- <span style="color: red;">**弹窗只有触发的时候才有内存占用**</span>
 
 ## 安装
 
 将文件复制到 SD 卡根目录：
 ```
 /atmosphere/contents/4100000002025924/
-make/switch/.overlays/ovl-AutoKeyLoop.ovl
+/atmosphere/contents/0100000000251020
+/switch/.overlays/ovl-AutoKeyLoop.ovl
 ```
 
 ## 多语言
@@ -63,8 +80,8 @@ SUPPORTED LANGUAGES:
 ## 编译
 
 ```bash
-cd sys-AutoKeyLoop && make
-cd ovl-AutoKeyLoop && make
+cd sys-AutoKeyLoop && make -j
+cd ovl-AutoKeyLoop && make -j
 ```
 或者直接根目录
 
