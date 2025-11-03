@@ -13,15 +13,8 @@ private:
     bool m_ShouldExit = false;
     bool m_IsPaused = false;
     
-    // 物理输入读取线程
-    Thread m_InputReaderThread;
-    alignas(0x1000) static char input_reader_thread_stack[4 * 1024];
-    bool m_InputThreadCreated = false;
-    bool m_InputThreadRunning = false;
-    
-    // 共享的物理输入状态（完整状态，包括摇杆）
-    HidNpadHandheldState m_SharedPhysicalState;
-    std::mutex m_InputMutex;
+    // 物理输入状态（不再需要线程间共享）
+    HidNpadHandheldState m_PhysicalState;
     
     // 配置参数互斥锁（保护连发配置的线程安全修改）
     std::mutex m_ConfigMutex;
@@ -64,13 +57,21 @@ public:
     // @param fireinterval 按键松开持续时间（毫秒）
     void UpdateConfig(u64 buttons, int presstime, int fireinterval);
     
-    // 暂停连发（两个线程停止工作，但不退出）
+    // 暂停连发（线程停止工作，但不退出）
     void Pause();
     
-    // 恢复连发（两个线程继续工作）
+    // 恢复连发（线程继续工作）
     void Resume();
     
 private:
+    // 事件枚举
+    enum class TurboEvent {
+        NO_ACTION,       // 无操作：没有连发按键，状态机未运行
+        TURBO_START,     // 启动连发：首次按下连发按键
+        TURBO_RUNNING,   // 连发运行：状态机正常工作
+        TURBO_STOP       // 停止连发：检测到松开
+    };
+    
     // 连发线程函数
     static void autokey_thread_func(void* arg);
     
@@ -80,18 +81,20 @@ private:
     // 劫持并修改控制器状态
     void HijackAndModifyState();
     
-    // 物理输入读取线程函数
-    static void input_reader_thread_func(void* arg);
-    
-    // 物理输入读取循环
-    void ProcessInputReading();
-    
     // 读取物理输入（内部使用，返回完整状态）
     void ReadPhysicalInput(HidNpadHandheldState* out_state);
     
-    // 获取共享的物理输入（线程安全）
-    void GetSharedPhysicalState(HidNpadHandheldState* out_state);
-    
     // 时间窗口检测：仅在"按下周期"检测真松开（避免污染）
     bool CheckReleaseInWindow(u64 autokey_buttons);
+    
+    // 事件判定
+    TurboEvent DetermineTurboEvent(u64 autokey_buttons);
+    
+    // 事件处理
+    void HandleTurboStart(u64 autokey_buttons);
+    void HandleTurboRunning(u64 normal_buttons, u64 autokey_buttons);
+    void HandleTurboStop(u64 physical_buttons);
+    
+    // 状态写入
+    void ApplyHdlsState(u64 buttons);
 };
