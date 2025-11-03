@@ -5,7 +5,7 @@
 #include <minIni.h>
 #include <cstdlib>
 #include "libnotification.h"
-#include "../log/log.h"
+// #include "../log/log.h"
 
 #define CONFIG_DIR "/config/AutoKeyLoop"
 #define CONFIG_PATH "/config/AutoKeyLoop/config.ini"
@@ -37,7 +37,7 @@ bool App::InitializeConfigPath() {
 // App类的实现
 App::App() {
     // 允许写入日志
-    log_set_enabled(true);
+    // log_set_enabled(true);
     // 初始化配置路径
     if (!InitializeConfigPath()) return;
     // 初始化IPC服务

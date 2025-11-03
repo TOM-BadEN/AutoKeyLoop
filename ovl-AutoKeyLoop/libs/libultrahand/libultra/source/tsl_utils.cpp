@@ -115,6 +115,12 @@ namespace ult {
         return parseJsonToMap(filePath, translationCache);
     }
     
+    // Function to translate a string using the translation cache
+    std::string i18n(const std::string& text) {
+        auto it = translationCache.find(text);
+        return (it != translationCache.end()) ? it->second : text;
+    }
+    
     
     u16 activeHeaderHeight = 97;
 

@@ -9,7 +9,7 @@ AboutPlugin::AboutPlugin()
 tsl::elm::Element* AboutPlugin::createUI()
 {
     // 创建覆盖层框架，设置标题和副标题
-    auto frame = new tsl::elm::OverlayFrame("关于插件", APP_VERSION_STRING);
+    auto frame = new tsl::elm::OverlayFrame("关于", APP_VERSION_STRING);
 
     // 创建主列表容器
     auto mainList = new tsl::elm::List();

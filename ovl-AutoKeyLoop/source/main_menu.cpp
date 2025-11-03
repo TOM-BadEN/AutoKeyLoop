@@ -510,5 +510,9 @@ bool MainMenu::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touc
         tsl::changeTo<AboutPlugin>();
         return true;
     }
+    else if (keysDown & HidNpadButton_Left) {
+        tsl::changeTo<SettingMenu>();
+        return true;
+    }
     return false;
 }
