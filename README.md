@@ -8,7 +8,7 @@ https://github.com/user-attachments/assets/2540f1d5-5294-489f-b85a-4b96806365bc
 - 映射功能全机型支持
 - <span style="color: red;">**连发功能仅支持LITE机型**</span>
 
-# AutoKeyLoop
+# KeyX 按键助手
 
 Nintendo Switch 按键连发插件，支持全局和游戏独立配置。
 由特斯拉插件与系统模块两部分组成。
