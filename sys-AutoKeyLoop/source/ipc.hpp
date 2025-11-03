@@ -3,18 +3,33 @@
 #include <functional>
 
 // IPC命令定义
-#define CMD_ENABLE_AUTOKEY  1   // 开启连发模块
-#define CMD_DISABLE_AUTOKEY 2   // 关闭连发模块
-#define CMD_RELOAD_CONFIG   3   // 重载配置
-#define CMD_EXIT            999 // 退出系统模块
+// 连发控制
+#define CMD_ENABLE_AUTOFIRE   1   // 开启连发
+#define CMD_DISABLE_AUTOFIRE  2   // 关闭连发
+
+// 映射控制
+#define CMD_ENABLE_MAPPING    3   // 开启映射
+#define CMD_DISABLE_MAPPING   4   // 关闭映射
+
+// 配置重载
+#define CMD_RELOAD_BASIC      5   // 重载基础配置
+#define CMD_RELOAD_AUTOFIRE   6   // 重载连发配置
+#define CMD_RELOAD_MAPPING    7   // 重载映射配置
+
+// 系统控制
+#define CMD_EXIT              999 // 退出系统模块
 
 // IPC命令处理结果
 struct CommandResult {
     bool should_close_connection;   // 是否需要关闭客户端连接
     bool should_exit_server;        // 是否需要退出服务器（在响应发送后）
-    bool should_enable_autokey;     // 是否需要开启连发（在响应发送后）
-    bool should_disable_autokey;    // 是否需要关闭连发（在响应发送后）
-    bool should_reload_config;      // 是否需要重载配置（在响应发送后）
+    bool should_enable_autofire;    // 是否需要开启连发（在响应发送后）
+    bool should_disable_autofire;   // 是否需要关闭连发（在响应发送后）
+    bool should_enable_mapping;     // 是否需要开启映射（在响应发送后）
+    bool should_disable_mapping;    // 是否需要关闭映射（在响应发送后）
+    bool should_reload_basic;       // 是否需要重载基础配置（在响应发送后）
+    bool should_reload_autofire;    // 是否需要重载连发配置（在响应发送后）
+    bool should_reload_mapping;     // 是否需要重载映射配置（在响应发送后）
 };
 
 // IPC服务器类
@@ -37,10 +52,14 @@ private:
     bool m_ThreadRunning = false;
     
     // 回调函数
-    std::function<void()> m_ExitCallback;        // 退出回调
-    std::function<void()> m_EnableCallback;      // 开启连发回调
-    std::function<void()> m_DisableCallback;     // 关闭连发回调
-    std::function<void()> m_ReloadConfigCallback; // 重载配置回调
+    std::function<void()> m_ExitCallback;             // 退出回调
+    std::function<void()> m_EnableAutoFireCallback;   // 开启连发回调
+    std::function<void()> m_DisableAutoFireCallback;  // 关闭连发回调
+    std::function<void()> m_EnableMappingCallback;    // 开启映射回调
+    std::function<void()> m_DisableMappingCallback;   // 关闭映射回调
+    std::function<void()> m_ReloadBasicCallback;      // 重载基础配置回调
+    std::function<void()> m_ReloadAutoFireCallback;   // 重载连发配置回调
+    std::function<void()> m_ReloadMappingCallback;    // 重载映射配置回调
     
     // 内部方法
     void StartServer();
@@ -74,8 +93,12 @@ public:
     bool Start(const char* service_name);
     void Stop();
     void SetExitCallback(std::function<void()> callback);
-    void SetEnableCallback(std::function<void()> callback);
-    void SetDisableCallback(std::function<void()> callback);
-    void SetReloadConfigCallback(std::function<void()> callback);
+    void SetEnableAutoFireCallback(std::function<void()> callback);
+    void SetDisableAutoFireCallback(std::function<void()> callback);
+    void SetEnableMappingCallback(std::function<void()> callback);
+    void SetDisableMappingCallback(std::function<void()> callback);
+    void SetReloadBasicCallback(std::function<void()> callback);
+    void SetReloadAutoFireCallback(std::function<void()> callback);
+    void SetReloadMappingCallback(std::function<void()> callback);
     bool ShouldExit() const { return m_ShouldExit; }
 };

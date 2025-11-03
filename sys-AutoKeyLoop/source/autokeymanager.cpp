@@ -56,9 +56,9 @@ AutoKeyManager::AutoKeyManager(u64 buttons, int presstime, int fireinterval) {
     memset(&m_AutoKeyThread, 0, sizeof(Thread));
     memset(&m_InputReaderThread, 0, sizeof(Thread));
     
-    // 创建物理输入读取线程
+    // 创建物理输入读取线程（-2表示自适应核心分配）
     rc = threadCreate(&m_InputReaderThread, input_reader_thread_func, this,
-                     input_reader_thread_stack, sizeof(input_reader_thread_stack), 44, 3);
+                     input_reader_thread_stack, sizeof(input_reader_thread_stack), 44, -2);
     
     if (R_FAILED(rc)) {
         return;
@@ -78,9 +78,9 @@ AutoKeyManager::AutoKeyManager(u64 buttons, int presstime, int fireinterval) {
     // 设置线程运行标志
     m_InputThreadRunning = true;
 
-    // 创建连发线程
+    // 创建连发线程（-2表示自适应核心分配）
     rc = threadCreate(&m_AutoKeyThread, autokey_thread_func, this, 
-                        autokey_thread_stack, sizeof(autokey_thread_stack), 44, 3);
+                        autokey_thread_stack, sizeof(autokey_thread_stack), 44, -2);
     
     // 创建连发线程失败
     if (R_FAILED(rc)) {
@@ -112,6 +112,20 @@ void AutoKeyManager::UpdateConfig(u64 buttons, int presstime, int fireinterval) 
     // 重置连发状态，让新配置立即生效（下次按键时重新计时）
     m_AutoKeyLastSwitchTime = 0;
     m_AutoKeyIsPressed = false;
+}
+
+// 暂停连发
+void AutoKeyManager::Pause() {
+    m_IsPaused = true;
+    
+    // 重置连发状态机，避免恢复时延续旧节奏
+    m_AutoKeyLastSwitchTime = 0;
+    m_AutoKeyIsPressed = false;
+}
+
+// 恢复连发
+void AutoKeyManager::Resume() {
+    m_IsPaused = false;
 }
 
 // 析构函数
@@ -169,17 +183,21 @@ void AutoKeyManager::ProcessInputReading() {
     HidNpadHandheldState temp_state;
     // 当析构函数运行时退出
     while (!m_ShouldExit) {
+        // 暂停时，跳过所有工作
+        if (m_IsPaused) {
+            svcSleepThread(1000000000ULL);  // 暂停时休眠1秒
+            continue;
+        }
 
         // 读取物理输入（完整状态，包括摇杆）
         ReadPhysicalInput(&temp_state);
-        
         // 更新共享变量（加锁保护）
         {
             std::lock_guard<std::mutex> lock(m_InputMutex);
             m_SharedPhysicalState = temp_state;
         }
-        
         svcSleepThread(UPDATE_INTERVAL_NS);
+        
     }
 }
 
@@ -188,11 +206,16 @@ void AutoKeyManager::ProcessAutoKey() {
     
     // 当析构函数运行时退出
     while (!m_ShouldExit) {
+        // 暂停时，跳过所有工作
+        if (m_IsPaused) {
+            svcSleepThread(1000000000ULL);  // 暂停时休眠1秒
+            continue;
+        }
+
         // 劫持并修改控制器状态
         HijackAndModifyState();
-
         svcSleepThread(UPDATE_INTERVAL_NS);
-
+        
     }
     
 }

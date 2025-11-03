@@ -11,6 +11,7 @@ private:
     bool m_ThreadCreated = false;
     bool m_ThreadRunning = false;
     bool m_ShouldExit = false;
+    bool m_IsPaused = false;
     
     // 物理输入读取线程
     Thread m_InputReaderThread;
@@ -62,6 +63,12 @@ public:
     // @param presstime 按键按下持续时间（毫秒）
     // @param fireinterval 按键松开持续时间（毫秒）
     void UpdateConfig(u64 buttons, int presstime, int fireinterval);
+    
+    // 暂停连发（两个线程停止工作，但不退出）
+    void Pause();
+    
+    // 恢复连发（两个线程继续工作）
+    void Resume();
     
 private:
     // 连发线程函数

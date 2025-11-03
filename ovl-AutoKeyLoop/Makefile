@@ -22,13 +22,13 @@ include $(DEVKITPRO)/libnx/switch_rules
 # 按键连发 (12 bytes)
 
 APP_TITLE	:=	AutoKeyLoop 
-APP_VERSION :=	1.0.3
+APP_VERSION :=	1.1.3
 
 TARGET		:=	ovl-AutoKeyLoop
 BUILD		:=	build
-SOURCES		:=	source libs/libultrahand/libultra/source libs/libultrahand/common
+SOURCES		:=	source source/setting libs/libultrahand/libultra/source libs/libultrahand/common
 DATA		:=	data
-INCLUDES	:=	include libs/libultrahand/libultra/include libs/libultrahand/libtesla/include libs/libultrahand/common
+INCLUDES	:=	include include/setting libs/libultrahand/libultra/include libs/libultrahand/libtesla/include libs/libultrahand/common
 
 NO_ICON		:=  1
 

@@ -7647,9 +7647,9 @@ namespace tsl {
             
                 if (this->m_maxWidth == 0) {
                     if (this->m_value.length() > 0) {
-                        //std::tie(width, height) = renderer->drawString(this->m_value, false, 0, 0, 20, a(tsl::style::color::ColorTransparent));
-                        //auto valueWidth = renderer->getTextDimensions(this->m_value, false, 20).first;
-                        width = renderer->getTextDimensions(this->m_value, false, 20).first;
+                        //std::tie(width, height) = renderer->drawString(this->m_value, false, 0, 0, 22, a(tsl::style::color::ColorTransparent));
+                        //auto valueWidth = renderer->getTextDimensions(this->m_value, false, 22).first;
+                        width = renderer->getTextDimensions(this->m_value, false, 22).first;
                         this->m_maxWidth = this->getWidth() - width - 70 +4;
                     } else {
                         this->m_maxWidth = this->getWidth() - 40 -10 -12;
@@ -7687,7 +7687,7 @@ namespace tsl {
                             renderer->enableScissoring(this->getX()+6, 97, this->m_maxWidth + 30 -3, tsl::cfg::FramebufferHeight-73-97);
                         else
                             renderer->enableScissoring(this->getX()+6, 97, this->m_maxWidth + 40 +9, tsl::cfg::FramebufferHeight-73-97);
-                        renderer->drawString(this->m_scrollText, false, this->getX() + 20-1 - this->m_scrollOffset, this->getY() + 45 - yOffset, 23, a(selectedTextColor));
+                        renderer->drawString(this->m_scrollText, false, this->getX() + 20-1 - this->m_scrollOffset, this->getY() + 45 - yOffset, 23, a(defaultTextColor));
                         renderer->disableScissoring();
                         
                         // Handle scrolling with frame rate compensation
@@ -7800,7 +7800,7 @@ namespace tsl {
                     static const std::vector<std::string> specialChars = {};
                 #endif
                     renderer->drawStringWithColoredSections(this->m_text, false, specialChars, this->getX() + 20-1, this->getY() + 45 - yOffset, 23,
-                        (this->m_focused ? (!useClickTextColor ? selectedTextColor : clickTextColor) : (!useClickTextColor ? defaultTextColor : clickTextColor)),
+                        (!useClickTextColor ? defaultTextColor : clickTextColor),
                         (this->m_focused ? starColor : selectionStarColor)
                     );
                 }
@@ -7810,7 +7810,7 @@ namespace tsl {
                 //const std::string& value = this->m_value;
                 const s32 xPosition = this->getX() + this->m_maxWidth + 44 + 3;
                 const s32 yPosition = this->getY() + 45 - yOffset;
-                static constexpr s32 fontSize = 20;
+                static constexpr s32 fontSize = 22;
                 //bool isFaint = ;
                 //bool isFocused = this->m_focused;
             

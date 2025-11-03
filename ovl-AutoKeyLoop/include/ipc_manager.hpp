@@ -1,16 +1,28 @@
 #pragma once
 #include <switch.h>
 
-// IPC命令定义
-#define CMD_ENABLE_AUTOKEY  1   // 开启连发模块
-#define CMD_DISABLE_AUTOKEY 2   // 关闭连发模块
-#define CMD_RELOAD_CONFIG   3   // 重载配置
-#define CMD_EXIT            999 // 退出系统模块
+// IPC命令定义 - 与 sys-AutoKeyLoop 保持一致
+// 连发控制
+#define CMD_ENABLE_AUTOFIRE   1   // 开启连发
+#define CMD_DISABLE_AUTOFIRE  2   // 关闭连发
+
+// 映射控制
+#define CMD_ENABLE_MAPPING    3   // 开启映射
+#define CMD_DISABLE_MAPPING   4   // 关闭映射
+
+// 配置重载
+#define CMD_RELOAD_BASIC      5   // 重载基础配置
+#define CMD_RELOAD_AUTOFIRE   6   // 重载连发配置
+#define CMD_RELOAD_MAPPING    7   // 重载映射配置
+
+// 系统控制
+#define CMD_EXIT              999 // 退出系统模块
 
 /**
  * IPC管理类 - 负责与 sys-AutoKeyLoop 系统模块的通信
  * 
  * 使用全局对象管理 IPC 服务生命周期，程序退出时自动断开连接
+ * 每次发送命令后自动断开连接
  */
 class IPCManager {
 private:
@@ -18,6 +30,13 @@ private:
     
     Service m_service;      // IPC 服务句柄
     bool m_connected;       // 连接状态
+    
+    /**
+     * 通用命令发送方法 - 连接、发送、断开
+     * @param cmd_id 命令ID
+     * @return Result 0=成功，其他=失败
+     */
+    Result SendCommand(u64 cmd_id);
 
 public:
     /**
@@ -47,7 +66,7 @@ public:
     
     /**
      * 检查是否已连接
-     * @return true=已连接, false=未连接
+     * @return true=已连接, false=未连
      */
     bool isConnected() const;
     
@@ -55,13 +74,46 @@ public:
      * 发送开启连发命令给系统模块
      * @return Result 0=成功，其他=失败
      */
-    Result sendEnableCommand();
+    Result sendEnableAutoFireCommand();
     
     /**
      * 发送关闭连发命令给系统模块
      * @return Result 0=成功，其他=失败
      */
-    Result sendDisableCommand();
+    Result sendDisableAutoFireCommand();
+    
+    /**
+     * 发送开启映射命令给系统模块
+     * @return Result 0=成功，其他=失败
+     */
+    Result sendEnableMappingCommand();
+    
+    /**
+     * 发送关闭映射命令给系统模块
+     * @return Result 0=成功，其他=失败
+     */
+    Result sendDisableMappingCommand();
+    
+    /**
+     * 发送重载基础配置命令给系统模块
+     * @return Result 0=成功，其他=失败
+     * @note 重载游戏特定的基础配置
+     */
+    Result sendReloadBasicCommand();
+    
+    /**
+     * 发送重载连发配置命令给系统模块
+     * @return Result 0=成功，其他=失败
+     * @note 重载连发相关配置
+     */
+    Result sendReloadAutoFireCommand();
+    
+    /**
+     * 发送重载映射配置命令给系统模块
+     * @return Result 0=成功，其他=失败
+     * @note 重载按键映射配置
+     */
+    Result sendReloadMappingCommand();
     
     /**
      * 发送退出命令给系统模块
@@ -69,20 +121,6 @@ public:
      * @note 成功发送后会自动断开连接
      */
     Result sendExitCommand();
-    
-    /**
-     * 重启连发功能（先关闭，等待50ms，再开启）
-     * @return Result 0=成功，其他=失败
-     * @note 用于切换配置后重新加载配置
-     */
-    Result sendRestartCommand();
-    
-    /**
-     * 发送重载配置命令给系统模块
-     * @return Result 0=成功，其他=失败
-     * @note 系统模块会重新读取配置并动态更新连发参数（不重启线程）
-     */
-    Result sendReloadConfigCommand();
 };
 
 // 全局实例 - 程序退出时自动调用析构函数

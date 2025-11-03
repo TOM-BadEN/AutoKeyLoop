@@ -1,5 +1,6 @@
 #include "sysmodule_manager.hpp"
 #include "ipc_manager.hpp"
+#include <ultra.hpp>
 
 // 检查系统模块是否正在运行
 bool SysModuleManager::isRunning() {
@@ -41,8 +42,7 @@ Result SysModuleManager::stopModule() {
     }
     
     // 使用 IPC 管理器发送退出命令
-    Result rc = g_ipcManager.sendExitCommand();
-
+    g_ipcManager.sendExitCommand();
 
     // 为了确保正确停止，增加超时机制，最大200ms
     int timeout = 20;
@@ -52,34 +52,32 @@ Result SysModuleManager::stopModule() {
     }
 
     if (isRunning()) {
-        return 9999; // 自定义错误码：系统模块退出超时
+        return 999;
     }
     
-    return rc;
-}
-
-// 重启系统模块（先停止，等待50ms，再启动）
-Result SysModuleManager::restartModule() {
-    // 检查系统模块是否正在运行
-    if (!isRunning()) {
-        return 0;  // 未运行，直接返回成功
-    }
-    
-    // 停止系统模块
-    Result rc = stopModule();
-    if (R_FAILED(rc)) {
-        return rc;  // 停止失败，返回错误
-    }
-    
-    // 重新启动系统模块
-    rc = startModule();
-    
-    return rc;
+    return 0;
 }
 
 // 切换系统模块开关（运行中则停止，未运行则启动）
 Result SysModuleManager::toggleModule() {
     if (isRunning()) return stopModule();
     else return startModule();
+}
+
+// 检查是否有 boot2.flag（自启动标志）
+bool SysModuleManager::hasBootFlag() {
+    return ult::isFile(BOOT2_FLAG_PATH);
+}
+
+// 切换 boot2.flag（有则删除，无则创建）
+Result SysModuleManager::toggleBootFlag() {
+    // 如果文件存在，删除它
+    if (ult::isFile(BOOT2_FLAG_PATH)) {
+        if (remove(BOOT2_FLAG_PATH) != 0) return -1;
+        return 0;
+    }
+    // 文件不存在，创建空文件
+    ult::createTextFile(BOOT2_FLAG_PATH, "");
+    return 0;
 }
 

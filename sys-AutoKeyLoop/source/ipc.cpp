@@ -35,9 +35,9 @@ bool IPCServer::Start(const char* service_name) {
     memcpy(m_ServerName.name, service_name, 
            service_name[7] == '\0' ? 8 : 7);  // 确保不超过8字符
     
-    // 创建IPC线程
+    // 创建IPC线程（-2表示自适应核心分配）
     Result rc = threadCreate(&m_IpcThread, ThreadEntry, this, 
-                           ipc_thread_stack, sizeof(ipc_thread_stack), 44, 3);
+                           ipc_thread_stack, sizeof(ipc_thread_stack), 44, -2);
     if (R_FAILED(rc)) {
         return false;
     }
@@ -77,18 +77,38 @@ void IPCServer::SetExitCallback(std::function<void()> callback) {
 }
 
 // 设置开启连发回调函数
-void IPCServer::SetEnableCallback(std::function<void()> callback) {
-    m_EnableCallback = callback;
+void IPCServer::SetEnableAutoFireCallback(std::function<void()> callback) {
+    m_EnableAutoFireCallback = callback;
 }
 
 // 设置关闭连发回调函数
-void IPCServer::SetDisableCallback(std::function<void()> callback) {
-    m_DisableCallback = callback;
+void IPCServer::SetDisableAutoFireCallback(std::function<void()> callback) {
+    m_DisableAutoFireCallback = callback;
 }
 
-// 设置重载配置回调函数
-void IPCServer::SetReloadConfigCallback(std::function<void()> callback) {
-    m_ReloadConfigCallback = callback;
+// 设置开启映射回调函数
+void IPCServer::SetEnableMappingCallback(std::function<void()> callback) {
+    m_EnableMappingCallback = callback;
+}
+
+// 设置关闭映射回调函数
+void IPCServer::SetDisableMappingCallback(std::function<void()> callback) {
+    m_DisableMappingCallback = callback;
+}
+
+// 设置重载基础配置回调函数
+void IPCServer::SetReloadBasicCallback(std::function<void()> callback) {
+    m_ReloadBasicCallback = callback;
+}
+
+// 设置重载连发配置回调函数
+void IPCServer::SetReloadAutoFireCallback(std::function<void()> callback) {
+    m_ReloadAutoFireCallback = callback;
+}
+
+// 设置重载映射配置回调函数
+void IPCServer::SetReloadMappingCallback(std::function<void()> callback) {
+    m_ReloadMappingCallback = callback;
 }
 
 // 静态线程入口函数
@@ -178,7 +198,7 @@ void IPCServer::WaitAndProcessRequest() {
         }
         
         bool should_close = false;
-        CommandResult cmd_result = {false, false, false, false, false};
+        CommandResult cmd_result = {false, false, false, false, false, false, false, false, false};
         Request request = ParseRequestFromTLS();
         
         switch (request.type) {
@@ -209,70 +229,96 @@ void IPCServer::WaitAndProcessRequest() {
         // 最后才执行回调逻辑（确保响应已成功发送）
         
         // 开启连发回调
-        if (cmd_result.should_enable_autokey) {
-            if (m_EnableCallback) {
-                m_EnableCallback();
-            }
+        if (cmd_result.should_enable_autofire) {
+            if (m_EnableAutoFireCallback) m_EnableAutoFireCallback();
         }
         
         // 关闭连发回调
-        if (cmd_result.should_disable_autokey) {
-            if (m_DisableCallback) {
-                m_DisableCallback();
-            }
+        if (cmd_result.should_disable_autofire) {
+            if (m_DisableAutoFireCallback) m_DisableAutoFireCallback();
         }
         
-        // 重载配置回调
-        if (cmd_result.should_reload_config) {
-            if (m_ReloadConfigCallback) {
-                m_ReloadConfigCallback();
-            }
+        // 开启映射回调
+        if (cmd_result.should_enable_mapping) {
+            if (m_EnableMappingCallback) m_EnableMappingCallback();
+        }
+        
+        // 关闭映射回调
+        if (cmd_result.should_disable_mapping) {
+            if (m_DisableMappingCallback) m_DisableMappingCallback();
+        }
+        
+        // 重载基础配置回调
+        if (cmd_result.should_reload_basic) {
+            if (m_ReloadBasicCallback) m_ReloadBasicCallback();
+        }
+        
+        // 重载连发配置回调
+        if (cmd_result.should_reload_autofire) {
+            if (m_ReloadAutoFireCallback) m_ReloadAutoFireCallback();
+        }
+        
+        // 重载映射配置回调
+        if (cmd_result.should_reload_mapping) {
+            if (m_ReloadMappingCallback) m_ReloadMappingCallback();
         }
         
         // 退出服务器回调
         if (cmd_result.should_exit_server) {
             m_ShouldExit = true;
-            if (m_ExitCallback) {
-                m_ExitCallback();
-            }
+            if (m_ExitCallback) m_ExitCallback();
         }
     }
 }
 
 // 处理命令 - 完整处理命令逻辑，但不直接修改服务器状态
 CommandResult IPCServer::HandleCommand(u64 cmd_id) {
-    CommandResult result = {false, false, false, false, false};
+    CommandResult result = {false, false, false, false, false, false, false, false, false};
     
     switch (cmd_id) {
-        case CMD_ENABLE_AUTOKEY:
-            WriteResponseToTLS(0);  // 写入成功响应
-            // 通过返回值告诉调用者需要在响应发送后执行回调
-            result.should_enable_autokey = true;
+        case CMD_ENABLE_AUTOFIRE:
+            WriteResponseToTLS(0);
+            result.should_enable_autofire = true;
             break;
             
-        case CMD_DISABLE_AUTOKEY:
-            WriteResponseToTLS(0);  // 写入成功响应
-            // 通过返回值告诉调用者需要在响应发送后执行回调
-            result.should_disable_autokey = true;
+        case CMD_DISABLE_AUTOFIRE:
+            WriteResponseToTLS(0);
+            result.should_disable_autofire = true;
             break;
             
-        case CMD_RELOAD_CONFIG:
-            WriteResponseToTLS(0);  // 写入成功响应
-            // 通过返回值告诉调用者需要在响应发送后执行回调
-            result.should_reload_config = true;
+        case CMD_ENABLE_MAPPING:
+            WriteResponseToTLS(0);
+            result.should_enable_mapping = true;
+            break;
+            
+        case CMD_DISABLE_MAPPING:
+            WriteResponseToTLS(0);
+            result.should_disable_mapping = true;
+            break;
+            
+        case CMD_RELOAD_BASIC:
+            WriteResponseToTLS(0);
+            result.should_reload_basic = true;
+            break;
+            
+        case CMD_RELOAD_AUTOFIRE:
+            WriteResponseToTLS(0);
+            result.should_reload_autofire = true;
+            break;
+            
+        case CMD_RELOAD_MAPPING:
+            WriteResponseToTLS(0);
+            result.should_reload_mapping = true;
             break;
             
         case CMD_EXIT:
-            // 写入成功响应
             WriteResponseToTLS(0);
-            // 通过返回值告诉调用者需要做什么（而不是直接修改状态）
-            result.should_close_connection = true;  // 需要关闭客户端连接
-            result.should_exit_server = true;       // 需要退出服务器
+            result.should_close_connection = true;
+            result.should_exit_server = true;
             break;
             
         default:
             WriteResponseToTLS(1);
-            // 默认值 {false, false, false, false, false}，不做任何额外操作
             break;
     }
     

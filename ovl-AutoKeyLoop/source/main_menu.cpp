@@ -1,9 +1,9 @@
 #include "main_menu.hpp"
 #include "game_monitor.hpp"
-#include "setting_manager.hpp"
 #include "ini_helper.hpp"
 #include "ipc_manager.hpp"
 #include "sysmodule_manager.hpp"
+#include "setting/setting_menu.hpp"
 #include <ultra.hpp>
 
 // Tesla插件界面尺寸常量定义
@@ -13,8 +13,7 @@
 #define LIST_ITEM_HEIGHT 70        // 列表项高度
 #define SPACING 20  // 间距常量
 
-#define CONFIG_PATH "/config/AutoKeyLoop/config.ini"
-
+constexpr const char* CONFIG_PATH = "/config/AutoKeyLoop/config.ini";
 
 // Switch 按键 Unicode 图标
 namespace ButtonIcon {
@@ -22,156 +21,244 @@ namespace ButtonIcon {
     constexpr const char* B      = "\uE0A1";  // B 按键
     constexpr const char* X      = "\uE0A2";  // X 按键
     constexpr const char* Y      = "\uE0A3";  // Y 按键
-    constexpr const char* L      = "\uE0A4";  // L 按键
-    constexpr const char* R      = "\uE0A5";  // R 按键
-    constexpr const char* ZL     = "\uE0A6";  // ZL 按键
-    constexpr const char* ZR     = "\uE0A7";  // ZR 按键
     constexpr const char* Up     = "\uE0AF";  // 方向键上
     constexpr const char* Down   = "\uE0B0";  // 方向键下
     constexpr const char* Left   = "\uE0B1";  // 方向键左
     constexpr const char* Right  = "\uE0B2";  // 方向键右
+    constexpr const char* L      = "\uE0A4";  // L 按键
+    constexpr const char* R      = "\uE0A5";  // R 按键
+    constexpr const char* ZL     = "\uE0A6";  // ZL 按键
+    constexpr const char* ZR     = "\uE0A7";  // ZR 按键
+    constexpr const char* StickL = "\uE0C4";  // 左摇杆按下
+    constexpr const char* StickR = "\uE0C5";  // 右摇杆按下
+    constexpr const char* Start  = "\uE0B5";  // Start/Plus
+    constexpr const char* Select = "\uE0B6";  // Select/Minus
+}
+
+namespace {
+    struct ButtonMapping {
+        const char* source;   // 源按键（固定）
+        char target[8];       // 目标按键（可变）
+    };
+    
+    ButtonMapping s_ButtonMappings[] = {
+        {"A", "A"},
+        {"B", "B"},
+        {"X", "X"},
+        {"Y", "Y"},
+        {"Up", "Up"},
+        {"Down", "Down"},
+        {"Left", "Left"},
+        {"Right", "Right"},
+        {"L", "L"},
+        {"R", "R"},
+        {"ZL", "ZL"},
+        {"ZR", "ZR"},
+        {"StickL", "StickL"},
+        {"StickR", "StickR"},
+        {"Start", "Start"},
+        {"Select", "Select"}
+    };
+    
+    constexpr int BUTTON_COUNT = 16;
+    // 根据按键名称获取图标
+    const char* getButtonIcon(const char* buttonName) {
+        if (strcmp(buttonName, "A") == 0) return ButtonIcon::A;
+        if (strcmp(buttonName, "B") == 0) return ButtonIcon::B;
+        if (strcmp(buttonName, "X") == 0) return ButtonIcon::X;
+        if (strcmp(buttonName, "Y") == 0) return ButtonIcon::Y;
+        if (strcmp(buttonName, "Up") == 0) return ButtonIcon::Up;
+        if (strcmp(buttonName, "Down") == 0) return ButtonIcon::Down;
+        if (strcmp(buttonName, "Left") == 0) return ButtonIcon::Left;
+        if (strcmp(buttonName, "Right") == 0) return ButtonIcon::Right;
+        if (strcmp(buttonName, "L") == 0) return ButtonIcon::L;
+        if (strcmp(buttonName, "R") == 0) return ButtonIcon::R;
+        if (strcmp(buttonName, "ZL") == 0) return ButtonIcon::ZL;
+        if (strcmp(buttonName, "ZR") == 0) return ButtonIcon::ZR;
+        if (strcmp(buttonName, "StickL") == 0) return ButtonIcon::StickL;
+        if (strcmp(buttonName, "StickR") == 0) return ButtonIcon::StickR;
+        if (strcmp(buttonName, "Start") == 0) return ButtonIcon::Start;
+        if (strcmp(buttonName, "Select") == 0) return ButtonIcon::Select;
+        return "\uE142";
+    }
+    
+    // 根据按键名称获取按键标志（用于检查连发位掩码）
+    u64 getButtonFlag(const char* buttonName) {
+        if (strcmp(buttonName, "A") == 0) return HidNpadButton_A;
+        if (strcmp(buttonName, "B") == 0) return HidNpadButton_B;
+        if (strcmp(buttonName, "X") == 0) return HidNpadButton_X;
+        if (strcmp(buttonName, "Y") == 0) return HidNpadButton_Y;
+        if (strcmp(buttonName, "Up") == 0) return HidNpadButton_Up;
+        if (strcmp(buttonName, "Down") == 0) return HidNpadButton_Down;
+        if (strcmp(buttonName, "Left") == 0) return HidNpadButton_Left;
+        if (strcmp(buttonName, "Right") == 0) return HidNpadButton_Right;
+        if (strcmp(buttonName, "L") == 0) return HidNpadButton_L;
+        if (strcmp(buttonName, "R") == 0) return HidNpadButton_R;
+        if (strcmp(buttonName, "ZL") == 0) return HidNpadButton_ZL;
+        if (strcmp(buttonName, "ZR") == 0) return HidNpadButton_ZR;
+        if (strcmp(buttonName, "StickL") == 0) return HidNpadButton_StickL;
+        if (strcmp(buttonName, "StickR") == 0) return HidNpadButton_StickR;
+        if (strcmp(buttonName, "Start") == 0) return HidNpadButton_Plus;
+        if (strcmp(buttonName, "Select") == 0) return HidNpadButton_Minus;
+        return 0;
+    }
 }
 
 // 静态成员变量定义
 TextAreaInfo MainMenu::s_TextAreaInfo;
-
-// 全局指针：用于在 UpdateMainMenu 中更新
-static tsl::elm::ListItem* g_EnableItem = nullptr;          // 开启连发列表项
+static tsl::elm::ListItem* s_AutoFireEnableItem = nullptr;          // 开启连发列表项
+static tsl::elm::ListItem* s_AutoRemapEnableItem = nullptr;          // 开启映射列表项
 
 
 // 静态方法：更新一次关键信息
 void MainMenu::UpdateMainMenu() {
     
-    // 获取当前运行程序的Title ID
+    // 开局检查游戏TID
+    // 目标是根据游戏TID，确认当前是否在游戏中
+    // 如果不在游戏中，那配置文件使用全局配置
+    // 如果在游戏中，那配置文件根据游戏配置文件中的设置来决定
+
     u64 currentTitleId = GameMonitor::getCurrentTitleId();
-    
-    // 检查是否满足运行条件
     s_TextAreaInfo.isInGame = (currentTitleId != 0) && SysModuleManager::isRunning();
-    
-    // 将Title ID转换为16位十六进制字符串
     snprintf(s_TextAreaInfo.gameId, sizeof(s_TextAreaInfo.gameId), "%016lX", currentTitleId);
-
-    // 默认使用全局配置
-    s_TextAreaInfo.isGlobalConfig = true;
-    // 默认是显示连发不开启
-    s_TextAreaInfo.isAutoEnabled = false;
-
-    /**
-        逻辑如下：
-        1. 这里读取信息只为了更新ovl插件的UI，实际开启由系统模块自己控制
-        2. 先看有没有独立配置文件，没有的话，就使用全局配置
-        3. 如果有独立配置文件，则读取独立配置文件的内容
-        4. 更新开启连发列表项的UI显示
-    */
-    std::string GameConfigPath = "/config/AutoKeyLoop/GameConfig/" + std::string(s_TextAreaInfo.gameId) + ".ini";
-    if (s_TextAreaInfo.isInGame) {
-        s_TextAreaInfo.GameConfigPath = GameConfigPath;
-        if(ult::isFile(GameConfigPath)) {
-            s_TextAreaInfo.isGlobalConfig = IniHelper::getBool("AUTOFIRE", "globconfig", true, GameConfigPath);
-            s_TextAreaInfo.isAutoEnabled = IniHelper::getBool("AUTOFIRE", "autoenable", false, GameConfigPath);
-        } else s_TextAreaInfo.isAutoEnabled = IniHelper::getBool("AUTOFIRE", "autoenable", false, CONFIG_PATH);
-    }
+    s_TextAreaInfo.GameConfigPath = "/config/AutoKeyLoop/GameConfig/" + std::string(s_TextAreaInfo.gameId) + ".ini";
+    s_TextAreaInfo.isGlobalConfig = IniHelper::getBool("AUTOFIRE", "globconfig", true, s_TextAreaInfo.GameConfigPath);
+    std::string SwitchConfigPath = (s_TextAreaInfo.isInGame && ult::isFile(s_TextAreaInfo.GameConfigPath)) ? s_TextAreaInfo.GameConfigPath : CONFIG_PATH;
+    s_TextAreaInfo.isAutoFireEnabled = IniHelper::getBool("AUTOFIRE", "autoenable", false, SwitchConfigPath);
+    s_TextAreaInfo.isAutoRemapEnabled = IniHelper::getBool("MAPPING", "autoenable", false, SwitchConfigPath);
+    if (s_AutoFireEnableItem != nullptr) s_AutoFireEnableItem->setValue(s_TextAreaInfo.isAutoFireEnabled ? "已开启" : "已关闭");
+    if (s_AutoRemapEnableItem != nullptr) s_AutoRemapEnableItem->setValue(s_TextAreaInfo.isAutoRemapEnabled ? "已开启" : "已关闭");
 
     // 读取按钮掩码值用于绘制按钮图标
     RefreshButtonsConfig();
-    
-    // 更新开启连发状态
-    if (g_EnableItem != nullptr) g_EnableItem->setValue(s_TextAreaInfo.isAutoEnabled ? "已开启" : "已关闭");
-
 }
 
-// 静态方法：刷新按钮配置（从配置文件中读取）
+// 刷新按钮配置，主要用于UI绘制
 void MainMenu::RefreshButtonsConfig() {
-    std::string GameConfigPath = "/config/AutoKeyLoop/GameConfig/" + std::string(s_TextAreaInfo.gameId) + ".ini";
-    std::string buttonsStr;
-    
-    if (s_TextAreaInfo.isGlobalConfig) {
-        buttonsStr = IniHelper::getString("AUTOFIRE", "buttons", "0", CONFIG_PATH);
-    } else {
-        buttonsStr = IniHelper::getString("AUTOFIRE", "buttons", "0", GameConfigPath);
-    }
-    
+    std::string ConfigPath = s_TextAreaInfo.isGlobalConfig ? CONFIG_PATH : s_TextAreaInfo.GameConfigPath;
+    std::string buttonsStr = IniHelper::getString("AUTOFIRE", "buttons", "0", ConfigPath);
     s_TextAreaInfo.buttons = std::stoull(buttonsStr);
+    // 读取映射配置
+    for (int i = 0; i < BUTTON_COUNT; i++) {
+        std::string temp = IniHelper::getString("MAPPING", s_ButtonMappings[i].source,
+                                                 s_ButtonMappings[i].source, ConfigPath);
+        strncpy(s_ButtonMappings[i].target, temp.c_str(), 7);
+        s_ButtonMappings[i].target[7] = '\0';
+    }
 }
 
-// 静态方法：连发功能开关
+// 连发功能开关
 void MainMenu::AutoKeyToggle() {
-    // 不在游戏中，不响应
     if (!s_TextAreaInfo.isInGame) return;
-
-    // 检查系统模块是否在运行
     bool isRunning = SysModuleManager::isRunning();
 
     // 如果当前是关闭状态，并且系统模块未运行，则启动它
-    if (!s_TextAreaInfo.isAutoEnabled && !isRunning) {
+    if (!s_TextAreaInfo.isAutoFireEnabled && !isRunning) {
         Result rc = SysModuleManager::startModule();
         if (R_FAILED(rc)) {
-            g_EnableItem->setValue("启动失败");
+            s_AutoFireEnableItem->setValue("检查系统模块");
             return;
         }
         svcSleepThread(20000000ULL);  // 等待20ms初始化
-        isRunning = true;  // 更新运行状态
+        isRunning = SysModuleManager::isRunning();
     }
     
-    // 如果当前是开启状态，并且系统模块未运行，则直接关闭
-    if (s_TextAreaInfo.isAutoEnabled && !isRunning) {
-        s_TextAreaInfo.isAutoEnabled = false;
-        g_EnableItem->setValue("已关闭");
+
+
+    // 如果当前是开启状态，且系统模块未运行，则直接关闭
+    if (s_TextAreaInfo.isAutoFireEnabled && !isRunning) {
+        s_AutoFireEnableItem->setValue("已关闭");
+        s_TextAreaInfo.isAutoFireEnabled = false;
         return;
     }
 
     // 根据状态发送命令
-    Result rc = s_TextAreaInfo.isAutoEnabled 
-        ? g_ipcManager.sendDisableCommand()   // 关闭
-        : g_ipcManager.sendEnableCommand();   // 开启
+    Result rc = s_TextAreaInfo.isAutoFireEnabled 
+        ? g_ipcManager.sendDisableAutoFireCommand()   // 关闭
+        : g_ipcManager.sendEnableAutoFireCommand();   // 开启
 
     if (R_FAILED(rc)) {
-        g_EnableItem->setValue("通信失败");
+        s_AutoFireEnableItem->setValue("IPC通信失败");
         return;
     }
 
-    // 更新状态
-    s_TextAreaInfo.isAutoEnabled = !s_TextAreaInfo.isAutoEnabled;
-    
-    g_EnableItem->setValue(s_TextAreaInfo.isAutoEnabled ? "已开启" : "已关闭");
-    
-    // 保存配置到独立游戏配置文件
+    // 切换状态，开变关-关变开
+    s_TextAreaInfo.isAutoFireEnabled = !s_TextAreaInfo.isAutoFireEnabled;
+    s_AutoFireEnableItem->setValue(s_TextAreaInfo.isAutoFireEnabled ? "已开启" : "已关闭");
     IniHelper::setBool("AUTOFIRE", "globconfig", s_TextAreaInfo.isGlobalConfig, s_TextAreaInfo.GameConfigPath);
-    IniHelper::setBool("AUTOFIRE", "autoenable", s_TextAreaInfo.isAutoEnabled, s_TextAreaInfo.GameConfigPath);
+    IniHelper::setBool("AUTOFIRE", "autoenable", s_TextAreaInfo.isAutoFireEnabled, s_TextAreaInfo.GameConfigPath);
 }
 
-// 静态方法：配置切换（全局/独立）
-void MainMenu::ConfigToggle() {
-    // 不在游戏中，不响应
+// 映射功能开关
+void MainMenu::AutoRemapToggle() {
     if (!s_TextAreaInfo.isInGame) return;
+    bool isRunning = SysModuleManager::isRunning();
+
+    // 如果当前是关闭状态，并且系统模块未运行，则启动它
+    if (!s_TextAreaInfo.isAutoRemapEnabled && !isRunning) {
+        Result rc = SysModuleManager::startModule();
+        if (R_FAILED(rc)) {
+            s_AutoRemapEnableItem->setValue("检查系统模块");
+            return;
+        }
+        svcSleepThread(20000000ULL);  // 等待20ms初始化
+        isRunning = SysModuleManager::isRunning();
+    }
     
-    // 切换全局/独立配置
-    s_TextAreaInfo.isGlobalConfig = !s_TextAreaInfo.isGlobalConfig;
-    
-    // 保存配置到独立游戏配置文件
+    // 如果当前是开启状态，且系统模块未运行，则直接关闭
+    if (s_TextAreaInfo.isAutoRemapEnabled && !isRunning) {
+        s_AutoRemapEnableItem->setValue("已关闭");
+        s_TextAreaInfo.isAutoRemapEnabled = false;
+        return;
+    }
+
+    // 根据状态发送命令
+    Result rc = s_TextAreaInfo.isAutoRemapEnabled 
+        ? g_ipcManager.sendDisableMappingCommand()   // 关闭
+        : g_ipcManager.sendEnableMappingCommand();   // 开启
+        
+    if (R_FAILED(rc)) {
+        s_AutoRemapEnableItem->setValue("IPC通信失败");
+        return;
+    }
+
+    // 切换状态，开变关-关变开
+    s_TextAreaInfo.isAutoRemapEnabled = !s_TextAreaInfo.isAutoRemapEnabled;
+    s_AutoRemapEnableItem->setValue(s_TextAreaInfo.isAutoRemapEnabled ? "已开启" : "已关闭");
     IniHelper::setBool("AUTOFIRE", "globconfig", s_TextAreaInfo.isGlobalConfig, s_TextAreaInfo.GameConfigPath);
-    IniHelper::setBool("AUTOFIRE", "autoenable", s_TextAreaInfo.isAutoEnabled, s_TextAreaInfo.GameConfigPath);
+    IniHelper::setBool("MAPPING", "autoenable", s_TextAreaInfo.isAutoRemapEnabled, s_TextAreaInfo.GameConfigPath);
+}
+
+// 配置切换（全局/独立）
+void MainMenu::ConfigToggle() {
+    if (!s_TextAreaInfo.isInGame) return;
+    s_TextAreaInfo.isGlobalConfig = !s_TextAreaInfo.isGlobalConfig;
+    IniHelper::setBool("AUTOFIRE", "globconfig", s_TextAreaInfo.isGlobalConfig, s_TextAreaInfo.GameConfigPath);
+    IniHelper::setBool("AUTOFIRE", "autoenable", s_TextAreaInfo.isAutoFireEnabled, s_TextAreaInfo.GameConfigPath);
+    IniHelper::setBool("MAPPING", "autoenable", s_TextAreaInfo.isAutoRemapEnabled, s_TextAreaInfo.GameConfigPath);
     
-    // 刷新按钮配置（切换配置后立即更新UI显示）
-    RefreshButtonsConfig();
+    // 刷新界面显示
+    UpdateMainMenu();
     
-    // 如果连发功能未开启，则不重启
-    if (!s_TextAreaInfo.isAutoEnabled) return;
+    // 如果连发功能或映射功能都未开启，则不重启
+    if (!s_TextAreaInfo.isAutoFireEnabled && !s_TextAreaInfo.isAutoRemapEnabled) return;
 
     // 如果系统模块未运行，则启动它
     if (!SysModuleManager::isRunning()) {
         Result rc = SysModuleManager::startModule();
         if (R_FAILED(rc)) {
-            g_EnableItem->setValue("启动失败");
+            s_AutoFireEnableItem->setValue("检查系统模块");
+            s_AutoRemapEnableItem->setValue("检查系统模块");
             return;
         }
         svcSleepThread(20000000ULL);  // 等待20ms初始化
     }
 
-    // 重启连发功能（让他重加载配置）
-    Result rc = g_ipcManager.sendRestartCommand();
+    // 发送重载配置命令
+    Result rc = g_ipcManager.sendReloadBasicCommand();
     if (R_FAILED(rc)) {
-        g_EnableItem->setValue("通信失败");
+        s_AutoFireEnableItem->setValue("IPC通信失败");
+        s_AutoRemapEnableItem->setValue("IPC通信失败");
         return;
     }
 }
@@ -182,12 +269,6 @@ MainMenu::MainMenu()
     // 初始化时更新文本区域信息
     UpdateMainMenu();
 }
-
-/*
-    注意：ovl插件中关于连发开关已启动的功能，只是UI的更新，所以异常状态下，是有可能出现状态不同步的
-    实际连发功能是否开启，还是需要看系统模块的真实状态，整个ovl中没有真正获取的方法，
-    我不太想通过ipc去读取，感觉没必要。
-*/
 
 // 创建用户界面
 tsl::elm::Element* MainMenu::createUI()
@@ -200,8 +281,8 @@ tsl::elm::Element* MainMenu::createUI()
     
     // 自定义头部绘制器
     frame->setHeader(new tsl::elm::CustomDrawer([](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
-        // 左侧：标题和版本（参考 EdiZon 坐标）
-        renderer->drawString("按键连发", false, 20, 50+2, 32, renderer->a(tsl::defaultOverlayColor));
+        // 左侧：标题和版本
+        renderer->drawString("按键助手", false, 20, 50+2, 32, renderer->a(tsl::defaultOverlayColor));
         renderer->drawString(APP_VERSION_STRING, false, 20, 50+23, 15, renderer->a(tsl::bannerVersionTextColor));
         
         // 右侧：两行信息（往左移，避免截断，屏幕可见宽度约615px）
@@ -212,6 +293,9 @@ tsl::elm::Element* MainMenu::createUI()
         renderer->drawString("配置:", false, 235, 61, 15, renderer->a(tsl::style::color::ColorText));
         const char* config = s_TextAreaInfo.isGlobalConfig ? "全局配置" : "独立配置";
         renderer->drawString(config, false, 275, 61, 15, renderer->a(tsl::style::color::ColorHighlight));
+
+        // 底部按钮（使用绝对坐标）
+        renderer->drawString("\uE0EE  关于", false, 280, 693, 23, renderer->a(tsl::style::color::ColorText));
 
     }));
 
@@ -225,74 +309,107 @@ tsl::elm::Element* MainMenu::createUI()
         
         // 如果在游戏中，绘制按键图标
         if (s_TextAreaInfo.isInGame) {
-            tsl::Color whiteColor = {0xFF, 0xFF, 0xFF, 0xFF};
-            tsl::Color lightBlueColor = {0x00, 0xDD, 0xFF, 0xFF};  // 亮天蓝色
+            tsl::Color whiteColor = {0xFF, 0xFF, 0xFF, 0xFF};          // 白色：未映射
+            tsl::Color blueColor = {0x00, 0xDD, 0xFF, 0xFF};           // 亮天蓝色：已映射
+            tsl::Color yellowColor = {0xFF, 0xFF, 0x00, 0xFF};         // 黄色：连发小点
             
-            const s32 buttonSize = 25;   // 按钮大小（缩小）
-            const s32 rowSpacing = 8;    // 行间距（缩小）
+            const s32 buttonSize = 25;   // 按钮大小（保持不变）
+            const s32 rowSpacing = 7;    // 行间距（8 × 0.9 ≈ 7）
             
             // === 水平位置计算 ===
             // 左侧：方向键组
-            s32 dpadLeftX = x + 35;      // 方向键左
-            s32 dpadCenterX = x + 70;    // 方向键上/下
-            s32 dpadRightX = x + 105;    // 方向键右
+            s32 dpadLeftX = x + 22;      // 方向键左（25 × 0.9 ≈ 22）
+            s32 dpadCenterX = x + 54;    // 方向键上/下（60 × 0.9 = 54）
+            s32 dpadRightX = x + 86;     // 方向键右（95 × 0.9 ≈ 86）
             
             // L/ZL列：在方向键右的右边，保持间距
-            s32 lColumnX = dpadRightX + 35;  // L和ZL垂直对齐
+            s32 lColumnX = dpadRightX + 32;  // L和ZL垂直对齐（35 × 0.9 ≈ 32）
             
-            // 右侧：ABXY按键组（保持原位）
-            s32 aButtonX = x + w - 35;    // A按键
-            s32 rightColumnX = x + w - 70;  // X和B按键（垂直对齐）
-            s32 yButtonX = x + w - 105;   // Y按键
+            // 右侧：ABXY按键组
+            s32 aButtonX = x + w - 40;    // A按键（45 × 0.9 ≈ 40）
+            s32 rightColumnX = x + w - 72;  // X和B按键（80 × 0.9 = 72）
+            s32 yButtonX = x + w - 104;   // Y按键（115 × 0.9 ≈ 104）
             
             // R/ZR列：在Y左边，保持间距
-            s32 rColumnX = yButtonX - 35;  // R和ZR垂直对齐
+            s32 rColumnX = yButtonX - 32;  // R和ZR垂直对齐（35 × 0.9 ≈ 32）
             
             // === 垂直位置计算 ===
-            const s32 layoutTotalHeight = 5 * buttonSize + 4 * rowSpacing;
+            const s32 layoutTotalHeight = 7 * buttonSize + 6 * rowSpacing;
             
             // 垂直居中
             s32 baseY = y + (h - layoutTotalHeight) / 2 + buttonSize - 10;
             
-            // === 根据 s_TextAreaInfo.buttons 显示按键颜色 ===
+            // === 定义 drawButton 函数（根据映射显示按键）===
+            auto drawButton = [&](const char* sourceName, s32 posX, s32 posY) {
+                // 查找映射
+                const char* targetIcon = nullptr;
+                const char* targetName = nullptr;
+                bool isMapped = false;
+                
+                for (int i = 0; i < BUTTON_COUNT; i++) {
+                    if (strcmp(s_ButtonMappings[i].source, sourceName) == 0) {
+                        targetIcon = getButtonIcon(s_ButtonMappings[i].target);
+                        targetName = s_ButtonMappings[i].target;
+                        isMapped = (strcmp(s_ButtonMappings[i].source, s_ButtonMappings[i].target) != 0);
+                        break;
+                    }
+                }
+                
+                if (!targetIcon) return;
+                
+                // 根据是否映射选择颜色
+                tsl::Color color = isMapped ? blueColor : whiteColor;
+                
+                // 绘制图标
+                renderer->drawString(targetIcon, false, posX, posY, buttonSize, 
+                                    renderer->a(color));
+                
+                // 检查目标按键是否有连发，绘制黄色小点
+                u64 flag = getButtonFlag(targetName);
+                if (s_TextAreaInfo.buttons & flag) {
+                    s32 dotX = posX + buttonSize - 3;  // 往右移动 2（-5 → -3）
+                    s32 dotY = posY - buttonSize + 3;  // 往上移动 2（+5 → +3）
+                    renderer->drawCircle(dotX, dotY, 3, true, renderer->a(yellowColor));
+                }
+            };
+            
+            // === 绘制按键布局 ===
             // 行1: ZL, ZR
             s32 row1Y = baseY;
-            renderer->drawString(ButtonIcon::ZL, false, lColumnX, row1Y, buttonSize, 
-                renderer->a((s_TextAreaInfo.buttons & HidNpadButton_ZL) ? lightBlueColor : whiteColor));
-            renderer->drawString(ButtonIcon::ZR, false, rColumnX, row1Y, buttonSize, 
-                renderer->a((s_TextAreaInfo.buttons & HidNpadButton_ZR) ? lightBlueColor : whiteColor));
+            drawButton("ZL", lColumnX, row1Y);
+            drawButton("ZR", rColumnX, row1Y);
             
             // 行2: L, R
             s32 row2Y = baseY + buttonSize + rowSpacing;
-            renderer->drawString(ButtonIcon::L, false, lColumnX, row2Y + 5, buttonSize, 
-                renderer->a((s_TextAreaInfo.buttons & HidNpadButton_L) ? lightBlueColor : whiteColor));
-            renderer->drawString(ButtonIcon::R, false, rColumnX, row2Y + 5, buttonSize, 
-                renderer->a((s_TextAreaInfo.buttons & HidNpadButton_R) ? lightBlueColor : whiteColor));
+            drawButton("L", lColumnX, row2Y + 9);
+            drawButton("R", rColumnX, row2Y + 9);
+            
+            // Select(-) 和 Start(+)：Y坐标在 ZR 和 R 之间
+            s32 selectStartY = (row1Y + (row2Y + 9)) / 2;
+            drawButton("Select", dpadLeftX, selectStartY);
+            drawButton("Start", aButtonX, selectStartY);
             
             // 行3: 方向键上, X
             s32 row3Y = baseY + 2 * (buttonSize + rowSpacing);
-            renderer->drawString(ButtonIcon::Up, false, dpadCenterX, row3Y, buttonSize, 
-                renderer->a((s_TextAreaInfo.buttons & HidNpadButton_Up) ? lightBlueColor : whiteColor));
-            renderer->drawString(ButtonIcon::X, false, rightColumnX, row3Y, buttonSize, 
-                renderer->a((s_TextAreaInfo.buttons & HidNpadButton_X) ? lightBlueColor : whiteColor));
+            drawButton("Up", dpadCenterX, row3Y);
+            drawButton("X", rightColumnX, row3Y);
             
             // 行4: 方向键左右, Y/A
             s32 row4Y = baseY + 3 * (buttonSize + rowSpacing);
-            renderer->drawString(ButtonIcon::Left, false, dpadLeftX, row4Y, buttonSize, 
-                renderer->a((s_TextAreaInfo.buttons & HidNpadButton_Left) ? lightBlueColor : whiteColor));
-            renderer->drawString(ButtonIcon::Right, false, dpadRightX, row4Y, buttonSize, 
-                renderer->a((s_TextAreaInfo.buttons & HidNpadButton_Right) ? lightBlueColor : whiteColor));
-            renderer->drawString(ButtonIcon::Y, false, yButtonX, row4Y, buttonSize, 
-                renderer->a((s_TextAreaInfo.buttons & HidNpadButton_Y) ? lightBlueColor : whiteColor));
-            renderer->drawString(ButtonIcon::A, false, aButtonX, row4Y, buttonSize, 
-                renderer->a((s_TextAreaInfo.buttons & HidNpadButton_A) ? lightBlueColor : whiteColor));
+            drawButton("Left", dpadLeftX, row4Y);
+            drawButton("Right", dpadRightX, row4Y);
+            drawButton("Y", yButtonX, row4Y);
+            drawButton("A", aButtonX, row4Y);
             
             // 行5: 方向键下, B
             s32 row5Y = baseY + 4 * (buttonSize + rowSpacing);
-            renderer->drawString(ButtonIcon::Down, false, dpadCenterX, row5Y, buttonSize, 
-                renderer->a((s_TextAreaInfo.buttons & HidNpadButton_Down) ? lightBlueColor : whiteColor));
-            renderer->drawString(ButtonIcon::B, false, rightColumnX, row5Y, buttonSize, 
-                renderer->a((s_TextAreaInfo.buttons & HidNpadButton_B) ? lightBlueColor : whiteColor));
+            drawButton("Down", dpadCenterX, row5Y);
+            drawButton("B", rightColumnX, row5Y);
+            
+            // 行6: StickL, StickR
+            s32 row6Y = baseY + 5 * (buttonSize + rowSpacing);
+            drawButton("StickL", lColumnX, row6Y);
+            drawButton("StickR", rColumnX, row6Y);
 
         } else {
             // 不在游戏中，绘制相关信息（使用红色，水平和垂直居中）
@@ -337,26 +454,25 @@ tsl::elm::Element* MainMenu::createUI()
 
     // ============= 下半部分：列表区域 =============
     // 创建开启连发列表项
-    g_EnableItem = new tsl::elm::ListItem("开启连发", s_TextAreaInfo.isAutoEnabled ? "已开启" : "已关闭");
-    g_EnableItem->setClickListener([](u64 keys) {
+    s_AutoFireEnableItem = new tsl::elm::ListItem("按键连发", s_TextAreaInfo.isAutoFireEnabled ? "已开启" : "已关闭");
+    s_AutoFireEnableItem->setClickListener([](u64 keys) {
         if (keys & HidNpadButton_A) {
             MainMenu::AutoKeyToggle();
             return true;
         }
         return false;
     });
-    mainList->addItem(g_EnableItem);
+    mainList->addItem(s_AutoFireEnableItem);
 
-    // 创建设置列表项
-    auto listItemSetting = new tsl::elm::ListItem("连发设置",">");
-    listItemSetting->setClickListener([this](u64 keys) {
+    s_AutoRemapEnableItem = new tsl::elm::ListItem("按键映射", s_TextAreaInfo.isAutoRemapEnabled ? "已开启" : "已关闭");
+    s_AutoRemapEnableItem->setClickListener([](u64 keys) {
         if (keys & HidNpadButton_A) {
-            tsl::changeTo<AutoKeySetting>(s_TextAreaInfo.gameId);
+            MainMenu::AutoRemapToggle();
             return true;
         }
         return false;
     });
-    mainList->addItem(listItemSetting);
+    mainList->addItem(s_AutoRemapEnableItem);
 
     // 创建切换配置列表项
     auto ConfigSwitchItem = new tsl::elm::ListItem("切换配置",">");
@@ -368,23 +484,31 @@ tsl::elm::Element* MainMenu::createUI()
         return false;
     });
     mainList->addItem(ConfigSwitchItem);
- 
-    // 创建关于插件列表项
-    auto listItemAbout = new tsl::elm::ListItem("关于插件",">");
-    // 为关于插件列表项添加点击事件处理
-    listItemAbout->setClickListener([](u64 keys) {
+
+    // 创建设置列表项
+    auto listItemSetting = new tsl::elm::ListItem("功能设置",">");
+    listItemSetting->setClickListener([this](u64 keys) {
         if (keys & HidNpadButton_A) {
-            // 切换到关于插件界面
-            tsl::changeTo<AboutPlugin>();
+            tsl::changeTo<SettingMenu>();
             return true;
         }
         return false;
     });
-    mainList->addItem(listItemAbout);
+    mainList->addItem(listItemSetting);
     
     // 将主列表设置为框架的内容
     frame->setContent(mainList);
 
     // 返回创建的界面元素
     return frame;
+}
+
+// 处理输入事件
+bool MainMenu::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, 
+    HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) {
+    if (keysDown & HidNpadButton_Right) {
+        tsl::changeTo<AboutPlugin>();
+        return true;
+    }
+    return false;
 }

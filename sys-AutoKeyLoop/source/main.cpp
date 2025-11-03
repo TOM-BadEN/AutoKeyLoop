@@ -29,19 +29,14 @@ void __libnx_initheap(void) {
 
 void __appInit(void) {
   smInitialize();
-  
-  // 先初始化 setsys，获取版本后立即退出
   setsysInitialize();
   SetSysFirmwareVersion fw;
   if (R_SUCCEEDED(setsysGetFirmwareVersion(&fw)))
       hosversionSet(MAKEHOSVERSION(fw.major, fw.minor, fw.micro));
   setsysExit();
-  
-  // 初始化 set 服务，设置多语言，立即退出
   setInitialize();
   getSetNotifLanguage();
   setExit();
-  
   fsInitialize();
   fsdevMountSdmc();
   hidInitialize();
@@ -49,17 +44,19 @@ void __appInit(void) {
   hidsysInitialize();
   pmdmntInitialize();
   pmshellInitialize();
+  pdmqryInitialize();
 }
 
 void __appExit(void) {
+  pdmqryExit();
   pmshellExit();
-  pmdmntExit();     // 8. 进程管理服务（最后初始化的，最先退出）
-  hidsysExit();     // 7. hidsys清理
-  hiddbgExit();     // 6. hiddbg清理
-  hidExit();        // 5. hid清理
-  fsdevUnmountAll(); // 4. 卸载文件系统
-  fsExit();         // 3. 文件系统服务
-  smExit();         // 1. sm服务（最先初始化的，最后退出）
+  pmdmntExit();     
+  hidsysExit();     
+  hiddbgExit();     
+  hidExit();        
+  fsdevUnmountAll(); 
+  fsExit();         
+  smExit();         
 }
 
 }

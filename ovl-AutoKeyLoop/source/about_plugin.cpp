@@ -18,8 +18,8 @@ tsl::elm::Element* AboutPlugin::createUI()
     auto aboutText = new tsl::elm::CustomDrawer([](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
         // 定义关于插件的文本内容
         const char* aboutInfo[] = {
-            "AutoKeyLoop",
-            " • 按键连发",
+            "KeyX",
+            " • 按键助手",
             "",
             "作者：",
             " • TOM",
@@ -28,15 +28,16 @@ tsl::elm::Element* AboutPlugin::createUI()
             " • 1051287661",
             "",
             "功能介绍：",
-            " • 只支持LITE机型使用",
+            " • 无视游戏限制自由分配按键",
+            " • 连发功能仅LITE机型可使用",
             " • 可自定义连发速度和间隔",
             " • 提供全局和游戏专用配置",
             "",
             "内存占用：",
-            " • 待机占用 450 KB",
-            " • 开启连发功能占用 706 KB",
-            " • 通知占用 688 KB",
-            " • 通知只有触发时占用内存",
+            " • 待机和映射功能占用 450 KB",
+            " • 开启连发功能时占用 706 KB",
+            " • 通知弹窗触发时占用 688 KB",
+            " • 通知弹窗仅在触发时占用内存",
             "",
             "感谢使用本插件！"
         };
@@ -56,8 +57,7 @@ tsl::elm::Element* AboutPlugin::createUI()
         // 绘制文本内容
         for (size_t i = 0; i < lineCount; i++) {
             s32 textY = startY + i * lineHeight;
-            if (textY + lineHeight > y + h - 10) break; // 防止超出显示区域
-            
+
             // 根据行号和内容类型选择颜色和字体大小
             tsl::Color textColor = {0xFF, 0xFF, 0xFF, 0xFF}; // 默认白色
             s32 currentFontSize = fontSize;
@@ -69,6 +69,8 @@ tsl::elm::Element* AboutPlugin::createUI()
             } else if (i == 1) { // 第1行：白色，大字体
                 textColor = {0xFF, 0xFF, 0xFF, 0xFF}; // 白色
                 currentFontSize = fontSize;
+            } else if (i == 11) { // 第11行：红色
+                textColor = {0xFF, 0x55, 0x55, 0xFF};
             } else if (strstr(aboutInfo[i], "：") != nullptr || strstr(aboutInfo[i], "！") != nullptr ) { // 带冒号的行：亮蓝色
                 textColor = {0x66, 0xCC, 0xFF, 0xFF}; // 亮蓝色
             } else { // 不带冒号的行：白色
@@ -87,4 +89,14 @@ tsl::elm::Element* AboutPlugin::createUI()
 
     // 返回创建的界面元素
     return frame;
+}
+
+// 处理输入事件
+bool AboutPlugin::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, 
+    HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) {
+    if (keysDown & HidNpadButton_Left) {
+        tsl::goBack();
+        return true;
+    }
+    return false;
 }
