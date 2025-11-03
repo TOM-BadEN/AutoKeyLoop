@@ -1,8 +1,0 @@
-minIni.o: \
- D:/msys64/home/18084/KeyX/sys-KeyX/lib/minIni-nx/source/minIni.c \
- D:/msys64/home/18084/KeyX/sys-KeyX/lib/minIni-nx/include/minIni.h \
- D:/msys64/home/18084/KeyX/sys-KeyX/lib/minIni-nx/include/minGlue.h \
- D:/msys64/home/18084/KeyX/sys-KeyX/lib/minIni-nx/include/minGlue-nx.h
-D:/msys64/home/18084/KeyX/sys-KeyX/lib/minIni-nx/include/minIni.h:
-D:/msys64/home/18084/KeyX/sys-KeyX/lib/minIni-nx/include/minGlue.h:
-D:/msys64/home/18084/KeyX/sys-KeyX/lib/minIni-nx/include/minGlue-nx.h:
