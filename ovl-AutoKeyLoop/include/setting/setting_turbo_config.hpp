@@ -20,6 +20,8 @@ class SettingTurboButton : public tsl::Gui
 public:
     SettingTurboButton(const char* configPath, bool isGlobal);
     virtual tsl::elm::Element* createUI() override;
+    virtual bool handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, 
+        HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) override;
     
 private:
     const char* m_configPath;   // 配置文件路径（只读，不需要复制）

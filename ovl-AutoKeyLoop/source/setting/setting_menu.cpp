@@ -4,6 +4,7 @@
 #include "ini_helper.hpp"
 #include "ipc_manager.hpp"
 #include "sysmodule_manager.hpp"
+#include "main_menu.hpp"
 
 // 配置文件路径常量
 constexpr const char* CONFIG_PATH = "/config/AutoKeyLoop/config.ini";
@@ -97,5 +98,16 @@ tsl::elm::Element* SettingMenu::createUI() {
         
     frame->setContent(list);
     return frame;
+}
+
+bool SettingMenu::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, 
+    HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) {
+    
+    // 监控 B 键返回，每次返回前刷新主页数据
+    if (keysDown & HidNpadButton_B) {
+        MainMenu::UpdateMainMenu();
+    }
+    
+    return false;  // 让默认的返回逻辑继续执行
 }
 

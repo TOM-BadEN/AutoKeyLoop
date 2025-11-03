@@ -32,21 +32,13 @@ private:
 class SettingRemapEdit : public tsl::Gui 
 {
 public:
-    SettingRemapEdit(int buttonIndex, int currentIndex = 0);
+    SettingRemapEdit(int buttonIndex);
     virtual tsl::elm::Element* createUI() override;
     virtual bool handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, 
         HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) override;
     
 private:
     int m_buttonIndex;          // 要修改的按键索引（0-15）
-    int m_currentIndex;         // 当前滚轮位置（0-15）
     bool m_needRefresh = false; // 需要刷新标志
-    
-    // 保存列表项指针数组，用于动态更新
-    static constexpr int VISIBLE_ITEMS = 7;
-    tsl::elm::ListItem* m_listItems[VISIBLE_ITEMS] = {nullptr};
-    
-    // 更新所有列表项的显示
-    void updateListItems();
 };
 
