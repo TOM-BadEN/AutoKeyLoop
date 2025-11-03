@@ -6,7 +6,7 @@ https://github.com/user-attachments/assets/2540f1d5-5294-489f-b85a-4b96806365bc
 # 注意
 
 - 映射功能全机型支持
-- <span style="color: red;">**连发功能仅支持LITE机型**</span>
+- **连发功能仅支持LITE机型**
 
 # KeyX 按键助手
 
@@ -25,7 +25,7 @@ Nintendo Switch 按键助手，支持连发与按键重新分配，拥有全局�
 
 - 支持 16 个按键互相映射 (A/B/X/Y/L/R/ZL/ZR/十字键/SELECT/START/L3/R3)
 - 与连发功能可同时启用，不会有冲突
-- <span style="color: red;">**完美避开系统关于按键修改后的警告弹窗**</span>
+- **完美避开系统关于按键修改后的警告弹窗**
 - 全局配置和游戏独立配置
 - 自动记忆开关状态
 
@@ -43,7 +43,7 @@ Nintendo Switch 按键助手，支持连发与按键重新分配，拥有全局�
 
 - 系统模块仅占用 297 KB
 - 弹窗额外占用 688 KB
-- <span style="color: red;">**弹窗只有触发的时候才有内存占用**</span>
+- **弹窗只有触发的时候才有内存占用**
 
 ## 安装
 
