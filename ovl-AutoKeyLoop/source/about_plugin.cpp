@@ -29,13 +29,13 @@ tsl::elm::Element* AboutPlugin::createUI()
             "",
             "功能介绍：",
             " • 无视游戏限制自由分配按键",
+            " • 映射和连发同时使用无冲突",
             " • 连发功能仅LITE机型可使用",
             " • 可自定义连发速度和间隔",
             " • 提供全局和游戏专用配置",
             "",
             "内存占用：",
-            " • 待机和映射功能占用 450 KB",
-            " • 开启连发功能时占用 706 KB",
+            " • 系统模块内存仅占用 297 KB",
             " • 通知弹窗触发时占用 688 KB",
             " • 通知弹窗仅在触发时占用内存",
             "",
@@ -69,7 +69,7 @@ tsl::elm::Element* AboutPlugin::createUI()
             } else if (i == 1) { // 第1行：白色，大字体
                 textColor = {0xFF, 0xFF, 0xFF, 0xFF}; // 白色
                 currentFontSize = fontSize;
-            } else if (i == 11) { // 第11行：红色
+            } else if (i == 12) { // 第12行：红色
                 textColor = {0xFF, 0x55, 0x55, 0xFF};
             } else if (strstr(aboutInfo[i], "：") != nullptr || strstr(aboutInfo[i], "！") != nullptr ) { // 带冒号的行：亮蓝色
                 textColor = {0x66, 0xCC, 0xFF, 0xFF}; // 亮蓝色

@@ -75,7 +75,7 @@ tsl::elm::Element* SettingMenu::createUI() {
     auto ItemModuleManager = new tsl::elm::CategoryHeader(" 功能模块管理 切换自启动 开关");
     list->addItem(ItemModuleManager);
     list->addItem(new tsl::elm::CustomDrawer([](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
-        renderer->drawString("  待机占用 450KB，连发时占用 706KB", false, x + 5, y + 20-7, 16, (tsl::highlightColor2));
+        renderer->drawString("  系统模块仅占用 297 KB", false, x + 5, y + 20-7, 16, (tsl::highlightColor2));
     }), 30);
 
     auto listItemTurboModule = new tsl::elm::ListItem("系统模块", descriptions[m_running][m_hasFlag]);
