@@ -1,4 +1,4 @@
-[🇨🇳 中文](#中文) | [🇬🇧 English](#english)
+[🇨🇳 中文](#中文) | [EN English](#english)
 
 https://github.com/user-attachments/assets/2540f1d5-5294-489f-b85a-4b96806365bc
 
