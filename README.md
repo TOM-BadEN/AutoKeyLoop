@@ -10,7 +10,7 @@ https://github.com/user-attachments/assets/2540f1d5-5294-489f-b85a-4b96806365bc
 
 # KeyX 按键助手
 
-Nintendo Switch 按键连发插件，支持全局和游戏独立配置。
+Nintendo Switch 按键助手，支持连发与按键重新分配，拥有全局或游戏独立配置，根据记忆自动启动功能。
 由特斯拉插件与系统模块两部分组成。
 
 ## 功能
