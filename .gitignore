@@ -28,3 +28,9 @@ config.ini
 01002B30028F6000.ini
 /sys-AutoKeyLoop/参考项目-SaltyNX
 /sys-AutoKeyLoop/参考项目-Status-Monitor-Overlay
+/ovl-KeyX/build
+ovl-KeyX/ovl-KeyX.elf
+ovl-KeyX/ovl-KeyX.nacp
+ovl-KeyX/ovl-KeyX.ovl
+/sys-KeyX/build
+/sys-KeyX/out
