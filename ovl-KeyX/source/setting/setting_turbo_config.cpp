@@ -242,7 +242,7 @@ tsl::elm::Element* SettingTurboButton::createUI() {
         bool isSelected = (s_TurboButtons & btn.flag) != 0;
         
         // 拼接按键名称和图标
-        std::string buttonName = std::string(btn.name) + "  " + btn.unicode;
+        std::string buttonName = ult::i18n(btn.name) + "  " + btn.unicode;
         auto item = new tsl::elm::ToggleListItem(buttonName, isSelected);
         
         item->setStateChangedListener([this, btn](bool state) {
