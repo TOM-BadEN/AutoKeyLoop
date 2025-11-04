@@ -239,9 +239,6 @@ void MainMenu::ConfigToggle() {
     
     // 刷新界面显示
     UpdateMainMenu();
-    
-    // 如果连发功能或映射功能都未开启，则不重启
-    if (!s_TextAreaInfo.isAutoFireEnabled && !s_TextAreaInfo.isAutoRemapEnabled) return;
 
     // 如果系统模块未运行，则启动它
     if (!SysModuleManager::isRunning()) {
