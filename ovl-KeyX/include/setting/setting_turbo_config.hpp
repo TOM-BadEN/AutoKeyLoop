@@ -9,7 +9,7 @@ public:
     
 private:
     bool m_isGlobal;  // true=全局配置, false=独立配置
-    char m_gameName[32];  // 当前游戏名称
+    char m_gameName[64];  // 当前游戏名称
     char m_ConfigPath[256];  // 配置文件路径
     bool m_TurboSpeed;  // 是否高速连发
 };

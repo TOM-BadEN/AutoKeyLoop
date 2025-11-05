@@ -150,27 +150,6 @@ void MainMenu::RefreshButtonsConfig() {
 // 连发功能开关
 void MainMenu::AutoKeyToggle() {
     if (!s_TextAreaInfo.isInGame) return;
-    bool isRunning = SysModuleManager::isRunning();
-
-    // 如果当前是关闭状态，并且系统模块未运行，则启动它
-    if (!s_TextAreaInfo.isAutoFireEnabled && !isRunning) {
-        Result rc = SysModuleManager::startModule();
-        if (R_FAILED(rc)) {
-            s_AutoFireEnableItem->setValue("检查系统模块");
-            return;
-        }
-        svcSleepThread(20000000ULL);  // 等待20ms初始化
-        isRunning = SysModuleManager::isRunning();
-    }
-    
-
-
-    // 如果当前是开启状态，且系统模块未运行，则直接关闭
-    if (s_TextAreaInfo.isAutoFireEnabled && !isRunning) {
-        s_AutoFireEnableItem->setValue("已关闭");
-        s_TextAreaInfo.isAutoFireEnabled = false;
-        return;
-    }
 
     // 根据状态发送命令
     Result rc = s_TextAreaInfo.isAutoFireEnabled 
@@ -192,25 +171,6 @@ void MainMenu::AutoKeyToggle() {
 // 映射功能开关
 void MainMenu::AutoRemapToggle() {
     if (!s_TextAreaInfo.isInGame) return;
-    bool isRunning = SysModuleManager::isRunning();
-
-    // 如果当前是关闭状态，并且系统模块未运行，则启动它
-    if (!s_TextAreaInfo.isAutoRemapEnabled && !isRunning) {
-        Result rc = SysModuleManager::startModule();
-        if (R_FAILED(rc)) {
-            s_AutoRemapEnableItem->setValue("检查系统模块");
-            return;
-        }
-        svcSleepThread(20000000ULL);  // 等待20ms初始化
-        isRunning = SysModuleManager::isRunning();
-    }
-    
-    // 如果当前是开启状态，且系统模块未运行，则直接关闭
-    if (s_TextAreaInfo.isAutoRemapEnabled && !isRunning) {
-        s_AutoRemapEnableItem->setValue("已关闭");
-        s_TextAreaInfo.isAutoRemapEnabled = false;
-        return;
-    }
 
     // 根据状态发送命令
     Result rc = s_TextAreaInfo.isAutoRemapEnabled 
@@ -239,17 +199,6 @@ void MainMenu::ConfigToggle() {
     
     // 刷新界面显示
     UpdateMainMenu();
-
-    // 如果系统模块未运行，则启动它
-    if (!SysModuleManager::isRunning()) {
-        Result rc = SysModuleManager::startModule();
-        if (R_FAILED(rc)) {
-            s_AutoFireEnableItem->setValue("检查系统模块");
-            s_AutoRemapEnableItem->setValue("检查系统模块");
-            return;
-        }
-        svcSleepThread(20000000ULL);  // 等待20ms初始化
-    }
 
     // 发送重载配置命令
     Result rc = g_ipcManager.sendReloadBasicCommand();

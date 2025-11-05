@@ -34,9 +34,10 @@ private:
     /**
      * 通用命令发送方法 - 连接、发送、断开
      * @param cmd_id 命令ID
+     * @param auto_start 如果系统模块未运行，是否尝试自动启动
      * @return Result 0=成功，其他=失败
      */
-    Result SendCommand(u64 cmd_id);
+    Result SendCommand(u64 cmd_id, bool auto_start = false);
 
 public:
     /**

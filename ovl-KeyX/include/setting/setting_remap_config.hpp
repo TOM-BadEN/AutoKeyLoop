@@ -10,7 +10,7 @@ public:
         HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) override;
     
 private:
-    char m_gameName[32];        // 当前游戏名称
+    char m_gameName[64];        // 当前游戏名称
     
     void loadMappings();        // 读取映射配置
 };
