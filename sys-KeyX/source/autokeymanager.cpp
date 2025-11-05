@@ -253,7 +253,8 @@ void AutoKeyManager::HandleTurboRunning(u64 normal_buttons, u64 autokey_buttons)
     }
     // autokey_buttons 可能为0（松开周期污染），但状态机继续运行保持节奏
     u64 final_buttons = m_AutoKeyIsPressed ? (normal_buttons | autokey_buttons) : normal_buttons;
-    ApplyHdlsState(final_buttons);
+    u64 final_buttons_jc = m_AutoKeyIsPressed ? autokey_buttons : 0;
+    ApplyHdlsState(final_buttons, final_buttons_jc);
 }
 
 // 事件处理：停止连发
@@ -261,30 +262,25 @@ void AutoKeyManager::HandleTurboStop(u64 physical_buttons) {
     // 重置状态机
     m_AutoKeyLastSwitchTime = 0;
     m_AutoKeyIsPressed = false;
-    // 透传完整物理状态
-    ApplyHdlsState(physical_buttons & ~STICK_PSEUDO_BUTTON_MASK);
+    ApplyHdlsState(physical_buttons, 0);
 }
 
 // 状态写入：统一的HDLS状态应用函数
-void AutoKeyManager::ApplyHdlsState(u64 buttons) {
+void AutoKeyManager::ApplyHdlsState(u64 buttons, u64 buttons_jc) {
     for (int i = 0; i < m_StateList.total_entries; i++) {
         memset(&m_StateList.entries[i].state, 0, sizeof(HiddbgHdlsState));
         
         // 获取设备类型（显式转换 u8 到 HidDeviceType）
         HidDeviceType device_type = (HidDeviceType)m_StateList.entries[i].device.deviceType;
-        
+        // jc除了连发的那个按键，其他的全部归0，虽然用起来不好用，但是总比不能用好
         // 根据设备类型过滤按键和摇杆
         if (IsLeftController(device_type)) {
             // 左 JoyCon：只发送左边按键+左摇杆
-            m_StateList.entries[i].state.buttons = buttons & LEFT_JOYCON_BUTTONS;
-            m_StateList.entries[i].state.analog_stick_l = m_PhysicalState.analog_stick_l;
-            // analog_stick_r 保持为 0
+            m_StateList.entries[i].state.buttons = buttons_jc & LEFT_JOYCON_BUTTONS;
         }
         else if (IsRightController(device_type)) {
             // 右 JoyCon：只发送右边按键+右摇杆
-            m_StateList.entries[i].state.buttons = buttons & RIGHT_JOYCON_BUTTONS;
-            m_StateList.entries[i].state.analog_stick_r = m_PhysicalState.analog_stick_r;
-            // analog_stick_l 保持为 0
+            m_StateList.entries[i].state.buttons = buttons_jc & RIGHT_JOYCON_BUTTONS;
         }
         else {
             // 完整手柄（Pro、Lite、SNES等）：发送所有按键+双摇杆
@@ -300,9 +296,9 @@ void AutoKeyManager::ApplyHdlsState(u64 buttons) {
 void AutoKeyManager::HijackAndModifyState() {
     if (!m_HdlsInitialized) return;
     // 计算按键分类
-    u64 physical_buttons = m_PhysicalState.buttons;
-    u64 autokey_buttons = physical_buttons & m_AutoKeyWhitelistMask & ~STICK_PSEUDO_BUTTON_MASK;
-    u64 normal_buttons = physical_buttons & ~m_AutoKeyWhitelistMask & ~STICK_PSEUDO_BUTTON_MASK;
+    u64 physical_buttons = m_PhysicalState.buttons & ~STICK_PSEUDO_BUTTON_MASK;
+    u64 autokey_buttons = physical_buttons & m_AutoKeyWhitelistMask;
+    u64 normal_buttons = physical_buttons & ~m_AutoKeyWhitelistMask;
     // 判定当前事件
     TurboEvent event = DetermineTurboEvent(autokey_buttons);
     switch (event) {

@@ -96,5 +96,5 @@ private:
     void HandleTurboStop(u64 physical_buttons);
     
     // 状态写入
-    void ApplyHdlsState(u64 buttons);
+    void ApplyHdlsState(u64 buttons, u64 buttons_jc);
 };
