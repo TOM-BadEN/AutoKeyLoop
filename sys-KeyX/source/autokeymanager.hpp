@@ -30,6 +30,7 @@ private:
     // 连发状态机
     bool m_AutoKeyIsPressed;
     u64 m_AutoKeyLastSwitchTime;
+    u64 m_InitialPressTime;     // 首次按下时间戳（用于延迟启动）
     
     // 连发按键池（白名单）- 只有这些按键允许连发
     u64 m_AutoKeyWhitelistMask;

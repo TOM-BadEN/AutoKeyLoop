@@ -63,7 +63,7 @@ tsl::elm::Element* SettingRemap::createUI() {
     auto ItemWarningSetting = new tsl::elm::CategoryHeader(" 注意事项");
     list->addItem(ItemWarningSetting);
     list->addItem(new tsl::elm::CustomDrawer([](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
-        renderer->drawString("  映射功能不占用任何内存", false, x + 5, y + 20-7, 16, (tsl::warningTextColor));
+        renderer->drawString("  映射功能不占用任何内存", false, x + 5, y + 20-7, 16, (tsl::highlightColor2));
     }), 30);
 
     

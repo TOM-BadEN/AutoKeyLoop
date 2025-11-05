@@ -126,7 +126,7 @@ void App::Loop() {
             case GameEvent::Running:
                 OnGameRunning(game.tid);
                 if (m_CurrentAutoEnable || m_CurrentAutoRemapEnable) svcSleepThread(100000000ULL);
-                else svcSleepThread(500000000ULL);
+                else for (int i = 0; i < 5 && !m_loop_error; ++i) svcSleepThread(100000000ULL);
                 continue;
             case GameEvent::Launched:
                 OnGameLaunched(game.tid);

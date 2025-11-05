@@ -58,6 +58,7 @@ AutoKeyManager::AutoKeyManager(u64 buttons, int presstime, int fireinterval) {
     m_AutoKeyWhitelistMask = buttons;
     m_PressDurationNs = (u64)presstime * 1000000ULL;    // 毫秒转纳秒
     m_ReleaseDurationNs = (u64)fireinterval * 1000000ULL; // 毫秒转纳秒
+    m_InitialPressTime = 0;
     // 初始化HDLS工作缓冲区（核心，需要这个来虚拟输入）
     Result rc = hiddbgAttachHdlsWorkBuffer(&m_HdlsSessionId, hdls_work_buffer, sizeof(hdls_work_buffer));
     if (R_FAILED(rc)) return;
@@ -88,6 +89,7 @@ void AutoKeyManager::UpdateConfig(u64 buttons, int presstime, int fireinterval) 
     m_AutoKeyWhitelistMask = buttons;
     m_PressDurationNs = (u64)presstime * 1000000ULL;    // 毫秒转纳秒
     m_ReleaseDurationNs = (u64)fireinterval * 1000000ULL; // 毫秒转纳秒
+    m_InitialPressTime = 0;
     // 重置连发状态，让新配置立即生效（下次按键时重新计时）
     m_AutoKeyLastSwitchTime = 0;
     m_AutoKeyIsPressed = false;
@@ -228,7 +230,14 @@ AutoKeyManager::TurboEvent AutoKeyManager::DetermineTurboEvent(u64 autokey_butto
     bool turbo_active = (m_AutoKeyLastSwitchTime != 0);  // 状态机运行中
     if (turbo_active && CheckReleaseInWindow(autokey_buttons)) return TurboEvent::TURBO_STOP;
     else if (turbo_active) return TurboEvent::TURBO_RUNNING;
-    else if (has_autokey) return TurboEvent::TURBO_START;
+    else if (has_autokey) {
+        if (m_InitialPressTime == 0) m_InitialPressTime = armGetSystemTick();
+        u64 elapsed_ns = armTicksToNs(armGetSystemTick() - m_InitialPressTime);
+        if (elapsed_ns < 200000000ULL) return TurboEvent::NO_ACTION;
+        m_InitialPressTime = 0;
+        return TurboEvent::TURBO_START;
+    }
+    m_InitialPressTime = 0;
     return TurboEvent::NO_ACTION;
 }
 
@@ -262,6 +271,7 @@ void AutoKeyManager::HandleTurboStop(u64 physical_buttons) {
     // 重置状态机
     m_AutoKeyLastSwitchTime = 0;
     m_AutoKeyIsPressed = false;
+    m_InitialPressTime = 0;
     ApplyHdlsState(physical_buttons, 0);
 }
 

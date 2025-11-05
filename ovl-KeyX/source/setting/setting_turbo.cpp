@@ -63,7 +63,13 @@ tsl::elm::Element* SettingTurbo::createUI() {
     auto ItemWarningSetting = new tsl::elm::CategoryHeader(" 注意事项");
     list->addItem(ItemWarningSetting);
     list->addItem(new tsl::elm::CustomDrawer([](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
-        renderer->drawString("  非LITE用户，请勿使用连发功能", false, x + 5, y + 20-7, 16, (tsl::warningTextColor));
+        renderer->drawString("  连发功能已适配全部机型，欢迎使用", false, x + 5, y + 20-7, 16, (tsl::highlightColor2));
+    }), 30);
+    list->addItem(new tsl::elm::CustomDrawer([](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
+        renderer->drawString("  非LITE机型的连发体验可能不够丝滑", false, x + 5, y + 20-7, 16, (tsl::highlightColor2));
+    }), 30);
+    list->addItem(new tsl::elm::CustomDrawer([](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
+        renderer->drawString("  已尽全力但底层限制，LITE连发完美", false, x + 5, y + 20-7, 16, (tsl::highlightColor2));
     }), 30);
     
     frame->setContent(list);
