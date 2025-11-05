@@ -46,12 +46,12 @@ SettingTurboConfig::SettingTurboConfig(bool isGlobal, u64 currentTitleId)
     if (!m_isGlobal) {
         // 获取当前游戏名称
         GameMonitor::getTitleIdGameName(currentTitleId, m_gameName);
-        // 生成当前游戏配置文件路径 示例：/config/AutoKeyLoop/GameConfig/01007EF00011E000.ini
-        snprintf(m_ConfigPath, sizeof(m_ConfigPath), "/config/AutoKeyLoop/GameConfig/%016lX.ini", currentTitleId);
+        // 生成当前游戏配置文件路径 示例：/config/KeyX/GameConfig/01007EF00011E000.ini
+        snprintf(m_ConfigPath, sizeof(m_ConfigPath), "/config/KeyX/GameConfig/%016lX.ini", currentTitleId);
     }
     else {
-        // 生成全局配置文件路径 示例：/config/AutoKeyLoop/config.ini
-        snprintf(m_ConfigPath, sizeof(m_ConfigPath), "/config/AutoKeyLoop/config.ini");
+        // 生成全局配置文件路径 示例：/config/KeyX/config.ini
+        snprintf(m_ConfigPath, sizeof(m_ConfigPath), "/config/KeyX/config.ini");
     }
 
     // 读取速度配置（0=普通，1=高速）

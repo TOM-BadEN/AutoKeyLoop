@@ -13,7 +13,7 @@
 #define LIST_ITEM_HEIGHT 70        // 列表项高度
 #define SPACING 20  // 间距常量
 
-constexpr const char* CONFIG_PATH = "/config/AutoKeyLoop/config.ini";
+constexpr const char* CONFIG_PATH = "/config/KeyX/config.ini";
 
 // Switch 按键 Unicode 图标
 namespace ButtonIcon {
@@ -121,7 +121,7 @@ void MainMenu::UpdateMainMenu() {
     u64 currentTitleId = GameMonitor::getCurrentTitleId();
     s_TextAreaInfo.isInGame = (currentTitleId != 0) && SysModuleManager::isRunning();
     snprintf(s_TextAreaInfo.gameId, sizeof(s_TextAreaInfo.gameId), "%016lX", currentTitleId);
-    s_TextAreaInfo.GameConfigPath = "/config/AutoKeyLoop/GameConfig/" + std::string(s_TextAreaInfo.gameId) + ".ini";
+    s_TextAreaInfo.GameConfigPath = "/config/KeyX/GameConfig/" + std::string(s_TextAreaInfo.gameId) + ".ini";
     s_TextAreaInfo.isGlobalConfig = IniHelper::getBool("AUTOFIRE", "globconfig", true, s_TextAreaInfo.GameConfigPath);
     std::string SwitchConfigPath = (s_TextAreaInfo.isInGame && ult::isFile(s_TextAreaInfo.GameConfigPath)) ? s_TextAreaInfo.GameConfigPath : CONFIG_PATH;
     s_TextAreaInfo.isAutoFireEnabled = IniHelper::getBool("AUTOFIRE", "autoenable", false, SwitchConfigPath);

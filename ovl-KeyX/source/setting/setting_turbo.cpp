@@ -5,7 +5,7 @@
 #include "ipc_manager.hpp"
 
 // 配置文件路径常量
-constexpr const char* CONFIG_PATH = "/config/AutoKeyLoop/config.ini";
+constexpr const char* CONFIG_PATH = "/config/KeyX/config.ini";
 
 SettingTurbo::SettingTurbo() {
     m_defaultAuto = IniHelper::getBool("AUTOFIRE", "autoenable", false, CONFIG_PATH);

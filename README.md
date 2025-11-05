@@ -57,7 +57,7 @@ Nintendo Switch 按键助手，支持连发与按键重新分配，拥有全局�
 ```
 /atmosphere/contents/4100000002025924/
 /atmosphere/contents/0100000000251020
-/switch/.overlays/ovl-AutoKeyLoop.ovl
+/switch/.overlays/ovl-KeyX.ovl
 ```
 
 ## 多语言
@@ -86,13 +86,13 @@ SUPPORTED LANGUAGES:
 ## 编译
 
 ```bash
-cd sys-AutoKeyLoop && make -j
-cd ovl-AutoKeyLoop && make -j
+cd sys-KeyX && make -j
+cd ovl-KeyX && make -j
 ```
 或者直接根目录
 
 ```bash
-cd AutoKeyLoop && make
+cd KeyX && make
 ```
 
 ## 许可证
@@ -162,7 +162,7 @@ Copy files to SD card root:
 ```
 /atmosphere/contents/4100000002025924/
 /atmosphere/contents/0100000000251020
-/switch/.overlays/ovl-AutoKeyLoop.ovl
+/switch/.overlays/ovl-KeyX.ovl
 ```
 
 ## Multi-Language
@@ -191,13 +191,13 @@ SUPPORTED LANGUAGES:
 ## Build
 
 ```bash
-cd sys-AutoKeyLoop && make -j
-cd ovl-AutoKeyLoop && make -j
+cd sys-KeyX && make -j
+cd ovl-KeyX && make -j
 ```
 Or from root directory:
 
 ```bash
-cd AutoKeyLoop && make
+cd KeyX && make
 ```
 
 ## License

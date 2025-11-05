@@ -1,9 +1,9 @@
 ================================================================================
-  AutoKeyLoop - Language Files
+  KeyX - Language Files
 ================================================================================
 
 LOCATION:
-  /switch/.overlays/lang/AutoKeyLoop/
+  /switch/.overlays/lang/KeyX/
 
 SUPPORTED LANGUAGES:
   - en.json       (English)
@@ -22,7 +22,7 @@ SUPPORTED LANGUAGES:
 HOW TO ADD A NEW LANGUAGE:
   1. Copy en.json and rename it to your language code (e.g., ja.json for Japanese)
   2. Translate the values (NOT the keys) in the JSON file
-  3. Place the file in: /switch/.overlays/lang/AutoKeyLoop/
+  3. Place the file in: /switch/.overlays/lang/KeyX/
   4. Restart the overlay to load the new language
 
 NOTES:
@@ -32,6 +32,6 @@ NOTES:
   - Only translate the text values, keep the JSON keys unchanged
 
 ================================================================================
-  github: https://github.com/TOM-BadEN/AutoKeyLoop
+  github: https://github.com/TOM-BadEN/KeyX
 ================================================================================
 

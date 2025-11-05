@@ -87,11 +87,11 @@ SettingRemapConfig::SettingRemapConfig(bool isGlobal, u64 currentTitleId)
         // 获取当前游戏名称
         GameMonitor::getTitleIdGameName(currentTitleId, m_gameName);
         // 生成当前游戏配置文件路径
-        snprintf(s_configPath, sizeof(s_configPath), "/config/AutoKeyLoop/GameConfig/%016lX.ini", currentTitleId);
+        snprintf(s_configPath, sizeof(s_configPath), "/config/KeyX/GameConfig/%016lX.ini", currentTitleId);
     }
     else {
         // 生成全局配置文件路径
-        snprintf(s_configPath, sizeof(s_configPath), "/config/AutoKeyLoop/config.ini");
+        snprintf(s_configPath, sizeof(s_configPath), "/config/KeyX/config.ini");
     }
     
     // 读取映射配置

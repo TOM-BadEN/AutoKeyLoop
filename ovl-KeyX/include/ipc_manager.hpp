@@ -1,7 +1,7 @@
 #pragma once
 #include <switch.h>
 
-// IPC命令定义 - 与 sys-AutoKeyLoop 保持一致
+// IPC命令定义 - 与 sys-KeyX 保持一致
 // 连发控制
 #define CMD_ENABLE_AUTOFIRE   1   // 开启连发
 #define CMD_DISABLE_AUTOFIRE  2   // 关闭连发
@@ -19,7 +19,7 @@
 #define CMD_EXIT              999 // 退出系统模块
 
 /**
- * IPC管理类 - 负责与 sys-AutoKeyLoop 系统模块的通信
+ * IPC管理类 - 负责与 sys-KeyX 系统模块的通信
  * 
  * 使用全局对象管理 IPC 服务生命周期，程序退出时自动断开连接
  * 每次发送命令后自动断开连接

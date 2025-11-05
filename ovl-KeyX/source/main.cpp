@@ -3,8 +3,8 @@
 #include "main_menu.hpp"
 #include "language_manager.hpp"
 
-// AutoKeyLoop 特斯拉覆盖层主类
-class AutoKeyLoopOverlay : public tsl::Overlay {
+// KeyX 特斯拉覆盖层主类
+class KeyXOverlay : public tsl::Overlay {
 public:
     // 初始化系统服务
     virtual void initServices() override 
@@ -39,5 +39,5 @@ public:
 
 // 程序入口点
 int main(int argc, char **argv) {
-    return tsl::loop<AutoKeyLoopOverlay>(argc, argv);
+    return tsl::loop<KeyXOverlay>(argc, argv);
 }

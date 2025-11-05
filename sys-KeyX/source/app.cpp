@@ -5,10 +5,9 @@
 #include <minIni.h>
 #include <cstdlib>
 #include "libnotification.h"
-// #include "../log/log.h"
 
-#define CONFIG_DIR "/config/AutoKeyLoop"
-#define CONFIG_PATH "/config/AutoKeyLoop/config.ini"
+#define CONFIG_DIR "/config/KeyX"
+#define CONFIG_PATH "/config/KeyX/config.ini"
 
 extern const char* g_NOTIF_AUTOFIRE_ON;
 extern const char* g_NOTIF_AUTOFIRE_OFF;
@@ -192,7 +191,7 @@ void App::LoadGameConfig(u64 tid) {
 // 加载基础配置（确定配置路径）
 void App::LoadBasicConfig(u64 tid) {
     m_notifEnabled = ini_getbool("NOTIFICATION", "notif", false, CONFIG_PATH);
-    snprintf(m_GameConfigPath, sizeof(m_GameConfigPath), "/config/AutoKeyLoop/GameConfig/%016lX.ini", tid);
+    snprintf(m_GameConfigPath, sizeof(m_GameConfigPath), "/config/KeyX/GameConfig/%016lX.ini", tid);
     // 此处用来设定是否使用全局配置，还是独立配置
     // 功能的开关，是m_SwitchConfigPath
     // 功能的详细参数，是m_ConfigPath

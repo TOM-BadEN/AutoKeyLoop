@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-自动将 AutoKeyLoop 标题替换为中文 "按键连发"
+自动将 KeyX 标题替换为中文 "按键连发"
 """
 import sys
 

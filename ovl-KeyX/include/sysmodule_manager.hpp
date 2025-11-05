@@ -2,11 +2,11 @@
 #include <switch.h>
 
 /**
- * 系统模块管理类 - 用于管理 sys-AutoKeyLoop 系统模块
+ * 系统模块管理类 - 用于管理 sys-KeyX 系统模块
  */
 class SysModuleManager {
 private:
-    // sys-AutoKeyLoop 系统模块的程序ID (Title ID)
+    // sys-KeyX 系统模块的程序ID (Title ID)
     static constexpr u64 MODULE_ID = 0x4100000002025924;
     
     // boot2.flag 路径

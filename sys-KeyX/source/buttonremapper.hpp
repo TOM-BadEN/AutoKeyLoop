@@ -29,5 +29,17 @@ private:
     
     // 应用映射到 Full 手柄
     static void ApplyMappingsToFull(HidsysUniquePadId pad_id, const std::vector<ButtonMapping>& mappings);
+    
+    // 应用映射到左 JoyCon
+    static void ApplyMappingsToLeft(HidsysUniquePadId pad_id, const std::vector<ButtonMapping>& mappings);
+    
+    // 应用映射到右 JoyCon
+    static void ApplyMappingsToRight(HidsysUniquePadId pad_id, const std::vector<ButtonMapping>& mappings);
+    
+    // 应用单个映射到左 JoyCon（只处理左侧按键）
+    static void ApplyMappingLeft(HidcfgButtonConfigLeft& config, const char* from, const char* to);
+    
+    // 应用单个映射到右 JoyCon（只处理右侧按键）
+    static void ApplyMappingRight(HidcfgButtonConfigRight& config, const char* from, const char* to);
 };
 

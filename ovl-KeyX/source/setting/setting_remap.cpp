@@ -5,7 +5,7 @@
 #include "ipc_manager.hpp"
 
 // 配置文件路径常量
-constexpr const char* CONFIG_PATH = "/config/AutoKeyLoop/config.ini";
+constexpr const char* CONFIG_PATH = "/config/KeyX/config.ini";
 
 SettingRemap::SettingRemap() {
     m_defaultAuto = IniHelper::getBool("MAPPING", "autoenable", false, CONFIG_PATH);
