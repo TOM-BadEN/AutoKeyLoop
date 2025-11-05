@@ -16,6 +16,34 @@
 namespace {
     // 摇杆伪按键位掩码 (BIT16-23)，必须过滤
     constexpr u64 STICK_PSEUDO_BUTTON_MASK = 0xFF0000ULL;
+    
+    // 左 JoyCon 按键掩码（十字键、左肩键、左摇杆、SELECT）
+    constexpr u64 LEFT_JOYCON_BUTTONS = 
+        HidNpadButton_Left | HidNpadButton_Right | HidNpadButton_Up | HidNpadButton_Down |
+        HidNpadButton_L | HidNpadButton_ZL | HidNpadButton_StickL |
+        HidNpadButton_Minus;
+    
+    // 右 JoyCon 按键掩码（面键、右肩键、右摇杆、START）
+    constexpr u64 RIGHT_JOYCON_BUTTONS = 
+        HidNpadButton_A | HidNpadButton_B | HidNpadButton_X | HidNpadButton_Y |
+        HidNpadButton_R | HidNpadButton_ZR | HidNpadButton_StickR |
+        HidNpadButton_Plus;
+    
+    // 判断是否为左 JoyCon
+    constexpr bool IsLeftController(HidDeviceType type) {
+        return type == HidDeviceType_JoyLeft2 || 
+               type == HidDeviceType_JoyLeft4 ||
+               type == HidDeviceType_LarkHvcLeft ||
+               type == HidDeviceType_LarkNesLeft;
+    }
+    
+    // 判断是否为右 JoyCon
+    constexpr bool IsRightController(HidDeviceType type) {
+        return type == HidDeviceType_JoyRight1 || 
+               type == HidDeviceType_JoyRight5 ||
+               type == HidDeviceType_LarkHvcRight ||
+               type == HidDeviceType_LarkNesRight;
+    }
 }
 
 // 静态线程栈定义
@@ -241,9 +269,29 @@ void AutoKeyManager::HandleTurboStop(u64 physical_buttons) {
 void AutoKeyManager::ApplyHdlsState(u64 buttons) {
     for (int i = 0; i < m_StateList.total_entries; i++) {
         memset(&m_StateList.entries[i].state, 0, sizeof(HiddbgHdlsState));
-        m_StateList.entries[i].state.buttons = buttons;
-        m_StateList.entries[i].state.analog_stick_l = m_PhysicalState.analog_stick_l;
-        m_StateList.entries[i].state.analog_stick_r = m_PhysicalState.analog_stick_r;
+        
+        // 获取设备类型（显式转换 u8 到 HidDeviceType）
+        HidDeviceType device_type = (HidDeviceType)m_StateList.entries[i].device.deviceType;
+        
+        // 根据设备类型过滤按键和摇杆
+        if (IsLeftController(device_type)) {
+            // 左 JoyCon：只发送左边按键+左摇杆
+            m_StateList.entries[i].state.buttons = buttons & LEFT_JOYCON_BUTTONS;
+            m_StateList.entries[i].state.analog_stick_l = m_PhysicalState.analog_stick_l;
+            // analog_stick_r 保持为 0
+        }
+        else if (IsRightController(device_type)) {
+            // 右 JoyCon：只发送右边按键+右摇杆
+            m_StateList.entries[i].state.buttons = buttons & RIGHT_JOYCON_BUTTONS;
+            m_StateList.entries[i].state.analog_stick_r = m_PhysicalState.analog_stick_r;
+            // analog_stick_l 保持为 0
+        }
+        else {
+            // 完整手柄（Pro、Lite、SNES等）：发送所有按键+双摇杆
+            m_StateList.entries[i].state.buttons = buttons;
+            m_StateList.entries[i].state.analog_stick_l = m_PhysicalState.analog_stick_l;
+            m_StateList.entries[i].state.analog_stick_r = m_PhysicalState.analog_stick_r;
+        }
     }
     hiddbgApplyHdlsStateList(m_HdlsSessionId, &m_StateList);
 }
