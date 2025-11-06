@@ -12,7 +12,9 @@ https://github.com/user-attachments/assets/2540f1d5-5294-489f-b85a-4b96806365bc
 ## 注意
 
 - 映射功能全机型支持
-- **连发功能仅支持LITE机型**
+- 从1.1.6版本开始，连发功能全机型支持
+- 但是需要注意使用JC的机型，连发功能表现的不够流畅，但是至少是可以正常使用了
+- LITE机型依旧完美使用连发功能
 
 # KeyX 按键助手
 
@@ -118,7 +120,9 @@ MIT License
 ## Notice
 
 - Key mapping works on all Switch models
-- **Turbo (auto-fire) only works on LITE models**
+- As of v1.1.6, turbo works on all Switch models
+- Note: Turbo on JoyCon models may feel less smooth, but at least it works
+- LITE models still have perfect turbo performance
 
 # KeyX Button Assistant
 
