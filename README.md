@@ -37,7 +37,7 @@ Nintendo Switch 按键助手，支持连发与按键重新分配，拥有全局�
 - 全局配置和游戏独立配置
 - 自动记忆开关状态
 
-### 按键连发 (仅支持LITE)
+### 按键连发 
 
 - 支持 12 个按键连发（A/B/X/Y/L/R/ZL/ZR/十字键）
 - 支持多个按键同时连发
@@ -145,7 +145,7 @@ Consists of Tesla overlay and system module.
 - Global and per-game configuration
 - Auto-remembers on/off state
 
-### Turbo (LITE Only)
+### Turbo 
 
 - Turbo for 12 buttons (A/B/X/Y/L/R/ZL/ZR/D-pad)
 - Multiple buttons can turbo simultaneously
