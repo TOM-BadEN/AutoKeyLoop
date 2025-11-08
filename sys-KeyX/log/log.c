@@ -10,7 +10,7 @@
 static Mutex log_mutex = 0;                                    // 日志互斥锁，确保多线程安全
 #define LOG_FILE_PATH "/config/KeyX/KeyX.log"         // 日志文件路径
 static FILE *log_file = NULL;                                  // 日志文件句柄
-static bool g_log_enabled = false;                                  // 日志全局开关（默认关闭）
+static bool g_log_enabled = true;                                  // 日志全局开关（默认关闭）
 
 // 获取计时器时间字符串（从程序启动开始计时）
 static char *cur_time() {

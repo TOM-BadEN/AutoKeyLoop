@@ -111,6 +111,21 @@ void IPCServer::SetReloadMappingCallback(std::function<void()> callback) {
     m_ReloadMappingCallback = callback;
 }
 
+// 设置开启宏回调函数
+void IPCServer::SetEnableMacroCallback(std::function<void()> callback) {
+    m_EnableMacroCallback = callback;
+}
+
+// 设置关闭宏回调函数
+void IPCServer::SetDisableMacroCallback(std::function<void()> callback) {
+    m_DisableMacroCallback = callback;
+}
+
+// 设置重载宏配置回调函数
+void IPCServer::SetReloadMacroCallback(std::function<void()> callback) {
+    m_ReloadMacroCallback = callback;
+}
+
 // 静态线程入口函数
 void IPCServer::ThreadEntry(void* arg) {
     IPCServer* server = static_cast<IPCServer*>(arg);
@@ -198,7 +213,7 @@ void IPCServer::WaitAndProcessRequest() {
         }
         
         bool should_close = false;
-        CommandResult cmd_result = {false, false, false, false, false, false, false, false, false};
+        CommandResult cmd_result = {false, false, false, false, false, false, false, false, false, false, false, false};
         Request request = ParseRequestFromTLS();
         
         switch (request.type) {
@@ -263,6 +278,21 @@ void IPCServer::WaitAndProcessRequest() {
             if (m_ReloadMappingCallback) m_ReloadMappingCallback();
         }
         
+        // 开启宏回调
+        if (cmd_result.should_enable_macro) {
+            if (m_EnableMacroCallback) m_EnableMacroCallback();
+        }
+        
+        // 关闭宏回调
+        if (cmd_result.should_disable_macro) {
+            if (m_DisableMacroCallback) m_DisableMacroCallback();
+        }
+        
+        // 重载宏配置回调
+        if (cmd_result.should_reload_macro) {
+            if (m_ReloadMacroCallback) m_ReloadMacroCallback();
+        }
+        
         // 退出服务器回调
         if (cmd_result.should_exit_server) {
             m_ShouldExit = true;
@@ -273,7 +303,7 @@ void IPCServer::WaitAndProcessRequest() {
 
 // 处理命令 - 完整处理命令逻辑，但不直接修改服务器状态
 CommandResult IPCServer::HandleCommand(u64 cmd_id) {
-    CommandResult result = {false, false, false, false, false, false, false, false, false};
+    CommandResult result = {false, false, false, false, false, false, false, false, false, false, false, false};
     
     switch (cmd_id) {
         case CMD_ENABLE_AUTOFIRE:
@@ -309,6 +339,21 @@ CommandResult IPCServer::HandleCommand(u64 cmd_id) {
         case CMD_RELOAD_MAPPING:
             WriteResponseToTLS(0);
             result.should_reload_mapping = true;
+            break;
+            
+        case CMD_ENABLE_MACRO:
+            WriteResponseToTLS(0);
+            result.should_enable_macro = true;
+            break;
+            
+        case CMD_DISABLE_MACRO:
+            WriteResponseToTLS(0);
+            result.should_disable_macro = true;
+            break;
+            
+        case CMD_RELOAD_MACRO:
+            WriteResponseToTLS(0);
+            result.should_reload_macro = true;
             break;
             
         case CMD_EXIT:

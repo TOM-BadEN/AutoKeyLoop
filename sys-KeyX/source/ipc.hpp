@@ -16,6 +16,11 @@
 #define CMD_RELOAD_AUTOFIRE   6   // 重载连发配置
 #define CMD_RELOAD_MAPPING    7   // 重载映射配置
 
+// 宏控制
+#define CMD_ENABLE_MACRO      8   // 开启宏
+#define CMD_DISABLE_MACRO     9   // 关闭宏
+#define CMD_RELOAD_MACRO      10  // 重载宏配置
+
 // 系统控制
 #define CMD_EXIT              999 // 退出系统模块
 
@@ -30,6 +35,9 @@ struct CommandResult {
     bool should_reload_basic;       // 是否需要重载基础配置（在响应发送后）
     bool should_reload_autofire;    // 是否需要重载连发配置（在响应发送后）
     bool should_reload_mapping;     // 是否需要重载映射配置（在响应发送后）
+    bool should_enable_macro;       // 是否需要开启宏（在响应发送后）
+    bool should_disable_macro;      // 是否需要关闭宏（在响应发送后）
+    bool should_reload_macro;       // 是否需要重载宏配置（在响应发送后）
 };
 
 // IPC服务器类
@@ -60,6 +68,9 @@ private:
     std::function<void()> m_ReloadBasicCallback;      // 重载基础配置回调
     std::function<void()> m_ReloadAutoFireCallback;   // 重载连发配置回调
     std::function<void()> m_ReloadMappingCallback;    // 重载映射配置回调
+    std::function<void()> m_EnableMacroCallback;      // 开启宏回调
+    std::function<void()> m_DisableMacroCallback;     // 关闭宏回调
+    std::function<void()> m_ReloadMacroCallback;      // 重载宏配置回调
     
     // 内部方法
     void StartServer();
@@ -100,5 +111,8 @@ public:
     void SetReloadBasicCallback(std::function<void()> callback);
     void SetReloadAutoFireCallback(std::function<void()> callback);
     void SetReloadMappingCallback(std::function<void()> callback);
+    void SetEnableMacroCallback(std::function<void()> callback);
+    void SetDisableMacroCallback(std::function<void()> callback);
+    void SetReloadMacroCallback(std::function<void()> callback);
     bool ShouldExit() const { return m_ShouldExit; }
 };

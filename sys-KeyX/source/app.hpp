@@ -1,5 +1,5 @@
 #pragma once
-#include "autokeymanager.hpp"
+#include "autokeyloop.hpp"
 #include "ipc.hpp"
 #include "buttonremapper.hpp"
 #include "focusmonitor.hpp"
@@ -12,9 +12,9 @@
 class App final {
 private:
 
-    std::unique_ptr<AutoKeyManager> autokey_manager;  // 自动按键管理器
-    std::unique_ptr<IPCServer> ipc_server;            // IPC服务器
-    std::mutex autokey_mutex;                         // 保护 autokey_manager 的互斥锁
+    std::unique_ptr<AutoKeyLoop> autokey_loop;         // 自动按键管理器
+    std::unique_ptr<IPCServer> ipc_server;             // IPC服务器
+    std::mutex autokey_mutex;                          // 保护 autokey_loop 的互斥锁
 
     // 控制住循环是否结束的true代表停止循环
     bool m_loop_error = true;
@@ -32,15 +32,15 @@ private:
 
     // 连发功能相关配置
     u64 m_CurrentTid = 0;                    // 当前游戏 TID
-    u64 m_CurrentButtons = 0;                // 白名单按键
-    int m_CurrentPressTime = 60;             // 按下时长（毫秒）
-    int m_CurrentFireInterval = 160;         // 松开时长（毫秒）
     bool m_CurrentAutoEnable = false;        // 是否自动启动
     bool m_CurrentGlobConfig = true;         // 是否使用全局配置
 
     // 按键映射功能相关配置
     std::vector<ButtonMapping> m_CurrentMappings;  // 按键映射配置
     bool m_CurrentAutoRemapEnable = false;         // 是否自动启动
+    
+    // 宏功能相关配置
+    bool m_CurrentAutoMacroEnable = false;         // 宏功能是否自动启动
     
     // 初始化配置路径（确保目录存在）
     bool InitializeConfigPath();
@@ -56,9 +56,6 @@ private:
     
     // 加载基础配置（确定配置路径）
     void LoadBasicConfig(u64 tid);
-    
-    // 加载连发配置
-    void LoadAutoFireConfig();
     
     // 加载映射配置
     void LoadButtonMappingConfig();
@@ -79,17 +76,7 @@ private:
     
     // 创建通知
     void CreateNotification(bool Enable);
-    
-public:
-    // 构造函数
-    App();
-    
-    // 析构函数
-    ~App();
-    
-    // 主循环函数
-    void Loop();
-    
+
     // 开启连发模块
     bool StartAutoKey();
     
@@ -103,6 +90,22 @@ public:
     void ResumeAutoKey();
     
     // 更新连发配置（线程安全）
-    void UpdateAutoKeyConfig();
+    void UpdateTurboConfig();
+    
+    // 更新宏配置（线程安全）
+    void UpdateMacroConfig();
+    
+    // 更新按键映射配置（线程安全）
+    void UpdateButtonMappingConfig();
+    
+public:
+    // 构造函数
+    App();
+    
+    // 析构函数
+    ~App();
+    
+    // 主循环函数
+    void Loop();
     
 };

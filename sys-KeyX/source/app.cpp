@@ -63,14 +63,33 @@ bool App::InitializeIPC() {
     // 设置开启连发回调
     ipc_server->SetEnableAutoFireCallback([this]() {
         m_CurrentAutoEnable = true;
-        LoadAutoFireConfig();
-        if (m_GameInFocus) StartAutoKey();
+        if (m_GameInFocus) {
+            if (autokey_loop) UpdateTurboConfig();
+            else StartAutoKey();
+        }
     });
     
     // 设置关闭连发回调
     ipc_server->SetDisableAutoFireCallback([this]() {
         m_CurrentAutoEnable = false;
-        StopAutoKey();
+        if (!m_CurrentAutoMacroEnable) StopAutoKey();
+        else UpdateTurboConfig();
+    });
+    
+    // 设置开启宏回调
+    ipc_server->SetEnableMacroCallback([this]() {
+        m_CurrentAutoMacroEnable = true;
+        if (m_GameInFocus) {
+            if (autokey_loop) UpdateMacroConfig();
+            else StartAutoKey();
+        }
+    });
+    
+    // 设置关闭宏回调
+    ipc_server->SetDisableMacroCallback([this]() {
+        m_CurrentAutoMacroEnable = false;
+        if (!m_CurrentAutoEnable) StopAutoKey();
+        else UpdateMacroConfig();
     });
     
     // 设置开启映射回调
@@ -78,6 +97,7 @@ bool App::InitializeIPC() {
         m_CurrentAutoRemapEnable = true;
         LoadButtonMappingConfig();
         if (m_GameInFocus) ButtonRemapper::SetMapping(m_CurrentMappings);
+        UpdateButtonMappingConfig();
     });
     
     // 设置关闭映射回调
@@ -90,19 +110,26 @@ bool App::InitializeIPC() {
     ipc_server->SetReloadBasicCallback([this]() {
         LoadGameConfig(m_CurrentTid);
         if (m_GameInFocus && m_CurrentAutoRemapEnable) ButtonRemapper::SetMapping(m_CurrentMappings);
-        UpdateAutoKeyConfig();
+        UpdateTurboConfig();
+        UpdateMacroConfig();
+        UpdateButtonMappingConfig();
     });
     
     // 设置重载连发配置回调
     ipc_server->SetReloadAutoFireCallback([this]() {
-        LoadAutoFireConfig();
-        UpdateAutoKeyConfig();
+        UpdateTurboConfig();
+    });
+    
+    // 设置重载宏配置回调
+    ipc_server->SetReloadMacroCallback([this]() {
+        UpdateMacroConfig();
     });
     
     // 设置重载映射配置回调
     ipc_server->SetReloadMappingCallback([this]() {
         LoadButtonMappingConfig();
         if (m_GameInFocus && m_CurrentAutoRemapEnable) ButtonRemapper::SetMapping(m_CurrentMappings);
+        UpdateButtonMappingConfig();
     });
 
     // 启动服务
@@ -125,7 +152,7 @@ void App::Loop() {
                 continue;
             case GameEvent::Running:
                 OnGameRunning(game.tid);
-                if (m_CurrentAutoEnable || m_CurrentAutoRemapEnable) svcSleepThread(100000000ULL);
+                if (autokey_loop || m_CurrentAutoRemapEnable) svcSleepThread(100000000ULL);
                 else for (int i = 0; i < 5 && !m_loop_error; ++i) svcSleepThread(100000000ULL);
                 continue;
             case GameEvent::Launched:
@@ -146,7 +173,7 @@ void App::OnGameLaunched(u64 tid) {
     m_GameInFocus = true;
     m_CurrentTid = tid;
     LoadGameConfig(tid);
-    if (m_CurrentAutoEnable) StartAutoKey();
+    if (m_CurrentAutoEnable || m_CurrentAutoMacroEnable) StartAutoKey();
     if (m_CurrentAutoRemapEnable) ButtonRemapper::SetMapping(m_CurrentMappings);
     CreateNotification(true);
 }
@@ -158,13 +185,14 @@ void App::OnGameRunning(u64 tid) {
     switch (focus) {
         case FocusState::InFocus:
             m_GameInFocus = true;
-            if (m_CurrentAutoEnable && autokey_manager != nullptr) ResumeAutoKey();
-            else if (m_CurrentAutoEnable && autokey_manager == nullptr) StartAutoKey();
+            if ((m_CurrentAutoEnable || m_CurrentAutoMacroEnable) && autokey_loop) ResumeAutoKey();
+            else if ((m_CurrentAutoEnable || m_CurrentAutoMacroEnable) && !autokey_loop) StartAutoKey();
+            else if (!m_CurrentAutoEnable && !m_CurrentAutoMacroEnable && autokey_loop) StopAutoKey();
             if (m_CurrentAutoRemapEnable) ButtonRemapper::SetMapping(m_CurrentMappings);
             break;
         case FocusState::OutOfFocus:
             m_GameInFocus = false;
-            if (m_CurrentAutoEnable) PauseAutoKey();
+            if (autokey_loop) PauseAutoKey();
             if (m_CurrentAutoRemapEnable) ButtonRemapper::RestoreMapping();
             break;
         default:
@@ -175,8 +203,7 @@ void App::OnGameRunning(u64 tid) {
 // 处理游戏退出事件
 void App::OnGameExited() {
     m_GameInFocus = false;
-    if (m_CurrentAutoEnable) StopAutoKey();
-    if (m_CurrentAutoRemapEnable) ButtonRemapper::RestoreMapping();
+    if (autokey_loop) StopAutoKey();
     m_CurrentTid = 0;
     CreateNotification(false);
 }
@@ -184,7 +211,6 @@ void App::OnGameExited() {
 // 加载游戏配置（读取并缓存配置参数）
 void App::LoadGameConfig(u64 tid) {
     LoadBasicConfig(tid);
-    LoadAutoFireConfig();
     LoadButtonMappingConfig();
 }
 
@@ -200,15 +226,7 @@ void App::LoadBasicConfig(u64 tid) {
     m_SwitchConfigPath = FileExists(m_GameConfigPath) ? m_GameConfigPath : CONFIG_PATH;  
     m_CurrentAutoEnable = ini_getbool("AUTOFIRE", "autoenable", 0, m_SwitchConfigPath);
     m_CurrentAutoRemapEnable = ini_getbool("MAPPING", "autoenable", 0, m_SwitchConfigPath);
-}
-
-// 加载连发配置
-void App::LoadAutoFireConfig() {
-    char buttons_str[32];
-    ini_gets("AUTOFIRE", "buttons", "0", buttons_str, sizeof(buttons_str), m_ConfigPath);
-    m_CurrentButtons = strtoull(buttons_str, nullptr, 10);
-    m_CurrentPressTime = ini_getl("AUTOFIRE", "presstime", 100, m_ConfigPath);
-    m_CurrentFireInterval = ini_getl("AUTOFIRE", "fireinterval", 100, m_ConfigPath);
+    m_CurrentAutoMacroEnable = ini_getbool("MACRO", "autoenable", 0, m_GameConfigPath);
 }
 
 // 加载映射配置
@@ -234,48 +252,58 @@ void App::LoadButtonMappings(const char* config_path) {
         mapping.source = button_names[i];
         // 从 INI 读取目标按键（默认值为源按键名称，表示未映射）
         ini_gets("MAPPING", button_names[i], button_names[i], mapping.target, sizeof(mapping.target), config_path);
-        // 只添加有映射变化的按键（跳过 A=A 这种未映射的）
         m_CurrentMappings.push_back(mapping);
     }
 }
 
-// 开启连发模块
+// 开启按键模块
 bool App::StartAutoKey() {
     std::lock_guard<std::mutex> lock(autokey_mutex);
     // 如果已经创建，则不重复创建
-    if (autokey_manager != nullptr) return true;
-    // 创建并初始化连发模块
-    autokey_manager = std::make_unique<AutoKeyManager>(
-        m_CurrentButtons,
-        m_CurrentPressTime,
-        m_CurrentFireInterval
-    );
+    if (autokey_loop) return true;
+    autokey_loop = std::make_unique<AutoKeyLoop>(m_ConfigPath, m_CurrentAutoEnable, m_CurrentAutoMacroEnable);
     return true;
 }
 
-// 退出连发模块
+// 退出按键模块
 void App::StopAutoKey() {
     std::lock_guard<std::mutex> lock(autokey_mutex);
-    if (autokey_manager != nullptr) autokey_manager.reset();
+    if (autokey_loop) autokey_loop.reset();
 }
 
 // 暂停连发
 void App::PauseAutoKey() {
     std::lock_guard<std::mutex> lock(autokey_mutex);
-    if (autokey_manager != nullptr) autokey_manager->Pause();
+    if (autokey_loop) autokey_loop->Pause();
 }
 
 // 恢复连发
 void App::ResumeAutoKey() {
     std::lock_guard<std::mutex> lock(autokey_mutex);
-    if (autokey_manager != nullptr) autokey_manager->Resume();
+    if (autokey_loop) autokey_loop->Resume();
 }
 
 // 更新连发配置
-void App::UpdateAutoKeyConfig() {
+void App::UpdateTurboConfig() {
     std::lock_guard<std::mutex> lock(autokey_mutex);
-    if (autokey_manager != nullptr) {
-        autokey_manager->UpdateConfig(m_CurrentButtons, m_CurrentPressTime, m_CurrentFireInterval);
+    if (autokey_loop) {
+        autokey_loop->UpdateTurboFeature(m_CurrentAutoEnable, m_ConfigPath);
+    }
+}
+
+// 更新宏配置
+void App::UpdateMacroConfig() {
+    std::lock_guard<std::mutex> lock(autokey_mutex);
+    if (autokey_loop) {
+        autokey_loop->UpdateMacroFeature(m_CurrentAutoMacroEnable, m_GameConfigPath);
+    }
+}
+
+// 更新按键映射配置
+void App::UpdateButtonMappingConfig() {
+    std::lock_guard<std::mutex> lock(autokey_mutex);
+    if (autokey_loop) {
+        autokey_loop->UpdateButtonMappings(m_ConfigPath);
     }
 }
 
