@@ -10,13 +10,16 @@ struct ButtonMapping {
 
 class ButtonRemapper {
 public:
-    // 设置手柄按键映射
-    static Result SetMapping(const std::vector<ButtonMapping>& mappings);
-    
+    // 设置手柄按键映射（从配置文件读取）
+    static Result SetMapping(const char* config_path);
+
     // 恢复默认按键配置
     static Result RestoreMapping();
 
 private:
+    // 从配置文件加载映射关系
+    static void LoadMappingsFromConfig(const char* config_path, std::vector<ButtonMapping>& out);
+
     // 查找按键枚举值（返回-1表示无效）
     static int FindButton(const char* name);
     

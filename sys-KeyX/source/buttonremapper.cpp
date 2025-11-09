@@ -1,8 +1,17 @@
 #include "buttonremapper.hpp"
 #include <cstring>
+#include "minIni.h"
 
 // 映射状态标志
 static bool s_MappingEnabled = false;
+
+// 按键名称表（用于配置读取）
+static constexpr const char* BUTTON_NAMES[] = {
+    "A", "B", "X", "Y",
+    "Up", "Down", "Left", "Right",
+    "L", "R", "ZL", "ZR",
+    "StickL", "StickR", "Start", "Select"
+};
 
 // 按键信息（通用）
 struct ButtonInfo {
@@ -149,7 +158,22 @@ void ButtonRemapper::ApplyMappingsToRight(HidsysUniquePadId pad_id, const std::v
     hidsysSetHidButtonConfigRight(pad_id, &config);
 }
 
-Result ButtonRemapper::SetMapping(const std::vector<ButtonMapping>& mappings) {
+// 从配置文件加载映射关系
+void ButtonRemapper::LoadMappingsFromConfig(const char* config_path, std::vector<ButtonMapping>& out) {
+    out.clear();
+    for (int i = 0; i < 16; i++) {
+        ButtonMapping mapping;
+        mapping.source = BUTTON_NAMES[i];
+        ini_gets("MAPPING", BUTTON_NAMES[i], BUTTON_NAMES[i], mapping.target, sizeof(mapping.target), config_path);
+        // 跳过A=A这种无效映射
+        if (strcmp(mapping.source, mapping.target) != 0) out.push_back(mapping);
+    }
+}
+
+Result ButtonRemapper::SetMapping(const char* config_path) {
+    // 读取配置到局部 vector
+    std::vector<ButtonMapping> mappings;
+    LoadMappingsFromConfig(config_path, mappings);
 
     // 如果是空的代表不需要修改配置，直接返回
     if (mappings.empty()) return 0;

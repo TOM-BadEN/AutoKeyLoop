@@ -6,7 +6,6 @@
 #include "gamemonitor.hpp"
 #include <mutex>
 #include <memory>
-#include <vector>
 
 // APP应用程序类
 class App final {
@@ -36,7 +35,6 @@ private:
     bool m_CurrentGlobConfig = true;         // 是否使用全局配置
 
     // 按键映射功能相关配置
-    std::vector<ButtonMapping> m_CurrentMappings;  // 按键映射配置
     bool m_CurrentAutoRemapEnable = false;         // 是否自动启动
     
     // 宏功能相关配置
@@ -57,11 +55,7 @@ private:
     // 加载基础配置（确定配置路径）
     void LoadBasicConfig(u64 tid);
     
-    // 加载映射配置
-    void LoadButtonMappingConfig();
-    
-    // 加载按键映射（内部调用）
-    void LoadButtonMappings(const char* config_path);
+
     
     // 获取当前游戏 Title ID（仅游戏，非游戏返回0）
     u64 GetCurrentGameTitleId();

@@ -25,28 +25,19 @@ bool App::FileExists(const char* path) {
 
 // 初始化配置路径（确保配置目录存在）
 bool App::InitializeConfigPath() {
-    // 直接尝试创建目录
     if (mkdir(CONFIG_DIR, 0777) == 0) return true;
-    // 如果错误原因是已存在，也算true
     if (errno == EEXIST) return true;
-    // 其他错误（如父目录不存在、权限不足等）
     return false;
 }
 
 // App类的实现
 App::App() {
-    // 允许写入日志
-    // log_set_enabled(true);
-    // 初始化配置路径
     if (!InitializeConfigPath()) return;
-    // 初始化IPC服务
     if (!InitializeIPC()) return;
-    // 初始化成功，允许主循环开始
     m_loop_error = false;
 }
 
 App::~App() {
-    m_CurrentMappings.clear();
 }
 
 // 初始化IPC服务
@@ -95,8 +86,7 @@ bool App::InitializeIPC() {
     // 设置开启映射回调
     ipc_server->SetEnableMappingCallback([this]() {
         m_CurrentAutoRemapEnable = true;
-        LoadButtonMappingConfig();
-        if (m_GameInFocus) ButtonRemapper::SetMapping(m_CurrentMappings);
+        if (m_GameInFocus) ButtonRemapper::SetMapping(m_ConfigPath);
         UpdateButtonMappingConfig();
     });
     
@@ -109,7 +99,7 @@ bool App::InitializeIPC() {
     // 设置重载全部配置
     ipc_server->SetReloadBasicCallback([this]() {
         LoadGameConfig(m_CurrentTid);
-        if (m_GameInFocus && m_CurrentAutoRemapEnable) ButtonRemapper::SetMapping(m_CurrentMappings);
+        if (m_GameInFocus && m_CurrentAutoRemapEnable) ButtonRemapper::SetMapping(m_ConfigPath);
         UpdateTurboConfig();
         UpdateMacroConfig();
         UpdateButtonMappingConfig();
@@ -127,8 +117,7 @@ bool App::InitializeIPC() {
     
     // 设置重载映射配置回调
     ipc_server->SetReloadMappingCallback([this]() {
-        LoadButtonMappingConfig();
-        if (m_GameInFocus && m_CurrentAutoRemapEnable) ButtonRemapper::SetMapping(m_CurrentMappings);
+        if (m_GameInFocus && m_CurrentAutoRemapEnable) ButtonRemapper::SetMapping(m_ConfigPath);
         UpdateButtonMappingConfig();
     });
 
@@ -174,7 +163,7 @@ void App::OnGameLaunched(u64 tid) {
     m_CurrentTid = tid;
     LoadGameConfig(tid);
     if (m_CurrentAutoEnable || m_CurrentAutoMacroEnable) StartAutoKey();
-    if (m_CurrentAutoRemapEnable) ButtonRemapper::SetMapping(m_CurrentMappings);
+    if (m_CurrentAutoRemapEnable) ButtonRemapper::SetMapping(m_ConfigPath);
     CreateNotification(true);
 }
 
@@ -188,7 +177,7 @@ void App::OnGameRunning(u64 tid) {
             if ((m_CurrentAutoEnable || m_CurrentAutoMacroEnable) && autokey_loop) ResumeAutoKey();
             else if ((m_CurrentAutoEnable || m_CurrentAutoMacroEnable) && !autokey_loop) StartAutoKey();
             else if (!m_CurrentAutoEnable && !m_CurrentAutoMacroEnable && autokey_loop) StopAutoKey();
-            if (m_CurrentAutoRemapEnable) ButtonRemapper::SetMapping(m_CurrentMappings);
+            if (m_CurrentAutoRemapEnable) ButtonRemapper::SetMapping(m_ConfigPath);
             break;
         case FocusState::OutOfFocus:
             m_GameInFocus = false;
@@ -211,7 +200,6 @@ void App::OnGameExited() {
 // 加载游戏配置（读取并缓存配置参数）
 void App::LoadGameConfig(u64 tid) {
     LoadBasicConfig(tid);
-    LoadButtonMappingConfig();
 }
 
 // 加载基础配置（确定配置路径）
@@ -227,33 +215,6 @@ void App::LoadBasicConfig(u64 tid) {
     m_CurrentAutoEnable = ini_getbool("AUTOFIRE", "autoenable", 0, m_SwitchConfigPath);
     m_CurrentAutoRemapEnable = ini_getbool("MAPPING", "autoenable", 0, m_SwitchConfigPath);
     m_CurrentAutoMacroEnable = ini_getbool("MACRO", "autoenable", 0, m_GameConfigPath);
-}
-
-// 加载映射配置
-void App::LoadButtonMappingConfig() {
-    LoadButtonMappings(m_ConfigPath);
-}
-
-// 加载按键映射配置
-void App::LoadButtonMappings(const char* config_path) {
-    // 清空旧数据
-    m_CurrentMappings.clear();
-    // 定义所有按键名称（编译时常量）
-    constexpr const char* button_names[] = {
-        "A", "B", "X", "Y",
-        "Up", "Down", "Left", "Right",
-        "L", "R", "ZL", "ZR",
-        "StickL", "StickR", "Start", "Select"
-    };
-    // 逐个读取映射配置
-    for (int i = 0; i < 16; i++) {
-        ButtonMapping mapping;
-        // 设置源按键名称（指向字符串字面量）
-        mapping.source = button_names[i];
-        // 从 INI 读取目标按键（默认值为源按键名称，表示未映射）
-        ini_gets("MAPPING", button_names[i], button_names[i], mapping.target, sizeof(mapping.target), config_path);
-        m_CurrentMappings.push_back(mapping);
-    }
 }
 
 // 开启按键模块
