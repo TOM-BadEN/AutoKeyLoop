@@ -1,6 +1,7 @@
 #include "setting/setting_menu.hpp"
 #include "setting/setting_turbo.hpp"
 #include "setting/setting_remap.hpp"
+#include "setting/setting_macro.hpp"
 #include "ini_helper.hpp"
 #include "ipc_manager.hpp"
 #include "sysmodule_manager.hpp"
@@ -53,11 +54,18 @@ tsl::elm::Element* SettingMenu::createUI() {
     });
     list->addItem(listItemMapping);
 
+    auto listItemMacro = new tsl::elm::ListItem("脚本设置", ">");
+    listItemMacro->setClickListener([](u64 keys) {
+        if (keys & HidNpadButton_A) {
+            tsl::changeTo<SettingMacro>();
+            return true;
+        }
+        return false;
+    });
+    list->addItem(listItemMacro);
+
     auto ItemBasicSetting = new tsl::elm::CategoryHeader(" 基础功能设置");
     list->addItem(ItemBasicSetting);
-    list->addItem(new tsl::elm::CustomDrawer([](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
-        renderer->drawString("  触发时额外占用内存 688KB", false, x + 5, y + 20-7, 16, (tsl::highlightColor2));
-    }), 30);
 
     auto listItemNotif = new tsl::elm::ListItem("通知弹窗", m_notifEnabled ? "开" : "关");
     listItemNotif->setClickListener([listItemNotif, this](u64 keys) {
@@ -74,9 +82,6 @@ tsl::elm::Element* SettingMenu::createUI() {
 
     auto ItemModuleManager = new tsl::elm::CategoryHeader(" 功能模块管理 切换自启动 开关");
     list->addItem(ItemModuleManager);
-    list->addItem(new tsl::elm::CustomDrawer([](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
-        renderer->drawString("  系统模块仅占用 297 KB", false, x + 5, y + 20-7, 16, (tsl::highlightColor2));
-    }), 30);
 
     auto listItemTurboModule = new tsl::elm::ListItem("系统模块", descriptions[m_running][m_hasFlag]);
     listItemTurboModule->setClickListener([listItemTurboModule, this](u64 keys) {
@@ -106,6 +111,12 @@ bool SettingMenu::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &t
     // 监控 B 键返回，每次返回前刷新主页数据
     if (keysDown & HidNpadButton_B) {
         MainMenu::UpdateMainMenu();
+    }
+
+    if (keysDown & HidNpadButton_Left) {
+        MainMenu::UpdateMainMenu();
+        tsl::goBack();
+        return true;
     }
     
     return false;  // 让默认的返回逻辑继续执行

@@ -15,12 +15,13 @@ public:
         setInitialize();      // 初始化set服务（获取系统语言）
         LanguageManager::initialize();  // 初始化语言系统
         setExit();            // 退出set服务
+        pdmqryInitialize();
     }
     
     // 退出系统服务
     virtual void exitServices() override 
     {
-        
+        pdmqryExit();
         pmshellExit();        // 退出进程Shell服务
         pmdmntExit();         // 退出进程管理服务
         fsdevUnmountAll();    // 卸载所有文件系统

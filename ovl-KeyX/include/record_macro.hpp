@@ -1,0 +1,33 @@
+#pragma once
+#include <tesla.hpp>
+
+// 录制用的 Frame
+class RecordingFrame : public tsl::elm::Element
+{
+public:
+    RecordingFrame();
+    void setRecordingTime(u64 elapsed_s);
+    virtual void draw(tsl::gfx::Renderer* renderer) override;
+    virtual void layout(u16 parentX, u16 parentY, u16 parentWidth, u16 parentHeight) override;
+
+private:
+    char m_RecordingTimeText[32];
+};
+
+// 录制时界面类
+class RecordingGui : public tsl::Gui 
+{
+public:
+    RecordingGui();
+    virtual tsl::elm::Element* createUI() override;
+    virtual void update() override;
+    virtual bool handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) override;
+
+private:
+    u64 m_startTime;
+    RecordingFrame* m_frame;
+    u64 m_lastUpdatedSeconds;
+    u64 m_lastFocusCheckMs;  // 上次焦点检测的时间（毫秒）
+    
+    void exitRecording();  // 退出录制并返回主界面
+};

@@ -241,7 +241,7 @@ tsl::elm::Element* MainMenu::createUI()
         renderer->drawString(config, false, 275, 61, 15, renderer->a(tsl::style::color::ColorHighlight));
 
         // 底部按钮（使用绝对坐标）
-        renderer->drawString("\uE0EE  关于", false, 280, 693, 23, renderer->a(tsl::style::color::ColorText));
+        renderer->drawString("\uE0EE  设置", false, 280, 693, 23, renderer->a(tsl::style::color::ColorText));
 
     }));
 
@@ -359,38 +359,11 @@ tsl::elm::Element* MainMenu::createUI()
 
         } else {
             // 不在游戏中，绘制相关信息（使用红色，水平和垂直居中）
-            const char* noGameText = SysModuleManager::isRunning() ? "未检测到游戏，功能不可用！" : "未启动系统模块，功能不可用！";
+            const char* noGameText = SysModuleManager::isRunning() ? "未检测到游戏，功能不可用" : "未启动系统模块，功能不可用";
             const s32 fontSize = 26;
-            
-            // 动态计算垂直居中位置
-            s32 centeredY = y + (h - fontSize) / 2;
-            
-            // 动态计算水平居中位置 - 计算实际字符数量
-            s32 textLength = 0;
-            for (const char* p = noGameText; *p; ) {
-                if ((*p & 0x80) == 0) {
-                    // ASCII字符
-                    p++;
-                    textLength++;
-                } else if ((*p & 0xE0) == 0xC0) {
-                    // UTF-8 2字节字符
-                    p += 2;
-                    textLength++;
-                } else if ((*p & 0xF0) == 0xE0) {
-                    // UTF-8 3字节字符（中文）
-                    p += 3;
-                    textLength++;
-                } else if ((*p & 0xF8) == 0xF0) {
-                    // UTF-8 4字节字符
-                    p += 4;
-                    textLength++;
-                } else {
-                    p++;
-                }
-            }
-            
-            s32 centeredX = x + (w - textLength * fontSize) / 2 + 5;
-            
+            auto textDim = renderer->getTextDimensions(noGameText, false, fontSize);
+            s32 centeredX = x + (w - textDim.first) / 2;
+            s32 centeredY = y + (h + textDim.second) / 2;
             renderer->drawString(noGameText, false, centeredX, centeredY, fontSize, tsl::Color(0xF, 0x5, 0x5, 0xF));
         }
         
@@ -420,6 +393,16 @@ tsl::elm::Element* MainMenu::createUI()
     });
     mainList->addItem(s_AutoRemapEnableItem);
 
+    // 创建设置列表项
+    auto listItemMacro = new tsl::elm::ListItem("按键脚本","已关闭");
+    listItemMacro->setClickListener([this](u64 keys) {
+        if (keys & HidNpadButton_A) {
+            return true;
+        }
+        return false;
+    });
+    mainList->addItem(listItemMacro);
+
     // 创建切换配置列表项
     auto ConfigSwitchItem = new tsl::elm::ListItem("切换配置",">");
     ConfigSwitchItem->setClickListener([](u64 keys) {
@@ -430,17 +413,6 @@ tsl::elm::Element* MainMenu::createUI()
         return false;
     });
     mainList->addItem(ConfigSwitchItem);
-
-    // 创建设置列表项
-    auto listItemSetting = new tsl::elm::ListItem("功能设置",">");
-    listItemSetting->setClickListener([this](u64 keys) {
-        if (keys & HidNpadButton_A) {
-            tsl::changeTo<SettingMenu>();
-            return true;
-        }
-        return false;
-    });
-    mainList->addItem(listItemSetting);
     
     // 将主列表设置为框架的内容
     frame->setContent(mainList);
@@ -453,11 +425,11 @@ tsl::elm::Element* MainMenu::createUI()
 bool MainMenu::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, 
     HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) {
     if (keysDown & HidNpadButton_Right) {
-        tsl::changeTo<AboutPlugin>();
+        tsl::changeTo<SettingMenu>();
         return true;
     }
     else if (keysDown & HidNpadButton_Left) {
-        tsl::changeTo<SettingMenu>();
+        tsl::changeTo<AboutPlugin>();
         return true;
     }
     return false;

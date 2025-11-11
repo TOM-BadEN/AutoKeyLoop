@@ -146,12 +146,13 @@ bool isMiniOrMicroMode = false;
 
 #endif
 
+
+
 #if USING_FPS_INDICATOR_DIRECTIVE
 float fps = 0.0;
 int frameCount = 0;
 double elapsedTime;
 #endif
-
 
 // Custom variables
 //static bool jumpToListItem = false;
@@ -181,6 +182,10 @@ namespace tsl {
 
     // Booleans
     inline std::atomic<bool> clearGlyphCacheNow(false);
+    
+    // 全局控制变量（录制等场景需要，线程安全）
+    // 禁用快捷键触发hide和触摸特斯拉以外的地方触发hide
+    inline std::atomic<bool> disableComboHide{false};
 
     // Constants
     
@@ -10734,11 +10739,13 @@ namespace tsl {
                     oldTouchPos = { 0 };
                     initialTouchPos = { 0 };
             #if IS_STATUS_MONITOR_DIRECTIVE
-                    if (FullMode && !deactivateOriginalFooter) {
+                    if (FullMode && !deactivateOriginalFooter && !tsl::disableComboHide.load(std::memory_order_acquire)) {
                         this->hide();
                     }
             #else
-                    this->hide();
+                    if (!tsl::disableComboHide.load(std::memory_order_acquire)) {
+                        this->hide();
+                    }
             #endif
                 }
                 ult::stillTouching.store(true, std::memory_order_release);
@@ -11433,11 +11440,11 @@ namespace tsl {
                         leventSignal(&renderingStopEvent);
                         #endif
         
-                        if (shData->overlayOpen) {
+                        if (shData->overlayOpen && !tsl::disableComboHide.load(std::memory_order_acquire)) {
                             tsl::Overlay::get()->hide();
                             shData->overlayOpen = false;
                         }
-                        else {
+                        else if (!shData->overlayOpen) {
                             eventFire(&shData->comboEvent);
                         }
                     }
