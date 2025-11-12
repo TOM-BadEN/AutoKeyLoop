@@ -1,4 +1,4 @@
-#include "focusmonitor.hpp"
+#include "focus.hpp"
 
 // 辅助函数实现：从事件数组中查找指定tid的最后一个焦点状态
 FocusState FocusMonitor::FindLastFocusState(const PdmAppletEvent* events, s32 total_out, u64 tid) {

@@ -1,4 +1,4 @@
-#include "setting_menu.hpp"
+#include "main_menu_setting.hpp"
 #include "setting_turbo.hpp"
 #include "setting_remap.hpp"
 #include "setting_macro.hpp"

@@ -4,7 +4,7 @@
 #include "ipc_manager.hpp"
 #include "sysmodule_manager.hpp"
 #include "record_macro.hpp"
-#include "focusmonitor.hpp"
+#include "focus.hpp"
 
 // 录制消息全局变量
 static char g_recordMessage[32] = "";
