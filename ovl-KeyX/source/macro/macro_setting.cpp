@@ -5,6 +5,7 @@
 #include "sysmodule.hpp"
 #include "macro_record.hpp"
 #include "focus.hpp"
+#include "macro_list.hpp"
 
 // 录制消息全局变量
 static char g_recordMessage[32] = "";
@@ -149,7 +150,7 @@ tsl::elm::Element* SettingMacro::createUI() {
     auto listItemView = new tsl::elm::ListItem("查看脚本", ">");
     listItemView->setClickListener([this](u64 keys) {
         if (keys & HidNpadButton_A) {
-            // TODO: 实现查看脚本功能
+            if (GameMonitor::getCurrentTitleId() == 0) tsl::changeTo<MacroListGui>();
             return true;
         }
         return false;
