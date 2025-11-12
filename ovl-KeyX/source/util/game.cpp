@@ -1,4 +1,4 @@
-#include "game_monitor.hpp"
+#include "game.hpp"
 
 // 获取当前运行程序的Title ID
 u64 GameMonitor::getCurrentTitleId() {

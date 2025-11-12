@@ -1,5 +1,5 @@
-#include "ipc_manager.hpp"
-#include "sysmodule_manager.hpp" 
+#include "ipc.hpp"
+#include "sysmodule.hpp" 
 
 // 全局实例定义 - 程序启动时创建，退出时自动析构
 IPCManager g_ipcManager;

@@ -1,8 +1,8 @@
 #include "setting_turbo.hpp"
 #include "setting_turbo_config.hpp"
-#include "game_monitor.hpp"
+#include "game.hpp"
 #include "ini_helper.hpp"
-#include "ipc_manager.hpp"
+#include "ipc.hpp"
 
 // 配置文件路径常量
 constexpr const char* CONFIG_PATH = "/config/KeyX/config.ini";

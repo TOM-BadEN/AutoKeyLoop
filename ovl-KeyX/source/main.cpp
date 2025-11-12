@@ -1,7 +1,7 @@
 #define TESLA_INIT_IMPL
 #include <tesla.hpp>
 #include "main_menu.hpp"
-#include "language_manager.hpp"
+#include "language.hpp"
 
 // KeyX 特斯拉覆盖层主类
 class KeyXOverlay : public tsl::Overlay {

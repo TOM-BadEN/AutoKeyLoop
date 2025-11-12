@@ -1,7 +1,7 @@
 #include "record_macro.hpp"
 #include "setting_macro.hpp"
 #include "focus.hpp"
-#include "game_monitor.hpp"
+#include "game.hpp"
 #include <ultra.hpp>
 #include <time.h>
 

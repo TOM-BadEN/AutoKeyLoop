@@ -1,4 +1,4 @@
-#include "language_manager.hpp"
+#include "language.hpp"
 #include <tesla.hpp>
 
 const std::string LANG_PATH = "/switch/.overlays/lang/KeyX/";

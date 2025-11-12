@@ -3,8 +3,8 @@
 #include "setting_remap.hpp"
 #include "setting_macro.hpp"
 #include "ini_helper.hpp"
-#include "ipc_manager.hpp"
-#include "sysmodule_manager.hpp"
+#include "ipc.hpp"
+#include "sysmodule.hpp"
 #include "main_menu.hpp"
 
 // 配置文件路径常量

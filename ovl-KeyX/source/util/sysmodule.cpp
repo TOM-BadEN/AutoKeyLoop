@@ -1,5 +1,5 @@
-#include "sysmodule_manager.hpp"
-#include "ipc_manager.hpp"
+#include "sysmodule.hpp"
+#include "ipc.hpp"
 #include <ultra.hpp>
 
 // 检查系统模块是否正在运行

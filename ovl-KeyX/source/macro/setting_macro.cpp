@@ -1,8 +1,8 @@
 #include "setting_macro.hpp"
-#include "game_monitor.hpp"
+#include "game.hpp"
 #include "ini_helper.hpp"
-#include "ipc_manager.hpp"
-#include "sysmodule_manager.hpp"
+#include "ipc.hpp"
+#include "sysmodule.hpp"
 #include "record_macro.hpp"
 #include "focus.hpp"
 

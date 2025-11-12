@@ -1,7 +1,7 @@
 #include "setting_turbo_config.hpp"
-#include "game_monitor.hpp"
+#include "game.hpp"
 #include "ini_helper.hpp"
-#include "ipc_manager.hpp"
+#include "ipc.hpp"
 
 // Switch 按键 Unicode 图标
 namespace ButtonIcon {
