@@ -2,7 +2,12 @@
 #include "setting/setting_macro.hpp"
 #include "focusmonitor.hpp"
 #include "game_monitor.hpp"
+#include <ultra.hpp>
+#include <time.h>
 
+namespace {
+    constexpr u64 STICK_PSEUDO_MASK = 0xFF0000ULL;  // 伪按键，必须过滤
+}
 
 // 录制用的 Frame
 RecordingFrame::RecordingFrame() 
@@ -45,7 +50,6 @@ void RecordingFrame::layout(u16 parentX, u16 parentY, u16 parentWidth, u16 paren
     this->setBoundaries(0, 0, tsl::cfg::FramebufferWidth, tsl::cfg::FramebufferHeight);
 }
 
-
 // 录制时界面类
 RecordingGui::RecordingGui()
  : m_startTime(armGetSystemTick())
@@ -62,6 +66,39 @@ RecordingGui::RecordingGui()
 tsl::elm::Element* RecordingGui::createUI() {
     m_frame = new RecordingFrame();
     return m_frame;
+}
+
+// 保存录制数据到文件
+void RecordingGui::saveToFile() {
+    if (m_frames.empty()) return;
+    // 构造文件头
+    MacroHeader header;
+    memcpy(header.magic, "KEYX", 4);
+    header.version = 1;
+    header.frameRate = 60;
+    header.titleId = GameMonitor::getCurrentTitleId();
+    header.frameCount = m_frames.size();
+    // 生成文件路径
+    char dirPath[64];
+    sprintf(dirPath, "/config/KeyX/macros/%016lX", header.titleId);
+    ult::createDirectory(dirPath);
+    char filename[96];
+    time_t timestamp = time(NULL);
+    // 尝试基础文件名 
+    // 如果文件已存在，添加后缀 -1, -2, -3...
+    sprintf(filename, "%s/macro_%lu.macro", dirPath, (unsigned long)timestamp);
+    int suffix = 1;
+    while (ult::isFile(filename)) {
+        sprintf(filename, "%s/macro_%lu-%d.macro", dirPath, (unsigned long)timestamp, suffix);
+        suffix++;
+    }
+    // 写入文件
+    FILE* fp = fopen(filename, "wb");
+    if (fp) {
+        fwrite(&header, sizeof(header), 1, fp);
+        fwrite(m_frames.data(), sizeof(MacroFrame), m_frames.size(), fp);
+        fclose(fp);
+    }
 }
 
 // 退出录制并返回主界面
@@ -97,7 +134,7 @@ void RecordingGui::update() {
     }
     
     // 超时检测
-    if (elapsed_ms > 10000) {
+    if (elapsed_ms > 30000) {
         setRecordingMessage("录制超时");
         exitRecording();
     }
@@ -107,10 +144,24 @@ bool RecordingGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &
     // 检测特斯拉快捷键
     const u64 combo = tsl::cfg::launchCombo;
     if (((keysHeld & combo) == combo) && (keysDown & combo)) {
+        while (!m_frames.empty() && (m_frames.back().keysHeld & combo)) {
+            m_frames.pop_back();
+        }
+        saveToFile();  // 保存文件
         setRecordingMessage("录制完成");
         exitRecording();
         return true;
     }
+    
+    // 录制当前帧数据
+    MacroFrame frame;
+    // 过滤摇杆虚拟按键（bit 16-23），只保留物理按键
+    frame.keysHeld = keysHeld & ~STICK_PSEUDO_MASK;
+    frame.leftX = joyStickPosLeft.x;
+    frame.leftY = joyStickPosLeft.y;
+    frame.rightX = joyStickPosRight.x;
+    frame.rightY = joyStickPosRight.y;
+    m_frames.push_back(frame);
     
     // 录制期间忽略所有其他按键
     return true;

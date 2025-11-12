@@ -169,7 +169,7 @@ tsl::elm::Element* SettingMacro::createUI() {
     }), 30);
 
     auto countdown = new tsl::elm::CustomDrawer([](tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h) {
-        s32 fontSize = 60;
+        s32 fontSize = 54;
         auto textDim = r->getTextDimensions(g_recordMessage, false, fontSize);
         while (textDim.first > w - 30) {
             fontSize = fontSize * 9 / 10;  // 缩小 10%
