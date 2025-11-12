@@ -1,4 +1,4 @@
-#include "about_plugin.hpp"
+#include "about.hpp"
 
 // 关于插件界面构造函数
 AboutPlugin::AboutPlugin()

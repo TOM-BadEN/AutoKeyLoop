@@ -1,6 +1,6 @@
 #pragma once
 #include <tesla.hpp>
-#include "about_plugin.hpp"  // 包含关于插件界面头文件
+#include "about.hpp"  // 包含关于插件界面头文件
 
 // 游戏状态结构体
 struct TextAreaInfo {
