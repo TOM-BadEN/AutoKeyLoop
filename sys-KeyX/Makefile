@@ -21,9 +21,20 @@ APP_TITLEID   := 4100000002025924
 TARGET		:=	sys-KeyX
 BUILD		:=	build
 OUTDIR := out
-SOURCES		:=	source source/autokey log lib/minIni-nx/source
+SOURCES		:=	source \
+				source/autokey \
+				source/remapper \
+				source/util \
+				source/log \
+				lib/minIni-nx/source
 DATA		:=	data
-INCLUDES	:=	include source/autokey log lib/minIni-nx/include lib/libnotification/libnotification
+INCLUDES	:=	include \
+				source/autokey \
+				source/remapper \
+				source/util \
+				source/log \
+				lib/minIni-nx/include \
+				lib/libnotification/libnotification
 EXEFS_SRC	:=	exefs_src
 
 #---------------------------------------------------------------------------------
