@@ -1,5 +1,5 @@
 #include "record_macro.hpp"
-#include "setting/setting_macro.hpp"
+#include "setting_macro.hpp"
 #include "focusmonitor.hpp"
 #include "game_monitor.hpp"
 #include <ultra.hpp>

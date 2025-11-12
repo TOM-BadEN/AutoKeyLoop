@@ -3,7 +3,7 @@
 #include "ini_helper.hpp"
 #include "ipc_manager.hpp"
 #include "sysmodule_manager.hpp"
-#include "setting/setting_menu.hpp"
+#include "setting_menu.hpp"
 #include <ultra.hpp>
 
 // Tesla插件界面尺寸常量定义

@@ -140,8 +140,8 @@ def decode_keys(keys):
 
 if __name__ == "__main__":
     # 目标文件
-    input_file = r"D:\msys64\home\18084\KeyX\out\CN\macro_1762909346.macro"
-    output_file = r"D:\msys64\home\18084\KeyX\out\CN\macro_1762909346.log"
+    input_file = r"D:\msys64\home\18084\KeyX\out\CN\macro_1762911948.macro"
+    output_file = r"D:\msys64\home\18084\KeyX\out\CN\macro_1762911948.log"
     
     print(f"解析文件: {input_file}")
     

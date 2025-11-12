@@ -1,4 +1,4 @@
-#include "setting/setting_turbo_config.hpp"
+#include "setting_turbo_config.hpp"
 #include "game_monitor.hpp"
 #include "ini_helper.hpp"
 #include "ipc_manager.hpp"

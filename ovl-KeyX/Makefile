@@ -26,9 +26,24 @@ APP_VERSION :=	1.2.6
 
 TARGET		:=	ovl-KeyX
 BUILD		:=	build
-SOURCES		:=	source source/setting libs/libultrahand/libultra/source libs/libultrahand/common
+SOURCES		:=	source \
+				source/about \
+				source/turbo \
+				source/remap \
+				source/macro \
+				source/util \
+				libs/libultrahand/libultra/source \
+				libs/libultrahand/common
 DATA		:=	data
-INCLUDES	:=	include include/setting libs/libultrahand/libultra/include libs/libultrahand/libtesla/include libs/libultrahand/common
+INCLUDES	:=	include \
+				include/about \
+				include/turbo \
+				include/remap \
+				include/macro \
+				include/util \
+				libs/libultrahand/libultra/include \
+				libs/libultrahand/libtesla/include \
+				libs/libultrahand/common
 
 NO_ICON		:=  1
 
