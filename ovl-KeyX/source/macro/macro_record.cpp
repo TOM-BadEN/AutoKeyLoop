@@ -1,5 +1,5 @@
-#include "record_macro.hpp"
-#include "setting_macro.hpp"
+#include "macro_record.hpp"
+#include "macro_setting.hpp"
 #include "focus.hpp"
 #include "game.hpp"
 #include <ultra.hpp>

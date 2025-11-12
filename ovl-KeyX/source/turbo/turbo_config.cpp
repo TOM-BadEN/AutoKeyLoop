@@ -1,4 +1,4 @@
-#include "setting_turbo_config.hpp"
+#include "turbo_config.hpp"
 #include "game.hpp"
 #include "ini_helper.hpp"
 #include "ipc.hpp"

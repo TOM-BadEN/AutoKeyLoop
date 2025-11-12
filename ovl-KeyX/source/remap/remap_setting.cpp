@@ -1,5 +1,5 @@
-#include "setting_remap.hpp"
-#include "setting_remap_config.hpp"
+#include "remap_setting.hpp"
+#include "remap_config.hpp"
 #include "game.hpp"
 #include "ini_helper.hpp"
 #include "ipc.hpp"

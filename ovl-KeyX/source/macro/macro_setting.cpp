@@ -1,9 +1,9 @@
-#include "setting_macro.hpp"
+#include "macro_setting.hpp"
 #include "game.hpp"
 #include "ini_helper.hpp"
 #include "ipc.hpp"
 #include "sysmodule.hpp"
-#include "record_macro.hpp"
+#include "macro_record.hpp"
 #include "focus.hpp"
 
 // 录制消息全局变量
