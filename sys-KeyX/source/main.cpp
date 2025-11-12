@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "app.hpp"
-#include "system_language.hpp"
+#include "language.hpp"
 
 // libnx fake heap initialization
 extern "C" {

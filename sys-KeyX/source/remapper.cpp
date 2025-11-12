@@ -1,4 +1,4 @@
-#include "buttonremapper.hpp"
+#include "remapper.hpp"
 #include <cstring>
 #include "minIni.h"
 

@@ -1,9 +1,9 @@
 #pragma once
 #include "autokeyloop.hpp"
 #include "ipc.hpp"
-#include "buttonremapper.hpp"
-#include "focusmonitor.hpp"
-#include "gamemonitor.hpp"
+#include "remapper.hpp"
+#include "focus.hpp"
+#include "game.hpp"
 #include <mutex>
 #include <memory>
 
