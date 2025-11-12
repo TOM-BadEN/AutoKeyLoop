@@ -1,5 +1,6 @@
 #include "macro_list.hpp"
 #include <ultra.hpp>
+#include "game.hpp"
 
 
 namespace {
@@ -9,7 +10,16 @@ namespace {
 MacroListGui::MacroListGui() 
  : m_macroDirs()
 {
-    if (ult::isDirectory(MACROS_DIR)) m_macroDirs = ult::getSubdirectories(MACROS_DIR);
+    if (ult::isDirectory(MACROS_DIR)) {
+        auto dirs = ult::getSubdirectories(MACROS_DIR);
+        m_macroDirs.reserve(dirs.size());
+        for (const auto& dir : dirs) {
+            MacroDirEntry entry{};
+            entry.dirName = dir;
+            m_macroDirs.push_back(entry);
+        }
+    }
+
 }
 
 tsl::elm::Element* MacroListGui::createUI() {
@@ -39,8 +49,9 @@ tsl::elm::Element* MacroListGui::createUI() {
     }
 
     list->addItem(new tsl::elm::CategoryHeader(" 选择要查看的游戏"));
-    for (const auto& dir : m_macroDirs) {
-        auto item = new tsl::elm::ListItem(dir);
+    for (auto& entry : m_macroDirs) {
+        auto item = new tsl::elm::ListItem(entry.dirName);
+        entry.item = item;
         item->setClickListener([this](u64 keys) {
             if (keys & HidNpadButton_A) {
                 return true;
@@ -52,5 +63,19 @@ tsl::elm::Element* MacroListGui::createUI() {
 
     frame->setContent(list);
     return frame;
+}
+
+// 异步更新游戏名字
+void MacroListGui::update() {
+    if (m_nextIndex >= m_macroDirs.size()) return;
+    auto& entry = m_macroDirs[m_nextIndex];
+    if (!entry.item) {
+        m_nextIndex = m_nextIndex + 1;
+        return;
+    }
+    u64 tid = strtoull(entry.dirName.c_str(), nullptr, 16);
+    char nameBuf[64]{};
+    if (GameMonitor::getTitleIdGameName(tid, nameBuf)) entry.item->setText(nameBuf);
+    m_nextIndex = m_nextIndex + 1;
 }
 

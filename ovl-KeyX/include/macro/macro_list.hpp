@@ -9,9 +9,17 @@ class MacroListGui : public tsl::Gui {
 public:
     MacroListGui();
     virtual tsl::elm::Element* createUI() override;
+    virtual void update() override;
    
 private:
-    std::vector<std::string> m_macroDirs;
+
+    struct MacroDirEntry {
+        std::string dirName;          
+        tsl::elm::ListItem* item{};   
+    };
+
+    std::vector<MacroDirEntry> m_macroDirs;
+    size_t m_nextIndex = 0;
 };
 
 
