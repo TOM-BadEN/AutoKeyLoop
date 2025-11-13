@@ -1,4 +1,5 @@
 #include "macro_view.hpp"
+#include "macro_rename.hpp"
 #include "macro_list.hpp"
 #include "macro_record.hpp" 
 #include <ultra.hpp>
@@ -26,13 +27,14 @@ namespace ButtonIcon {
 // 脚本查看类
 MacroViewGui::MacroViewGui(const char* macroFilePath, const char* gameName) 
  : m_info()
- , m_macroFilePath(macroFilePath)
 {
+    
+    strcpy(m_macroFilePath, macroFilePath);
+    strcpy(m_info.gameName, gameName);
     std::string fileName = ult::getFileName(macroFilePath);
     auto dot = fileName.rfind('.');
     if (dot != std::string::npos) fileName = fileName.substr(0, dot); 
     strcpy(m_info.macroName, fileName.c_str());
-    strcpy(m_info.gameName, gameName);
     struct stat st{};
     if (stat(macroFilePath, &st) == 0) {
         u32 kb = static_cast<u32>((st.st_size + 1023) / 1024);
@@ -113,6 +115,7 @@ tsl::elm::Element* MacroViewGui::createUI() {
     auto listChangeName = new tsl::elm::ListItem("修改名称",">");
     listChangeName->setClickListener([this](u64 keys) {
         if (keys & HidNpadButton_A) {
+            tsl::changeTo<MacroRenameGui>(m_macroFilePath, m_info.gameName);
             return true;
         }   
         return false;

@@ -8,7 +8,7 @@ public:
     MacroViewGui(const char* macroFilePath, const char* gameName);
     virtual tsl::elm::Element* createUI() override;
     virtual bool handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) override;
-
+    
 private:
 
     struct MacroInfo {
@@ -22,7 +22,7 @@ private:
     };
 
     MacroInfo m_info{};
-    const char* m_macroFilePath;
+    char m_macroFilePath[96];
 
     // 删除按钮
     tsl::elm::ListItem* m_deleteItem = nullptr;

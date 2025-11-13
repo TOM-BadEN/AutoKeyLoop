@@ -1,5 +1,6 @@
 #include "macro_record.hpp"
 #include "macro_setting.hpp"
+#include "macro_rename.hpp"
 #include "focus.hpp"
 #include "game.hpp"
 #include <ultra.hpp>
@@ -80,7 +81,7 @@ void RecordingGui::saveToFile() {
     header.frameCount = m_frames.size();
     // 生成文件路径
     char dirPath[64];
-    sprintf(dirPath, "/config/KeyX/macros/%016lX", header.titleId);
+    sprintf(dirPath, "sdmc:/config/KeyX/macros/%016lX", header.titleId);
     ult::createDirectory(dirPath);
     char filename[96];
     time_t timestamp = time(NULL);
@@ -99,6 +100,11 @@ void RecordingGui::saveToFile() {
         fwrite(m_frames.data(), sizeof(MacroFrame), m_frames.size(), fp);
         fclose(fp);
     }
+
+    char gameName[64];
+    GameMonitor::getTitleIdGameName(header.titleId, gameName);
+    exitRecording();
+    tsl::changeTo<MacroRenameGui>(filename, gameName, true);
 }
 
 // 退出录制并返回主界面
@@ -147,9 +153,7 @@ bool RecordingGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &
         while (!m_frames.empty() && (m_frames.back().keysHeld & combo)) {
             m_frames.pop_back();
         }
-        saveToFile();  // 保存文件
-        setRecordingMessage("录制完成");
-        exitRecording();
+        saveToFile();  // 界面挑战写在这个函数末尾了
         return true;
     }
     

@@ -2,6 +2,8 @@
 #include "macro_view.hpp"
 #include <ultra.hpp>
 #include "game.hpp"
+#include <algorithm>
+#include <strings.h>
 
 
 namespace {
@@ -90,6 +92,7 @@ MacroListGuiGame::MacroListGuiGame(u64 titleId)
     sprintf(gameDirPath, "sdmc:/config/KeyX/macros/%016lX/*.macro", titleId);
     m_macroFiles = ult::getFilesListByWildcards(gameDirPath);
     GameMonitor::getTitleIdGameName(titleId, m_gameName);
+    std::sort(m_macroFiles.begin(), m_macroFiles.end(),[](const std::string& a, const std::string& b) { return strcasecmp(a.c_str(), b.c_str()) < 0; });
 }
 
 tsl::elm::Element* MacroListGuiGame::createUI() {

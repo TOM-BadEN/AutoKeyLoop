@@ -150,7 +150,9 @@ tsl::elm::Element* SettingMacro::createUI() {
     auto listItemView = new tsl::elm::ListItem("查看脚本", ">");
     listItemView->setClickListener([this](u64 keys) {
         if (keys & HidNpadButton_A) {
-            if (GameMonitor::getCurrentTitleId() == 0) tsl::changeTo<MacroListGui>();
+            u64 tid = GameMonitor::getCurrentTitleId();
+            if ( tid == 0) tsl::changeTo<MacroListGui>();
+            else tsl::changeTo<MacroListGuiGame>(tid);
             return true;
         }
         return false;
