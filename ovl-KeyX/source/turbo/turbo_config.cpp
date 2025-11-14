@@ -2,38 +2,7 @@
 #include "game.hpp"
 #include "ini_helper.hpp"
 #include "ipc.hpp"
-
-// Switch 按键 Unicode 图标
-namespace ButtonIcon {
-    constexpr const char* A      = "\uE0A0";  // A 按键
-    constexpr const char* B      = "\uE0A1";  // B 按键
-    constexpr const char* X      = "\uE0A2";  // X 按键
-    constexpr const char* Y      = "\uE0A3";  // Y 按键
-    constexpr const char* L      = "\uE0A4";  // L 按键
-    constexpr const char* R      = "\uE0A5";  // R 按键
-    constexpr const char* ZL     = "\uE0A6";  // ZL 按键
-    constexpr const char* ZR     = "\uE0A7";  // ZR 按键
-    constexpr const char* Up     = "\uE0AF";  // 方向键上
-    constexpr const char* Down   = "\uE0B0";  // 方向键下
-    constexpr const char* Left   = "\uE0B1";  // 方向键左
-    constexpr const char* Right  = "\uE0B2";  // 方向键右
-}
-
-// 按键位标志定义（与 HidNpadButton 位索引保持一致）
-enum ButtonFlags : u64 {
-    BTN_A     = 1ULL << 0,   // HidNpadButton_A
-    BTN_B     = 1ULL << 1,   // HidNpadButton_B
-    BTN_X     = 1ULL << 2,   // HidNpadButton_X
-    BTN_Y     = 1ULL << 3,   // HidNpadButton_Y
-    BTN_L     = 1ULL << 6,   // HidNpadButton_L（跳过 StickL/StickR）
-    BTN_R     = 1ULL << 7,   // HidNpadButton_R
-    BTN_ZL    = 1ULL << 8,   // HidNpadButton_ZL
-    BTN_ZR    = 1ULL << 9,   // HidNpadButton_ZR
-    BTN_LEFT  = 1ULL << 12,  // HidNpadButton_Left（跳过 Plus/Minus）
-    BTN_UP    = 1ULL << 13,  // HidNpadButton_Up
-    BTN_RIGHT = 1ULL << 14,  // HidNpadButton_Right
-    BTN_DOWN  = 1ULL << 15   // HidNpadButton_Down
-};
+#include "hiddata.hpp"
 
 namespace {
     // 储存当前选中的连发按键的位掩码
@@ -212,51 +181,19 @@ tsl::elm::Element* SettingTurboButton::createUI() {
         renderer->drawString(subtitle, false, 20, 50+23, 15, renderer->a(tsl::bannerVersionTextColor));
         renderer->drawString("\uE0EE  重置", false, 280, 693, 23, renderer->a(tsl::style::color::ColorText));
     }));
-    
     auto list = new tsl::elm::List();
     list->addItem(new tsl::elm::CategoryHeader("选择连发按键（可多选）"));
-    
-    // 定义按键配置：名称、Unicode符号、位标志
-    struct ButtonConfig {
-        const char* name;
-        const char* unicode;
-        u64 flag;
-    };
-    
-    ButtonConfig buttons[] = {
-        {"按键", ButtonIcon::A, BTN_A},
-        {"按键", ButtonIcon::B, BTN_B},
-        {"按键", ButtonIcon::X, BTN_X},
-        {"按键", ButtonIcon::Y, BTN_Y},
-        {"按键", ButtonIcon::L, BTN_L},
-        {"按键", ButtonIcon::R, BTN_R},
-        {"按键", ButtonIcon::ZL, BTN_ZL},
-        {"按键", ButtonIcon::ZR, BTN_ZR},
-        {"方向键上", ButtonIcon::Up, BTN_UP},
-        {"方向键下", ButtonIcon::Down, BTN_DOWN},
-        {"方向键左", ButtonIcon::Left, BTN_LEFT},
-        {"方向键右", ButtonIcon::Right, BTN_RIGHT}
-    };
-    
-    for (const auto& btn : buttons) {
+    for (const auto& btn : TurboConfig::Buttons) {
         bool isSelected = (s_TurboButtons & btn.flag) != 0;
-        
-        // 拼接按键名称和图标
-        std::string buttonName = ult::i18n(btn.name) + "  " + btn.unicode;
+        const char* icon = HidHelper::getIconByMask(btn.flag);
+        std::string buttonName = std::string(ult::i18n(btn.name)) + "  " + icon;
         auto item = new tsl::elm::ToggleListItem(buttonName, isSelected);
-        
         item->setStateChangedListener([this, btn](bool state) {
-            if (state) {
-                s_TurboButtons |= btn.flag;  // 添加按键
-            } else {
-                s_TurboButtons &= ~btn.flag; // 移除按键
-            }
-            
-            // 保存到配置文件
+            if (state) s_TurboButtons |= btn.flag;
+            else s_TurboButtons &= ~btn.flag;
             IniHelper::setInt("AUTOFIRE", "buttons", s_TurboButtons, m_configPath);
             g_ipcManager.sendReloadAutoFireCommand();
         });
-        
         list->addItem(item);
     }
     

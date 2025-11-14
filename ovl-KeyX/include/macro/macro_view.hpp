@@ -22,14 +22,32 @@ private:
     };
 
     MacroInfo m_info{};
+    char m_gameCfgPath[96];
     char m_macroFilePath[96];
+    u64 m_Hotkey;
 
     // 删除按钮
     tsl::elm::ListItem* m_deleteItem = nullptr;
 
 
     void ParsingMacros();
+    void getHotkey();
 
 };
 
+
+// 脚本查看类
+class MacroHotKeySettingGui : public tsl::Gui {
+
+public:
+    MacroHotKeySettingGui(const char* macroFilePath, const char* gameName, const char* gameCfgPath, u64 Hotkey);
+    virtual tsl::elm::Element* createUI() override;
+    
+private:
+    char m_macroFilePath[96];
+    char m_gameName[64];
+    char m_gameCfgPath[96];
+    u64 m_Hotkey;
+};
+    
 

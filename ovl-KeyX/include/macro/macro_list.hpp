@@ -29,8 +29,15 @@ public:
     virtual tsl::elm::Element* createUI() override;
 
 private:
+
+    struct Macro {
+        std::string macroPath;
+        u64 Hotkey;
+    };
+
+    std::vector<Macro> m_macro;
     char m_gameName[64];
-    std::vector<std::string> m_macroFiles;
+
 };
 
 

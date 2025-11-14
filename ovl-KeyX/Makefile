@@ -41,9 +41,11 @@ INCLUDES	:=	include \
 				include/remap \
 				include/macro \
 				include/util \
+				include/common \
 				libs/libultrahand/libultra/include \
 				libs/libultrahand/libtesla/include \
 				libs/libultrahand/common
+				
 
 NO_ICON		:=  1
 

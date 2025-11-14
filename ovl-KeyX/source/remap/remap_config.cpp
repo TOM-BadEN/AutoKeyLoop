@@ -2,34 +2,12 @@
 #include "game.hpp"
 #include "ini_helper.hpp"
 #include "ipc.hpp"
+#include "hiddata.hpp"
 
-// Switch 按键 Unicode 图标
-namespace ButtonIcon {
-    constexpr const char* A      = "\uE0A0";  // A 按键
-    constexpr const char* B      = "\uE0A1";  // B 按键
-    constexpr const char* X      = "\uE0A2";  // X 按键
-    constexpr const char* Y      = "\uE0A3";  // Y 按键
-    constexpr const char* Up     = "\uE0AF";  // 方向键上
-    constexpr const char* Down   = "\uE0B0";  // 方向键下
-    constexpr const char* Left   = "\uE0B1";  // 方向键左
-    constexpr const char* Right  = "\uE0B2";  // 方向键右
-    constexpr const char* L      = "\uE0A4";  // L 按键
-    constexpr const char* R      = "\uE0A5";  // R 按键
-    constexpr const char* ZL     = "\uE0A6";  // ZL 按键
-    constexpr const char* ZR     = "\uE0A7";  // ZR 按键
-    constexpr const char* StickL = "\uE0C4";  // 左摇杆按下
-    constexpr const char* StickR = "\uE0C5";  // 右摇杆按下
-    constexpr const char* Start  = "\uE0B5";  // Start/Plus
-    constexpr const char* Select = "\uE0B6";  // Select/Minus
-}
 
 namespace {
-    struct ButtonMapping {
-        const char* source;   // 源按键（固定）
-        char target[8];       // 目标按键（可变）
-    };
     
-    ButtonMapping s_ButtonMappings[] = {
+    MappingDef::ButtonMapping s_ButtonMappings[] = {
         {"A", "A"},
         {"B", "B"},
         {"X", "X"},
@@ -48,33 +26,10 @@ namespace {
         {"Select", "Select"}
     };
     
-    constexpr int BUTTON_COUNT = 16;
-    
     // 当前配置上下文（全局变量）
     bool s_isGlobal = true;
     u64 s_titleId = 0;
     char s_configPath[256] = "";
-    
-    // 根据按键名称获取图标
-    const char* getButtonIcon(const char* buttonName) {
-        if (strcmp(buttonName, "A") == 0) return ButtonIcon::A;
-        if (strcmp(buttonName, "B") == 0) return ButtonIcon::B;
-        if (strcmp(buttonName, "X") == 0) return ButtonIcon::X;
-        if (strcmp(buttonName, "Y") == 0) return ButtonIcon::Y;
-        if (strcmp(buttonName, "Up") == 0) return ButtonIcon::Up;
-        if (strcmp(buttonName, "Down") == 0) return ButtonIcon::Down;
-        if (strcmp(buttonName, "Left") == 0) return ButtonIcon::Left;
-        if (strcmp(buttonName, "Right") == 0) return ButtonIcon::Right;
-        if (strcmp(buttonName, "L") == 0) return ButtonIcon::L;
-        if (strcmp(buttonName, "R") == 0) return ButtonIcon::R;
-        if (strcmp(buttonName, "ZL") == 0) return ButtonIcon::ZL;
-        if (strcmp(buttonName, "ZR") == 0) return ButtonIcon::ZR;
-        if (strcmp(buttonName, "StickL") == 0) return ButtonIcon::StickL;
-        if (strcmp(buttonName, "StickR") == 0) return ButtonIcon::StickR;
-        if (strcmp(buttonName, "Start") == 0) return ButtonIcon::Start;
-        if (strcmp(buttonName, "Select") == 0) return ButtonIcon::Select;
-        return "\uE142";
-    }
 }
 
 SettingRemapConfig::SettingRemapConfig(bool isGlobal, u64 currentTitleId)
@@ -99,7 +54,7 @@ SettingRemapConfig::SettingRemapConfig(bool isGlobal, u64 currentTitleId)
 }
 
 void SettingRemapConfig::loadMappings() {
-    for (int i = 0; i < BUTTON_COUNT; i++) {
+    for (int i = 0; i < MappingDef::BUTTON_COUNT; i++) {
         std::string temp = IniHelper::getString(
             "MAPPING",
             s_ButtonMappings[i].source,
@@ -135,9 +90,9 @@ tsl::elm::Element* SettingRemapConfig::createUI() {
     list->addItem(new tsl::elm::CategoryHeader(" 当前映射列表"));
     
     // 遍历所有映射，创建列表项
-    for (int i = 0; i < BUTTON_COUNT; i++) {
-        const char* sourceIcon = getButtonIcon(s_ButtonMappings[i].source);
-        const char* targetIcon = getButtonIcon(s_ButtonMappings[i].target);
+    for (int i = 0; i < MappingDef::BUTTON_COUNT; i++) {
+        const char* sourceIcon = HidHelper::getButtonIcon(s_ButtonMappings[i].source);
+        const char* targetIcon = HidHelper::getButtonIcon(s_ButtonMappings[i].target);
         
         // 判断是否映射
         bool isMapped = (strcmp(s_ButtonMappings[i].source, s_ButtonMappings[i].target) != 0);
@@ -224,9 +179,9 @@ tsl::elm::Element* SettingRemapDisplay::createUI() {
             const char* targetIcon = nullptr;
             bool isMapped = false;
             
-            for (int i = 0; i < BUTTON_COUNT; i++) {
+            for (int i = 0; i < MappingDef::BUTTON_COUNT; i++) {
                 if (strcmp(s_ButtonMappings[i].source, sourceName) == 0) {
-                    targetIcon = getButtonIcon(s_ButtonMappings[i].target);
+                    targetIcon = HidHelper::getButtonIcon(s_ButtonMappings[i].target);
                     isMapped = (strcmp(s_ButtonMappings[i].source, s_ButtonMappings[i].target) != 0);
                     break;
                 }
@@ -310,7 +265,7 @@ bool SettingRemapDisplay::handleInput(u64 keysDown, u64 keysHeld, const HidTouch
 
 void SettingRemapDisplay::resetMappings() {
     // 保存到配置文件（写入默认值）
-    for (int i = 0; i < BUTTON_COUNT; i++) {
+    for (int i = 0; i < MappingDef::BUTTON_COUNT; i++) {
         IniHelper::setString("MAPPING", 
             s_ButtonMappings[i].source, 
             s_ButtonMappings[i].source,
@@ -326,7 +281,7 @@ SettingRemapEdit::SettingRemapEdit(int buttonIndex)
 
 tsl::elm::Element* SettingRemapEdit::createUI() {
     const char* sourceName = s_ButtonMappings[m_buttonIndex].source;
-    const char* sourceIcon = getButtonIcon(sourceName);
+    const char* sourceIcon = HidHelper::getButtonIcon(sourceName);
     
     auto frame = new tsl::elm::OverlayFrame(
         "修改映射", 
@@ -340,9 +295,9 @@ tsl::elm::Element* SettingRemapEdit::createUI() {
     list->addItem(header);
     
     // 显示所有 16 个可选按键
-    for (int i = 0; i < BUTTON_COUNT; i++) {
+    for (int i = 0; i < MappingDef::BUTTON_COUNT; i++) {
         const char* targetName = s_ButtonMappings[i].source;  // 使用源按键名作为目标选项
-        const char* targetIcon = getButtonIcon(targetName);
+        const char* targetIcon = HidHelper::getButtonIcon(targetName);
         
         // 判断是否是当前映射
         bool isCurrent = (strcmp(s_ButtonMappings[m_buttonIndex].target, targetName) == 0);

@@ -4,7 +4,8 @@
 #include "game.hpp"
 #include <algorithm>
 #include <strings.h>
-
+#include "ini_helper.hpp"
+#include "hiddata.hpp"
 
 namespace {
     const char* MACROS_DIR = "/config/KeyX/macros";
@@ -52,7 +53,7 @@ tsl::elm::Element* MacroListGui::createUI() {
 
     list->addItem(new tsl::elm::CategoryHeader(" 选择要查看的游戏"));
     for (auto& entry : m_macroDirs) {
-        auto item = new tsl::elm::ListItem(entry.dirName);
+        auto item = new tsl::elm::ListItem("");
         entry.item = item;
         item->setClickListener([this, entry](u64 keys) {
             if (keys & HidNpadButton_A) {
@@ -80,19 +81,54 @@ void MacroListGui::update() {
     u64 tid = strtoull(entry.dirName.c_str(), nullptr, 16);
     char nameBuf[64]{};
     if (GameMonitor::getTitleIdGameName(tid, nameBuf)) entry.item->setText(nameBuf);
+    else entry.item->setText(entry.dirName);
     m_nextIndex = m_nextIndex + 1;
 }
 
 
 // 脚本清单具体游戏的脚本列表类
 MacroListGuiGame::MacroListGuiGame(u64 titleId)
- : m_gameName()
+ : m_macro()
 {
+    GameMonitor::getTitleIdGameName(titleId, m_gameName);
     char gameDirPath[64]{};
     sprintf(gameDirPath, "sdmc:/config/KeyX/macros/%016lX/*.macro", titleId);
-    m_macroFiles = ult::getFilesListByWildcards(gameDirPath);
-    GameMonitor::getTitleIdGameName(titleId, m_gameName);
-    std::sort(m_macroFiles.begin(), m_macroFiles.end(),[](const std::string& a, const std::string& b) { return strcasecmp(a.c_str(), b.c_str()) < 0; });
+    
+    std::vector<std::string> allMacroFiles = ult::getFilesListByWildcards(gameDirPath);
+    std::sort(allMacroFiles.begin(), allMacroFiles.end(),[](const std::string& a, const std::string& b) { return strcasecmp(a.c_str(), b.c_str()) < 0; });
+
+    // 获取完整的宏文件列表
+    char gameCfgPath[64];
+    sprintf(gameCfgPath, "sdmc:/config/KeyX/GameConfig/%016lX.ini", titleId);
+    Macro entry;
+    int macroCount = IniHelper::getInt("MACRO", "macroCount", 0, gameCfgPath);
+    for (int idx = 1; idx <= macroCount; ++idx) {
+        std::string path  = "macro_path_"  + std::to_string(idx);
+        std::string combo = "macro_combo_" + std::to_string(idx);
+        std::string macroPath = IniHelper::getString("MACRO", path, "", gameCfgPath);
+        if (macroPath.empty()) continue;
+        u64 Hotkey = static_cast<u64>(IniHelper::getInt("MACRO", combo, 0, gameCfgPath));
+        if (Hotkey == 0) continue;
+        entry.macroPath = macroPath;
+        entry.Hotkey = Hotkey;
+        m_macro.push_back(entry);
+    }
+    std::sort(m_macro.begin(), m_macro.end(),[](const Macro& lhs, const Macro& rhs) {
+        std::string nameL = ult::getFileName(lhs.macroPath);
+        std::string nameR = ult::getFileName(rhs.macroPath);
+        return strcasecmp(nameL.c_str(), nameR.c_str()) < 0;
+    });
+    std::unordered_set<std::string> boundPaths;
+    boundPaths.reserve(m_macro.size());
+    for (const auto& entry : m_macro) boundPaths.insert(entry.macroPath);
+    for (const auto& filePath : allMacroFiles) {
+        if (boundPaths.count(filePath)) continue;
+        Macro extra{};
+        extra.macroPath = filePath;
+        extra.Hotkey = 0;                             
+        m_macro.push_back(std::move(extra));
+    }
+
 }
 
 tsl::elm::Element* MacroListGuiGame::createUI() {
@@ -100,7 +136,7 @@ tsl::elm::Element* MacroListGuiGame::createUI() {
     auto frame = new tsl::elm::OverlayFrame(m_gameName, "当前游戏的所有脚本");
     auto list = new tsl::elm::List();
     
-    if (m_macroFiles.empty()) {
+    if (m_macro.empty()) {
         auto noMacro = new tsl::elm::CustomDrawer([](tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h) {
             s32 textFont = 40;
             s32 iconFont = 100;
@@ -123,14 +159,14 @@ tsl::elm::Element* MacroListGuiGame::createUI() {
     }
 
     list->addItem(new tsl::elm::CategoryHeader(" 选择要查看的脚本"));
-    for (auto filePath : m_macroFiles) {
-        std::string fileName = ult::getFileName(filePath);
+    for (const auto& entry : m_macro) {
+        std::string fileName = ult::getFileName(entry.macroPath);
         auto dot = fileName.rfind('.');
         if (dot != std::string::npos) fileName = fileName.substr(0, dot); 
-        auto item = new tsl::elm::ListItem(fileName);
-        item->setClickListener([this, filePath](u64 keys) {
+        auto item = new tsl::elm::ListItem(fileName, HidHelper::getCombinedIcons(entry.Hotkey));
+        item->setClickListener([this, entry](u64 keys) {
             if (keys & HidNpadButton_A) {
-                tsl::changeTo<MacroViewGui>(filePath.c_str(), m_gameName);
+                tsl::changeTo<MacroViewGui>(entry.macroPath.c_str(), m_gameName);
                 return true;
             }   
             return false;
@@ -142,4 +178,5 @@ tsl::elm::Element* MacroListGuiGame::createUI() {
     return frame;
 
 }
+
 

@@ -40,7 +40,7 @@ MacroRenameGui::MacroRenameGui(const char* macroFilePath, const char* gameName, 
 
 tsl::elm::Element* MacroRenameGui::createUI() {
 
-    auto frame = new tsl::elm::OverlayFrame(m_gameName, "修改脚本文件的名字");
+    auto frame = new tsl::elm::OverlayFrame(m_gameName, m_isRecord ? "是否保存当前脚本" : "修改脚本文件的名字");
 
     auto keyboard = new tsl::elm::CustomDrawer([this](tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h) {
         const char* const* keyboard = m_useLower ? KeyboardRowsLower : KeyboardRowsUpper;
@@ -96,7 +96,8 @@ tsl::elm::Element* MacroRenameGui::createUI() {
         s32 GuideY = 470;
         r->drawString(" 用户指南", false, GuideX, GuideY, 20, tsl::Color(0xF,0xF,0xF,0xF));
         r->drawString("  重置输入     切换大小写", false, GuideX + 25, GuideY + 35, 18, tsl::highlightColor2);
-        r->drawString("  取消修改     保存修改", false, GuideX + 25, GuideY + 70, 18, tsl::highlightColor2);
+        if (!m_isRecord) r->drawString("  取消修改     保存修改", false, GuideX + 25, GuideY + 70, 18, tsl::highlightColor2);
+        else r->drawString("  删除脚本     保存脚本", false, GuideX + 25, GuideY + 70, 18, tsl::Color(0xF,0x5,0x5,0xF));
 
     });
 
@@ -187,6 +188,7 @@ bool MacroRenameGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState
 
     // 功能按键
     if (keysDown & HidNpadButton_Minus) {           // - 返回
+        if (m_isRecord) ult::deleteFileOrDirectory(m_macroFilePath);
         tsl::goBack();
         return true;
     } else if (keysDown & HidNpadButton_Plus) {     // + 保存

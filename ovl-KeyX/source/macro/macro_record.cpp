@@ -84,13 +84,15 @@ void RecordingGui::saveToFile() {
     sprintf(dirPath, "sdmc:/config/KeyX/macros/%016lX", header.titleId);
     ult::createDirectory(dirPath);
     char filename[96];
-    time_t timestamp = time(NULL);
+    time_t now = time(nullptr);
+    struct tm tmNow;
+    localtime_r(&now, &tmNow);
     // 尝试基础文件名 
     // 如果文件已存在，添加后缀 -1, -2, -3...
-    sprintf(filename, "%s/macro_%lu.macro", dirPath, (unsigned long)timestamp);
+    sprintf(filename, "%s/m_%02d%02d%02d.macro", dirPath, tmNow.tm_hour, tmNow.tm_min, tmNow.tm_sec);
     int suffix = 1;
     while (ult::isFile(filename)) {
-        sprintf(filename, "%s/macro_%lu-%d.macro", dirPath, (unsigned long)timestamp, suffix);
+        sprintf(filename, "%s/m_%02d%02d%02d-%d.macro", dirPath, tmNow.tm_hour, tmNow.tm_min, tmNow.tm_sec, suffix++);
         suffix++;
     }
     // 写入文件

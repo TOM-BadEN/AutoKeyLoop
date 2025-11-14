@@ -5,6 +5,7 @@
 #include "sysmodule.hpp"
 #include "main_menu_setting.hpp"
 #include <ultra.hpp>
+#include "hiddata.hpp"
 
 // Tesla插件界面尺寸常量定义
 #define TESLA_VIEW_HEIGHT 720      // Tesla插件总高度
@@ -15,33 +16,10 @@
 
 constexpr const char* CONFIG_PATH = "/config/KeyX/config.ini";
 
-// Switch 按键 Unicode 图标
-namespace ButtonIcon {
-    constexpr const char* A      = "\uE0A0";  // A 按键
-    constexpr const char* B      = "\uE0A1";  // B 按键
-    constexpr const char* X      = "\uE0A2";  // X 按键
-    constexpr const char* Y      = "\uE0A3";  // Y 按键
-    constexpr const char* Up     = "\uE0AF";  // 方向键上
-    constexpr const char* Down   = "\uE0B0";  // 方向键下
-    constexpr const char* Left   = "\uE0B1";  // 方向键左
-    constexpr const char* Right  = "\uE0B2";  // 方向键右
-    constexpr const char* L      = "\uE0A4";  // L 按键
-    constexpr const char* R      = "\uE0A5";  // R 按键
-    constexpr const char* ZL     = "\uE0A6";  // ZL 按键
-    constexpr const char* ZR     = "\uE0A7";  // ZR 按键
-    constexpr const char* StickL = "\uE0C4";  // 左摇杆按下
-    constexpr const char* StickR = "\uE0C5";  // 右摇杆按下
-    constexpr const char* Start  = "\uE0B5";  // Start/Plus
-    constexpr const char* Select = "\uE0B6";  // Select/Minus
-}
 
 namespace {
-    struct ButtonMapping {
-        const char* source;   // 源按键（固定）
-        char target[8];       // 目标按键（可变）
-    };
-    
-    ButtonMapping s_ButtonMappings[] = {
+
+    MappingDef::ButtonMapping s_ButtonMappings[] = {
         {"A", "A"},
         {"B", "B"},
         {"X", "X"},
@@ -60,48 +38,6 @@ namespace {
         {"Select", "Select"}
     };
     
-    constexpr int BUTTON_COUNT = 16;
-    // 根据按键名称获取图标
-    const char* getButtonIcon(const char* buttonName) {
-        if (strcmp(buttonName, "A") == 0) return ButtonIcon::A;
-        if (strcmp(buttonName, "B") == 0) return ButtonIcon::B;
-        if (strcmp(buttonName, "X") == 0) return ButtonIcon::X;
-        if (strcmp(buttonName, "Y") == 0) return ButtonIcon::Y;
-        if (strcmp(buttonName, "Up") == 0) return ButtonIcon::Up;
-        if (strcmp(buttonName, "Down") == 0) return ButtonIcon::Down;
-        if (strcmp(buttonName, "Left") == 0) return ButtonIcon::Left;
-        if (strcmp(buttonName, "Right") == 0) return ButtonIcon::Right;
-        if (strcmp(buttonName, "L") == 0) return ButtonIcon::L;
-        if (strcmp(buttonName, "R") == 0) return ButtonIcon::R;
-        if (strcmp(buttonName, "ZL") == 0) return ButtonIcon::ZL;
-        if (strcmp(buttonName, "ZR") == 0) return ButtonIcon::ZR;
-        if (strcmp(buttonName, "StickL") == 0) return ButtonIcon::StickL;
-        if (strcmp(buttonName, "StickR") == 0) return ButtonIcon::StickR;
-        if (strcmp(buttonName, "Start") == 0) return ButtonIcon::Start;
-        if (strcmp(buttonName, "Select") == 0) return ButtonIcon::Select;
-        return "\uE142";
-    }
-    
-    // 根据按键名称获取按键标志（用于检查连发位掩码）
-    u64 getButtonFlag(const char* buttonName) {
-        if (strcmp(buttonName, "A") == 0) return HidNpadButton_A;
-        if (strcmp(buttonName, "B") == 0) return HidNpadButton_B;
-        if (strcmp(buttonName, "X") == 0) return HidNpadButton_X;
-        if (strcmp(buttonName, "Y") == 0) return HidNpadButton_Y;
-        if (strcmp(buttonName, "Up") == 0) return HidNpadButton_Up;
-        if (strcmp(buttonName, "Down") == 0) return HidNpadButton_Down;
-        if (strcmp(buttonName, "Left") == 0) return HidNpadButton_Left;
-        if (strcmp(buttonName, "Right") == 0) return HidNpadButton_Right;
-        if (strcmp(buttonName, "L") == 0) return HidNpadButton_L;
-        if (strcmp(buttonName, "R") == 0) return HidNpadButton_R;
-        if (strcmp(buttonName, "ZL") == 0) return HidNpadButton_ZL;
-        if (strcmp(buttonName, "ZR") == 0) return HidNpadButton_ZR;
-        if (strcmp(buttonName, "StickL") == 0) return HidNpadButton_StickL;
-        if (strcmp(buttonName, "StickR") == 0) return HidNpadButton_StickR;
-        if (strcmp(buttonName, "Start") == 0) return HidNpadButton_Plus;
-        if (strcmp(buttonName, "Select") == 0) return HidNpadButton_Minus;
-        return 0;
-    }
 }
 
 // 静态成员变量定义
@@ -139,7 +75,7 @@ void MainMenu::RefreshButtonsConfig() {
     std::string buttonsStr = IniHelper::getString("AUTOFIRE", "buttons", "0", ConfigPath);
     s_TextAreaInfo.buttons = std::stoull(buttonsStr);
     // 读取映射配置
-    for (int i = 0; i < BUTTON_COUNT; i++) {
+    for (int i = 0; i < MappingDef::BUTTON_COUNT; i++) {
         std::string temp = IniHelper::getString("MAPPING", s_ButtonMappings[i].source,
                                                  s_ButtonMappings[i].source, ConfigPath);
         strncpy(s_ButtonMappings[i].target, temp.c_str(), 7);
@@ -292,9 +228,9 @@ tsl::elm::Element* MainMenu::createUI()
                 const char* targetName = nullptr;
                 bool isMapped = false;
                 
-                for (int i = 0; i < BUTTON_COUNT; i++) {
+                for (int i = 0; i < MappingDef::BUTTON_COUNT; i++) {
                     if (strcmp(s_ButtonMappings[i].source, sourceName) == 0) {
-                        targetIcon = getButtonIcon(s_ButtonMappings[i].target);
+                        targetIcon = HidHelper::getButtonIcon(s_ButtonMappings[i].target);
                         targetName = s_ButtonMappings[i].target;
                         isMapped = (strcmp(s_ButtonMappings[i].source, s_ButtonMappings[i].target) != 0);
                         break;
@@ -311,7 +247,7 @@ tsl::elm::Element* MainMenu::createUI()
                                     renderer->a(color));
                 
                 // 检查目标按键是否有连发，绘制黄色小点
-                u64 flag = getButtonFlag(targetName);
+                u64 flag = HidHelper::getButtonFlag(targetName);
                 if (s_TextAreaInfo.buttons & flag) {
                     s32 dotX = posX + buttonSize - 3;  // 往右移动 2（-5 → -3）
                     s32 dotY = posY - buttonSize + 3;  // 往上移动 2（+5 → +3）

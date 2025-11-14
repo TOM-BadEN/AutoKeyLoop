@@ -3,30 +3,14 @@
 #include "macro_list.hpp"
 #include "macro_record.hpp" 
 #include <ultra.hpp>
-
-// Switch 按键 Unicode 图标
-namespace ButtonIcon {
-    constexpr const char* A      = "\uE0A0";  // A 按键
-    constexpr const char* B      = "\uE0A1";  // B 按键
-    constexpr const char* X      = "\uE0A2";  // X 按键
-    constexpr const char* Y      = "\uE0A3";  // Y 按键
-    constexpr const char* Up     = "\uE0AF";  // 方向键上
-    constexpr const char* Down   = "\uE0B0";  // 方向键下
-    constexpr const char* Left   = "\uE0B1";  // 方向键左
-    constexpr const char* Right  = "\uE0B2";  // 方向键右
-    constexpr const char* L      = "\uE0A4";  // L 按键
-    constexpr const char* R      = "\uE0A5";  // R 按键
-    constexpr const char* ZL     = "\uE0A6";  // ZL 按键
-    constexpr const char* ZR     = "\uE0A7";  // ZR 按键
-    constexpr const char* StickL = "\uE0C4";  // 左摇杆按下
-    constexpr const char* StickR = "\uE0C5";  // 右摇杆按下
-    constexpr const char* Start  = "\uE0B5";  // Start/Plus
-    constexpr const char* Select = "\uE0B6";  // Select/Minus
-}
+#include "ini_helper.hpp" 
+#include "hiddata.hpp"
 
 // 脚本查看类
 MacroViewGui::MacroViewGui(const char* macroFilePath, const char* gameName) 
  : m_info()
+ , m_Hotkey(0)
+
 {
     
     strcpy(m_macroFilePath, macroFilePath);
@@ -41,7 +25,8 @@ MacroViewGui::MacroViewGui(const char* macroFilePath, const char* gameName)
         snprintf(m_info.fileSizeKb, sizeof(m_info.fileSizeKb), "%u KB", static_cast<u16>(kb));
     }
     ParsingMacros();
-    
+    getHotkey();
+
 }
 
 // 解析宏文件，获取文件头数据
@@ -57,6 +42,19 @@ void MacroViewGui::ParsingMacros(){
         snprintf(m_info.durationSec, sizeof(m_info.durationSec), "%u s", header.frameRate ? static_cast<u8>(header.frameCount / header.frameRate) : 0);
     }
     fclose(fp);
+}
+
+void MacroViewGui::getHotkey() {
+    sprintf(m_gameCfgPath, "sdmc:/config/KeyX/GameConfig/%s.ini", m_info.titleId);
+    int macroCount = IniHelper::getInt("MACRO", "macroCount", 0, m_gameCfgPath);
+    for (int idx = 1; idx <= macroCount; ++idx) {
+        std::string path  = "macro_path_"  + std::to_string(idx);
+        std::string macroPath = IniHelper::getString("MACRO", path, "", m_gameCfgPath);
+        if (macroPath == m_macroFilePath) {
+            std::string combo = "macro_combo_" + std::to_string(idx);
+            m_Hotkey = static_cast<u64>(IniHelper::getInt("MACRO", combo, 0, m_gameCfgPath));
+        }
+    }
 }
 
 
@@ -103,16 +101,17 @@ tsl::elm::Element* MacroViewGui::createUI() {
     });
     list->addItem(textArea, 310);
 
-    auto listButton = new tsl::elm::ListItem("分配按键",">");
+    auto listButton = new tsl::elm::ListItem("分配按键", m_Hotkey ? HidHelper::getCombinedIcons(m_Hotkey) : ">");
     listButton->setClickListener([this](u64 keys) {
         if (keys & HidNpadButton_A) {
+            tsl::changeTo<MacroHotKeySettingGui>(m_macroFilePath, m_info.gameName, m_gameCfgPath, m_Hotkey);
             return true;
         }
         return false;
     });
     list->addItem(listButton);
 
-    auto listChangeName = new tsl::elm::ListItem("修改名称",">");
+    auto listChangeName = new tsl::elm::ListItem("修改名称", ">");
     listChangeName->setClickListener([this](u64 keys) {
         if (keys & HidNpadButton_A) {
             tsl::changeTo<MacroRenameGui>(m_macroFilePath, m_info.gameName);
@@ -143,4 +142,40 @@ bool MacroViewGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &
 
     return false;
 }
+
+// 快捷键设置
+MacroHotKeySettingGui::MacroHotKeySettingGui(const char* macroFilePath, const char* gameName, const char* gameCfgPath, u64 Hotkey) 
+{
+    strcpy(m_macroFilePath, macroFilePath);
+    strcpy(m_gameName, gameName);
+    strcpy(m_gameCfgPath, gameCfgPath);
+}
+
+tsl::elm::Element* MacroHotKeySettingGui::createUI() {
+    auto frame = new tsl::elm::OverlayFrame("设置快捷键", m_gameName);
+    auto list = new tsl::elm::List();
+    list->addItem(new tsl::elm::CategoryHeader(" 选择触发脚本的快捷键"));
+
+    for (const u64 combo : MacroHotkeys::Hotkeys) {
+        std::string iconStr = HidHelper::getCombinedIcons(combo);
+        auto listSetHotKey = new tsl::elm::ListItem(iconStr);
+        listSetHotKey->setClickListener([this, combo](u64 keys) {
+            if (keys & HidNpadButton_A) {
+                IniHelper::setInt("MACRO", "macroCount", 1, m_gameCfgPath);
+                IniHelper::setString("MACRO", "macro_path_1", m_macroFilePath, m_gameCfgPath);
+                IniHelper::setInt("MACRO", "macro_combo_1", combo, m_gameCfgPath);
+                tsl::goBack();
+                return true;
+            } 
+            return false;
+        });
+        list->addItem(listSetHotKey);
+    }
+
+    frame->setContent(list);
+    return frame;
+}
+
+
+
 
