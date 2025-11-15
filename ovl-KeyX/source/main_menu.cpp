@@ -54,8 +54,10 @@ void MainMenu::RefreshData() {
     std::string SwitchConfigPath = (m_textAreaInfo.isInGame && ult::isFile(m_textAreaInfo.GameConfigPath)) ? m_textAreaInfo.GameConfigPath : CONFIG_PATH;
     m_textAreaInfo.isAutoFireEnabled = IniHelper::getBool("AUTOFIRE", "autoenable", false, SwitchConfigPath);
     m_textAreaInfo.isAutoRemapEnabled = IniHelper::getBool("MAPPING", "autoenable", false, SwitchConfigPath);
+    m_textAreaInfo.isAutoMacroEnabled = IniHelper::getBool("MACRO", "autoenable", false, m_textAreaInfo.GameConfigPath);   // 宏只读独立游戏配置
     if (m_AutoFireEnableItem != nullptr) m_AutoFireEnableItem->setValue(m_textAreaInfo.isAutoFireEnabled ? "已开启" : "已关闭");
     if (m_AutoRemapEnableItem != nullptr) m_AutoRemapEnableItem->setValue(m_textAreaInfo.isAutoRemapEnabled ? "已开启" : "已关闭");
+    if (m_AutoMacroEnableItem != nullptr) m_AutoMacroEnableItem->setValue(m_textAreaInfo.isAutoMacroEnabled ? "已开启" : "已关闭");
 
     // 读取按钮掩码值用于绘制按钮图标
     std::string ConfigPath = m_textAreaInfo.isGlobalConfig ? CONFIG_PATH : m_textAreaInfo.GameConfigPath;
@@ -68,6 +70,16 @@ void MainMenu::RefreshData() {
         strncpy(s_buttonMappings[i].target, temp.c_str(), 7);
         s_buttonMappings[i].target[7] = '\0';
     }
+
+    // 读取所有宏的快捷键
+    m_macroHotKey = 0;
+    int macroCount = IniHelper::getInt("MACRO", "macroCount", 0, m_textAreaInfo.GameConfigPath);
+    for (int i = 1; i <= macroCount; i++) {
+        u64 combo = static_cast<u64>(IniHelper::getInt("MACRO", "macro_combo_" + std::to_string(i), 0, m_textAreaInfo.GameConfigPath));
+        m_macroHotKey |= combo;
+    }
+    m_macroHotKey &= ~ (ButtonMask::BTN_ZL | ButtonMask::BTN_ZR);
+    
 }
 
 
@@ -95,6 +107,18 @@ void MainMenu::AutoRemapToggle() {
     m_AutoRemapEnableItem->setValue(m_textAreaInfo.isAutoRemapEnabled ? "已开启" : "已关闭");
     IniHelper::setBool("AUTOFIRE", "globconfig", m_textAreaInfo.isGlobalConfig, m_textAreaInfo.GameConfigPath);
     IniHelper::setBool("MAPPING", "autoenable", m_textAreaInfo.isAutoRemapEnabled, m_textAreaInfo.GameConfigPath);
+}
+
+// 宏功能开关
+void MainMenu::AutoMacroToggle() {
+    if (!m_textAreaInfo.isInGame) return;
+    // 根据状态发送IPC命令
+    Result rc = m_textAreaInfo.isAutoMacroEnabled ? g_ipcManager.sendDisableMacroCommand() : g_ipcManager.sendEnableMacroCommand();
+    if (R_FAILED(rc)) return;
+    // 切换状态，开变关-关变开
+    m_textAreaInfo.isAutoMacroEnabled = !m_textAreaInfo.isAutoMacroEnabled;
+    m_AutoMacroEnableItem->setValue(m_textAreaInfo.isAutoMacroEnabled ? "已开启" : "已关闭");
+    IniHelper::setBool("MACRO", "autoenable", m_textAreaInfo.isAutoMacroEnabled, m_textAreaInfo.GameConfigPath);
 }
 
 // 配置切换（全局/独立）
@@ -160,6 +184,7 @@ tsl::elm::Element* MainMenu::createUI()
             tsl::Color whiteColor = {0xFF, 0xFF, 0xFF, 0xFF};          // 白色：未映射
             tsl::Color blueColor = {0x00, 0xDD, 0xFF, 0xFF};           // 亮天蓝色：已映射
             tsl::Color yellowColor = {0xFF, 0xFF, 0x00, 0xFF};         // 黄色：连发小点
+            tsl::Color redColor = {0xFF, 0x00, 0x00, 0xFF};            // 红色：宏小点
             
             const s32 buttonSize = 25;   // 按钮大小（保持不变）
             const s32 rowSpacing = 7;    // 行间距（8 × 0.9 ≈ 7）
@@ -218,6 +243,13 @@ tsl::elm::Element* MainMenu::createUI()
                     s32 dotX = posX + buttonSize - 3;  // 往右移动 2（-5 → -3）
                     s32 dotY = posY - buttonSize + 3;  // 往上移动 2（+5 → +3）
                     renderer->drawCircle(dotX, dotY, 3, true, renderer->a(yellowColor));
+                }
+                
+                // 检查目标按键是否有宏，绘制红色小点
+                if (m_macroHotKey & flag) {
+                    s32 macroX = posX + buttonSize - 3 + 8;      
+                    s32 macroY = posY - buttonSize + 3; 
+                    renderer->drawCircle(macroX, macroY, 3, true, renderer->a(redColor));
                 }
             };
             
@@ -296,14 +328,15 @@ tsl::elm::Element* MainMenu::createUI()
     mainList->addItem(m_AutoRemapEnableItem);
 
     // 创建设置列表项
-    auto listItemMacro = new tsl::elm::ListItem("按键脚本","已关闭");
-    listItemMacro->setClickListener([this](u64 keys) {
+    m_AutoMacroEnableItem = new tsl::elm::ListItem("按键脚本", m_textAreaInfo.isAutoMacroEnabled ? "已开启" : "已关闭");
+    m_AutoMacroEnableItem->setClickListener([this](u64 keys) {
         if (keys & HidNpadButton_A) {
+            AutoMacroToggle();
             return true;
         }
         return false;
     });
-    mainList->addItem(listItemMacro);
+    mainList->addItem(m_AutoMacroEnableItem);
 
     // 创建切换配置列表项
     auto ConfigSwitchItem = new tsl::elm::ListItem("切换配置",">");

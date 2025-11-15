@@ -79,6 +79,18 @@ Result IPCManager::sendReloadMappingCommand() {
     return SendCommand(CMD_RELOAD_MAPPING, false);
 }
 
+Result IPCManager::sendEnableMacroCommand() {
+    return SendCommand(CMD_ENABLE_MACRO, true);  // 需要自动启动
+}
+
+Result IPCManager::sendDisableMacroCommand() {
+    return SendCommand(CMD_DISABLE_MACRO, false);
+}
+
+Result IPCManager::sendReloadMacroCommand() {
+    return SendCommand(CMD_RELOAD_MACRO, false);
+}
+
 Result IPCManager::sendExitCommand() {
     return SendCommand(CMD_EXIT, false);
 }

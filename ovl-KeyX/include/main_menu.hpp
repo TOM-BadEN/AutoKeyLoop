@@ -11,6 +11,7 @@ struct TextAreaInfo {
     std::string GameConfigPath;         // 配置文件路径
     u64 buttons;                        // 连发按键
     bool isAutoRemapEnabled;            // 映射开关
+    bool isAutoMacroEnabled;            // 宏开关
 };
 
 // 主菜单类定义
@@ -29,9 +30,13 @@ private:
     TextAreaInfo m_textAreaInfo{};
     tsl::elm::ListItem* m_AutoFireEnableItem = nullptr;
     tsl::elm::ListItem* m_AutoRemapEnableItem = nullptr;
+    tsl::elm::ListItem* m_AutoMacroEnableItem = nullptr;
+    u64 m_macroHotKey = 0;
 
     void RefreshData();     // 更新数据
     void AutoKeyToggle();   // 连发功能开关
     void AutoRemapToggle(); // 映射功能开关
+    void AutoMacroToggle(); // 宏功能开关
     void ConfigToggle();    // 配置切换（全局/独立）
+
 };

@@ -7,6 +7,7 @@
 #include "hiddata.hpp"
 #include "refresh.hpp"
 #include <algorithm>
+#include "ipc.hpp"
 
 namespace {
 
@@ -123,15 +124,15 @@ tsl::elm::Element* MacroViewGui::createUI() {
         char line[64];
         constexpr const u32 fontSize = 20;
         const s32 startX = x + 26;
-        s32 lineHeight = r->getTextDimensions("你", false, fontSize).second + 15;
+        s32 lineHeight = r->getTextDimensions(ult::i18n("你"), false, fontSize).second + 15;
         s32 totalHeight = lineHeight * static_cast<s32>(std::size(kLabels));
         s32 startY = y + (h - totalHeight) / 2 - 20;
         for (size_t i = 0; i < std::size(kLabels); ++i) {
-            snprintf(line, sizeof(line), "%s%s", kLabels[i], values[i]);
+            snprintf(line, sizeof(line), "%s%s", ult::i18n(kLabels[i]).c_str(), values[i]);
             r->drawStringWithColoredSections(
                 line,
                 false,
-                {kLabels[i]},
+                {ult::i18n(kLabels[i])},
                 startX,
                 startY + lineHeight,
                 fontSize,
@@ -181,7 +182,7 @@ bool MacroViewGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &
     if ((keysDown & HidNpadButton_Minus) && m_deleteItem) {
         if (getFocusedElement() == m_deleteItem) {
             ult::deleteFileOrDirectory(m_macroFilePath);
-            removeHotkeyIfExists(m_macroFilePath, m_gameCfgPath);
+            if (removeHotkeyIfExists(m_macroFilePath, m_gameCfgPath)) g_ipcManager.sendReloadMacroCommand();
             Refresh::RefrRequest(Refresh::MacroGameList);
             tsl::goBack();
             return true;
@@ -222,6 +223,7 @@ tsl::elm::Element* MacroHotKeySettingGui::createUI() {
     deleteItem->setClickListener([this](u64 keys) {
         if (keys & HidNpadButton_A) {
             if (removeHotkeyIfExists(m_macroFilePath, m_gameCfgPath)) {
+                g_ipcManager.sendReloadMacroCommand();
                 Refresh::RefrSetMultiple(Refresh::MacroGameList | Refresh::MacroView);
             }
             tsl::goBack();
@@ -245,6 +247,7 @@ tsl::elm::Element* MacroHotKeySettingGui::createUI() {
                 IniHelper::setInt("MACRO", "macroCount", macroCount, m_gameCfgPath);
                 IniHelper::setString("MACRO", "macro_path_" + std::to_string(macroCount), m_macroFilePath, m_gameCfgPath);
                 IniHelper::setInt("MACRO", "macro_combo_" + std::to_string(macroCount), combo, m_gameCfgPath);
+                g_ipcManager.sendReloadMacroCommand();
                 Refresh::RefrSetMultiple(Refresh::MacroGameList | Refresh::MacroView);
                 tsl::goBack();
                 return true;

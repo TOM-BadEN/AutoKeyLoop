@@ -189,7 +189,7 @@ bool SettingMacro::HandleRecordClick() {
     }
     u64 gameTid = GameMonitor::getCurrentTitleId();
     if (gameTid == 0) {
-        g_recordMessage = "未启动游戏";
+        g_recordMessage = "请在游戏中录制";
         return true;
     }
     FocusState focusState = FocusMonitor::GetState(gameTid);

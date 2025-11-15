@@ -9,23 +9,23 @@
 
 // ===== 按键 Unicode 图标定义 =====
 namespace ButtonIcon {
-    constexpr const char* A      = "\uE0A0";  // A 按键
-    constexpr const char* B      = "\uE0A1";  // B 按键
-    constexpr const char* X      = "\uE0A2";  // X 按键
-    constexpr const char* Y      = "\uE0A3";  // Y 按键
-    constexpr const char* Up     = "\uE0AF";  // 方向键上
-    constexpr const char* Down   = "\uE0B0";  // 方向键下
-    constexpr const char* Left   = "\uE0B1";  // 方向键左
-    constexpr const char* Right  = "\uE0B2";  // 方向键右
-    constexpr const char* L      = "\uE0A4";  // L 按键
-    constexpr const char* R      = "\uE0A5";  // R 按键
-    constexpr const char* ZL     = "\uE0A6";  // ZL 按键
-    constexpr const char* ZR     = "\uE0A7";  // ZR 按键
-    constexpr const char* StickL = "\uE0C4";  // 左摇杆按下
-    constexpr const char* StickR = "\uE0C5";  // 右摇杆按下
-    constexpr const char* Start  = "\uE0B5";  // Start/Plus
-    constexpr const char* Select = "\uE0B6";  // Select/Minus
-    constexpr const char* Unknown = "\uE142"; // 未知按键
+    constexpr const char* A      = "";  // A 按键
+    constexpr const char* B      = "";  // B 按键
+    constexpr const char* X      = "";  // X 按键
+    constexpr const char* Y      = "";  // Y 按键
+    constexpr const char* Up     = "";  // 方向键上
+    constexpr const char* Down   = "";  // 方向键下
+    constexpr const char* Left   = "";  // 方向键左
+    constexpr const char* Right  = "";  // 方向键右
+    constexpr const char* L      = "";  // L 按键
+    constexpr const char* R      = "";  // R 按键
+    constexpr const char* ZL     = "";  // ZL 按键
+    constexpr const char* ZR     = "";  // ZR 按键
+    constexpr const char* StickL = "";  // 左摇杆按下
+    constexpr const char* StickR = "";  // 右摇杆按下
+    constexpr const char* Start  = "";  // Start/Plus
+    constexpr const char* Select = "";  // Select/Minus
+    constexpr const char* Unknown = ""; // 未知按键
 }
 
 // ===== 按键名称常量 =====

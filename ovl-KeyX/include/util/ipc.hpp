@@ -15,6 +15,11 @@
 #define CMD_RELOAD_AUTOFIRE   6   // 重载连发配置
 #define CMD_RELOAD_MAPPING    7   // 重载映射配置
 
+// 宏控制
+#define CMD_ENABLE_MACRO      8   // 开启宏
+#define CMD_DISABLE_MACRO     9   // 关闭宏
+#define CMD_RELOAD_MACRO      10  // 重载宏配置
+
 // 系统控制
 #define CMD_EXIT              999 // 退出系统模块
 
@@ -122,6 +127,25 @@ public:
      * @note 成功发送后会自动断开连接
      */
     Result sendExitCommand();
+
+    /**
+     * 发送开启宏命令给系统模块
+     * @return Result 0=成功，其他=失败
+     */
+    Result sendEnableMacroCommand();
+    
+    /**
+     * 发送关闭宏命令给系统模块
+     * @return Result 0=成功，其他=失败
+     */
+    Result sendDisableMacroCommand();
+    
+    /**
+     * 发送重载宏配置命令给系统模块
+     * @return Result 0=成功，其他=失败
+     * @note 重载按键宏配置
+     */
+    Result sendReloadMacroCommand();
 };
 
 // 全局实例 - 程序退出时自动调用析构函数

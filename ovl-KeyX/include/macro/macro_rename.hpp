@@ -28,5 +28,5 @@ private:
     void MacroRename();
     
     // 更新配置文件中的脚本路径
-    void updateConfigPath(const char* newPath);
+    bool updateConfigPath(const char* newPath);
 };

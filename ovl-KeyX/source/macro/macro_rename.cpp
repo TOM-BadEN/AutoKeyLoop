@@ -5,6 +5,7 @@
 #include <cstdio>
 #include "refresh.hpp"
 #include "ini_helper.hpp"
+#include "ipc.hpp"
 
 namespace {
     constexpr const char* KeyboardRowsUpper[] = {
@@ -237,7 +238,7 @@ void MacroRenameGui::MacroRename(){
     strcpy(gameName, m_gameName);
     bool isRecord = m_isRecord;
     if (!isRecord) {  // 如果不是从录制中跳转进来的
-        updateConfigPath(newMacroFilePath);    
+        if (updateConfigPath(newMacroFilePath)) g_ipcManager.sendReloadMacroCommand();    
         Refresh::RefrRequest(Refresh::MacroGameList);                       
         tsl::goBack(2);
     } 
@@ -245,7 +246,7 @@ void MacroRenameGui::MacroRename(){
 }
 
 // 当修改名称后，更新配置文件中的脚本路径
-void MacroRenameGui::updateConfigPath(const char* newPath) {
+bool MacroRenameGui::updateConfigPath(const char* newPath) {
     // 从路径中提取 titleId: sdmc:/config/KeyX/macros/{titleId}/filename.macro
     const char* macrosDir = strstr(m_macroFilePath, "/macros/");
     char titleId[17];
@@ -260,7 +261,8 @@ void MacroRenameGui::updateConfigPath(const char* newPath) {
         std::string path = IniHelper::getString("MACRO", key, "", gameCfgPath);
         if (path == m_macroFilePath) {
             IniHelper::setString("MACRO", key, newPath, gameCfgPath);
-            break;
+            return true;  // 找到并更新成功
         }
     }
+    return false;  // 未找到匹配项
 }
