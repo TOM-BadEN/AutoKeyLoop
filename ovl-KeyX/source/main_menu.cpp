@@ -237,18 +237,28 @@ tsl::elm::Element* MainMenu::createUI()
                 renderer->drawString(targetIcon, false, posX, posY, buttonSize, 
                                     renderer->a(color));
                 
-                // 检查目标按键是否有连发，绘制黄色小点
+                // 检查目标按键是否有连发和宏
                 u64 flag = HidHelper::getButtonFlag(targetName);
-                if (m_textAreaInfo.buttons & flag) {
+                bool hasTurbo = (m_textAreaInfo.buttons & flag) != 0;
+                bool hasMacro = (m_macroHotKey & flag) != 0;
+                
+                // 绘制黄色小点（连发）
+                if (hasTurbo) {
                     s32 dotX = posX + buttonSize - 3;  // 往右移动 2（-5 → -3）
                     s32 dotY = posY - buttonSize + 3;  // 往上移动 2（+5 → +3）
                     renderer->drawCircle(dotX, dotY, 3, true, renderer->a(yellowColor));
                 }
                 
-                // 检查目标按键是否有宏，绘制红色小点
-                if (m_macroHotKey & flag) {
-                    s32 macroX = posX + buttonSize - 3 + 8;      
-                    s32 macroY = posY - buttonSize + 3; 
+                // 绘制红色小点（宏）
+                if (hasMacro && !hasTurbo) {
+                    s32 macroX, macroY;
+                    macroX = posX + buttonSize - 3;
+                    macroY = posY - buttonSize + 3;
+                    renderer->drawCircle(macroX, macroY, 3, true, renderer->a(redColor));
+                } else if (hasMacro && hasTurbo) {    // 重合：红点右移8px，避免重叠
+                    s32 macroX, macroY;
+                    macroX = posX + buttonSize - 3 + 8;
+                    macroY = posY - buttonSize + 3;
                     renderer->drawCircle(macroX, macroY, 3, true, renderer->a(redColor));
                 }
             };

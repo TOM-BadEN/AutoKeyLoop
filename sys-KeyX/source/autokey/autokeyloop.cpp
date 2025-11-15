@@ -49,7 +49,7 @@ alignas(0x1000) char AutoKeyLoop::thread_stack[4 * 1024];
 alignas(0x1000) u8 AutoKeyLoop::hdls_work_buffer[0x1000];
 
 // 构造函数
-AutoKeyLoop::AutoKeyLoop(const char* config_path, bool enable_turbo, bool enable_macro) {
+AutoKeyLoop::AutoKeyLoop(const char* config_path, const char* macroCfgPath, bool enable_turbo, bool enable_macro) {
     // 初始化HDLS工作缓冲区
     Result rc = hiddbgAttachHdlsWorkBuffer(&m_HdlsSessionId, hdls_work_buffer, sizeof(hdls_work_buffer));
     if (R_FAILED(rc)) return;
@@ -71,7 +71,7 @@ AutoKeyLoop::AutoKeyLoop(const char* config_path, bool enable_turbo, bool enable
     m_EnableMacro = enable_macro;
     // 根据开关创建功能模块
     if (m_EnableTurbo) m_Turbo = std::make_unique<Turbo>(config_path);
-    if (m_EnableMacro) m_Macro = std::make_unique<Macro>(config_path);
+    if (m_EnableMacro) m_Macro = std::make_unique<Macro>(macroCfgPath);
     
     // 加载按键映射配置并生成逆映射表
     UpdateButtonMappings(config_path);
@@ -180,10 +180,10 @@ void AutoKeyLoop::UpdateTurboFeature(bool enable, const char* config_path) {
 }
 
 // 更新宏功能
-void AutoKeyLoop::UpdateMacroFeature(bool enable, const char* config_path) {
-    if (m_EnableMacro && enable && m_Macro) m_Macro->LoadConfig(config_path);
+void AutoKeyLoop::UpdateMacroFeature(bool enable, const char* macroCfgPath) {
+    if (m_EnableMacro && enable && m_Macro) m_Macro->LoadConfig(macroCfgPath);
     else if (m_EnableMacro && !enable && m_Macro) m_Macro.reset();
-    else if (!m_EnableMacro && enable) m_Macro = std::make_unique<Macro>(config_path);
+    else if (!m_EnableMacro && enable) m_Macro = std::make_unique<Macro>(macroCfgPath);
     m_EnableMacro = enable;
 }
 

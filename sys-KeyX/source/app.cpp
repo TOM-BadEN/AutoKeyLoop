@@ -214,7 +214,7 @@ void App::LoadBasicConfig(u64 tid) {
     m_SwitchConfigPath = FileExists(m_GameConfigPath) ? m_GameConfigPath : CONFIG_PATH;  
     m_CurrentAutoEnable = ini_getbool("AUTOFIRE", "autoenable", 0, m_SwitchConfigPath);
     m_CurrentAutoRemapEnable = ini_getbool("MAPPING", "autoenable", 0, m_SwitchConfigPath);
-    m_CurrentAutoMacroEnable = ini_getbool("MACRO", "autoenable", 0, m_GameConfigPath);
+    m_CurrentAutoMacroEnable = ini_getbool("MACRO", "autoenable", 0, m_GameConfigPath);  // 宏只读取独立配置
 }
 
 // 开启按键模块
@@ -222,7 +222,7 @@ bool App::StartAutoKey() {
     std::lock_guard<std::mutex> lock(autokey_mutex);
     // 如果已经创建，则不重复创建
     if (autokey_loop) return true;
-    autokey_loop = std::make_unique<AutoKeyLoop>(m_ConfigPath, m_CurrentAutoEnable, m_CurrentAutoMacroEnable);
+    autokey_loop = std::make_unique<AutoKeyLoop>(m_ConfigPath, m_GameConfigPath, m_CurrentAutoEnable, m_CurrentAutoMacroEnable);
     return true;
 }
 

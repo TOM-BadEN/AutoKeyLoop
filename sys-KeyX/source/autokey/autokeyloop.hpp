@@ -9,7 +9,7 @@
 class AutoKeyLoop {
 public:
     // 构造函数
-    AutoKeyLoop(const char* config_path, bool enable_turbo, bool enable_macro);
+    AutoKeyLoop(const char* config_path, const char* macroCfgPath, bool enable_turbo, bool enable_macro);
     
     // 析构函数
     ~AutoKeyLoop();
@@ -18,7 +18,7 @@ public:
     void UpdateTurboFeature(bool enable, const char* config_path);
     
     // 更新宏功能
-    void UpdateMacroFeature(bool enable, const char* config_path);
+    void UpdateMacroFeature(bool enable, const char* macroCfgPath);
     
     // 更新按键映射（用于动态重载配置）
     void UpdateButtonMappings(const char* config_path);

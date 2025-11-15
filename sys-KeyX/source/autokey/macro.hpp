@@ -2,20 +2,60 @@
 
 #include <switch.h>
 #include "common.hpp"
+#include <vector>
 
 class Macro {
 public:
-    Macro(const char* config_path);
+    Macro(const char* macroCfgPath);
     
     // 加载配置
-    void LoadConfig(const char* config_path);
+    void LoadConfig(const char* macroCfgPath);
     
     // 核心函数：处理输入，填充处理结果（事件+按键数据）
     void Process(ProcessResult& result);
     
-    // 重置宏状态（用于暂停时清理）
-    void MacroFinishing();
+    // 宏结束清理工作
+    void MacroFinishing();                    
 
 private:
-    // TODO: 宏配置和状态
+
+    struct MacroEntry {
+        char MacroFilePath[96];    // 宏文件路径
+        u64 combo;                 // 快捷键组合
+    };
+
+    // 宏文件头
+    struct MacroHeader {
+        char magic[4];      // "KEYX"
+        u16 version;        // 版本号
+        u16 frameRate;      // 帧率
+        u64 titleId;        // 游戏TID
+        u32 frameCount;     // 总帧数
+    } __attribute__((packed));
+
+    // 宏单帧数据
+    struct MacroFrame {
+        u64 keysHeld;       // 按键状态
+        s32 leftX;          // 左摇杆X
+        s32 leftY;          // 左摇杆Y
+        s32 rightX;         // 右摇杆X
+        s32 rightY;         // 右摇杆Y
+    } __attribute__((packed));
+
+    std::vector<MacroEntry> m_Macros{};     // 宏列表
+    bool m_IsPlaying = false;               // 是否正在播放
+    int m_CurrentMacroIndex = -1;           // 当前播放的宏索引
+    u32 m_CurrentFrameIndex = 0;            // 当前播放的帧索引
+    u64 m_PlaybackStartTick = 0;            // 播放开始时间
+    u16 m_FrameRate = 0;                    // 宏帧率
+    std::vector<MacroFrame> m_Frames{};     // 宏帧数据
+    bool m_LastHotkeyPressed = false;       // 上一帧快捷键状态
+
+    FeatureEvent DetermineEvent(u64 buttons);    // 判定事件
+    int CheckHotkeyTriggered(u64 buttons);       // 检查快捷键触发
+    u32 CalculateTargetFrame() const;            // 计算当前应该播放第几帧
+    void MacroStarting();                        // 宏启动
+    void LoadMacroFile(const char* filePath);    // 加载宏文件
+    void MacroExecuting(ProcessResult& result);  // 宏执行
+    
 };
