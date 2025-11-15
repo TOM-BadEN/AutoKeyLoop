@@ -3,6 +3,7 @@
 #include "ini_helper.hpp"
 #include "ipc.hpp"
 #include "hiddata.hpp"
+#include "refresh.hpp"
 
 
 namespace {
@@ -88,8 +89,9 @@ tsl::elm::Element* SettingRemapConfig::createUI() {
     
     // 添加分类标题
     list->addItem(new tsl::elm::CategoryHeader(" 当前映射列表"));
-    
+
     // 遍历所有映射，创建列表项
+    m_listItems.clear();
     for (int i = 0; i < MappingDef::BUTTON_COUNT; i++) {
         const char* sourceIcon = HidHelper::getButtonIcon(s_ButtonMappings[i].source);
         const char* targetIcon = HidHelper::getButtonIcon(s_ButtonMappings[i].target);
@@ -116,12 +118,16 @@ tsl::elm::Element* SettingRemapConfig::createUI() {
             }
             return false;
         });
-        
+        m_listItems.push_back(item);
         list->addItem(item);
     }
     
     frame->setContent(list);
     return frame;
+}
+
+void SettingRemapConfig::update() {
+    if (Refresh::RefrConsume(Refresh::RemapConfig)) refreshList();
 }
 
 bool SettingRemapConfig::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, 
@@ -133,6 +139,19 @@ bool SettingRemapConfig::handleInput(u64 keysDown, u64 keysHeld, const HidTouchS
     return false;
 }
 
+void SettingRemapConfig::refreshList() {
+    loadMappings();
+    for (size_t i = 0; i < m_listItems.size(); i++) {
+        const char* targetIcon = HidHelper::getButtonIcon(s_ButtonMappings[i].target);
+        bool isMapped = (strcmp(s_ButtonMappings[i].source, s_ButtonMappings[i].target) != 0);
+        tsl::Color valueColor = isMapped ? tsl::Color{0x00, 0xDD, 0xFF, 0xFF} : tsl::style::color::ColorText;
+        m_listItems[i]->setValue(ult::i18n("按键  ") + targetIcon);
+        m_listItems[i]->setValueColor(valueColor);
+    }
+}
+
+
+// 映射布局显示界面
 SettingRemapDisplay::SettingRemapDisplay()
 {
 }
@@ -249,14 +268,12 @@ bool SettingRemapDisplay::handleInput(u64 keysDown, u64 keysHeld, const HidTouch
         return true;
     }
 
-    if (keysDown & HidNpadButton_Plus) {
+    else if (keysDown & HidNpadButton_Plus) {
         // 重置映射
         resetMappings();
         g_ipcManager.sendReloadMappingCommand();
-        // 刷新界面
+        Refresh::RefrRequest(Refresh::RemapConfig);
         tsl::goBack();
-        tsl::goBack();
-        tsl::changeTo<SettingRemapConfig>(s_isGlobal, s_titleId);
         return true;
     }
 
@@ -315,8 +332,8 @@ tsl::elm::Element* SettingRemapEdit::createUI() {
                     targetName, 
                     s_configPath);
                 g_ipcManager.sendReloadMappingCommand();
-                // 设置刷新标志（实际刷新在 handleInput 中进行）
-                m_needRefresh = true;
+                Refresh::RefrRequest(Refresh::RemapConfig);
+                tsl::goBack();
                 return true;
             }
             return false;
@@ -332,16 +349,4 @@ tsl::elm::Element* SettingRemapEdit::createUI() {
     return frame;
 }
 
-bool SettingRemapEdit::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, 
-    HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) {
-    
-    if (m_needRefresh) {
-        tsl::goBack();
-        tsl::goBack();
-        tsl::changeTo<SettingRemapConfig>(s_isGlobal, s_titleId);
-        return true;
-    }
-    
-    return false;
-}
 

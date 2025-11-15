@@ -3,6 +3,7 @@
 #include "game.hpp"
 #include "ini_helper.hpp"
 #include "ipc.hpp"
+#include "refresh.hpp"
 
 // 配置文件路径常量
 constexpr const char* CONFIG_PATH = "/config/KeyX/config.ini";
@@ -29,8 +30,8 @@ tsl::elm::Element* SettingRemap::createUI() {
     list->addItem(listItemGlobalSetting);
 
     u64 currentTitleId = GameMonitor::getCurrentTitleId();
-    auto listItemIndependentSetting = new tsl::elm::ListItem("独立配置", currentTitleId == 0 ? "\uE14C" : ">");
-    listItemIndependentSetting->setClickListener([](u64 keys) {
+    m_listIndependentSetting = new tsl::elm::ListItem("独立配置", currentTitleId == 0 ? "\uE14C" : ">");
+    m_listIndependentSetting->setClickListener([](u64 keys) {
         if (keys & HidNpadButton_A) {
             u64 currentTitleId = GameMonitor::getCurrentTitleId();
             if (currentTitleId == 0) return true;
@@ -39,7 +40,7 @@ tsl::elm::Element* SettingRemap::createUI() {
         }
         return false;
     });
-    list->addItem(listItemIndependentSetting);
+    list->addItem(m_listIndependentSetting);
 
     auto ItemBasicSetting = new tsl::elm::CategoryHeader(" 基础功能设置");
     list->addItem(ItemBasicSetting);
@@ -69,6 +70,10 @@ tsl::elm::Element* SettingRemap::createUI() {
     
     frame->setContent(list);
     return frame;
+}
+
+void SettingRemap::update() {
+    if (Refresh::RefrConsume(Refresh::OnShow)) m_listIndependentSetting->setValue(GameMonitor::getCurrentTitleId() == 0 ? "\uE14C" : ">");
 }
 
 

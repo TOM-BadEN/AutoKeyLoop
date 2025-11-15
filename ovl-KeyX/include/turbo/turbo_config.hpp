@@ -22,9 +22,11 @@ public:
     virtual tsl::elm::Element* createUI() override;
     virtual bool handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, 
         HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) override;
+    virtual void update() override;
     
 private:
     const char* m_configPath;   // 配置文件路径（只读，不需要复制）
     bool m_isGlobal;            // true=全局配置, false=独立配置
+    std::vector<tsl::elm::ToggleListItem*> m_toggleItems;
 };
 

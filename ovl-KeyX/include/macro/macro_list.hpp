@@ -18,7 +18,7 @@ private:
         tsl::elm::ListItem* item{};   
     };
 
-    std::vector<MacroDirEntry> m_macroDirs;
+    std::vector<MacroDirEntry> m_macroDirs{};
     size_t m_nextIndex = 0;
 };
 
@@ -27,6 +27,7 @@ class MacroListGuiGame : public tsl::Gui {
 public:
     MacroListGuiGame(u64 titleId);
     virtual tsl::elm::Element* createUI() override;
+    virtual void update() override;
 
 private:
 
@@ -35,9 +36,9 @@ private:
         u64 Hotkey;
     };
 
-    std::vector<Macro> m_macro;
+    std::vector<Macro> m_macro{};
+    u64 m_titleId;
     char m_gameName[64];
-
 };
 
 

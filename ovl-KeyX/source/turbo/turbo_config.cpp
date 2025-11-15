@@ -3,6 +3,7 @@
 #include "ini_helper.hpp"
 #include "ipc.hpp"
 #include "hiddata.hpp"
+#include "refresh.hpp"
 
 namespace {
     // 储存当前选中的连发按键的位掩码
@@ -183,22 +184,31 @@ tsl::elm::Element* SettingTurboButton::createUI() {
     }));
     auto list = new tsl::elm::List();
     list->addItem(new tsl::elm::CategoryHeader("选择连发按键（可多选）"));
+    m_toggleItems.clear();
     for (const auto& btn : TurboConfig::Buttons) {
         bool isSelected = (s_TurboButtons & btn.flag) != 0;
         const char* icon = HidHelper::getIconByMask(btn.flag);
         std::string buttonName = std::string(ult::i18n(btn.name)) + "  " + icon;
         auto item = new tsl::elm::ToggleListItem(buttonName, isSelected);
         item->setStateChangedListener([this, btn](bool state) {
+            Refresh::RefrRequest(Refresh::MainMenu);
             if (state) s_TurboButtons |= btn.flag;
             else s_TurboButtons &= ~btn.flag;
             IniHelper::setInt("AUTOFIRE", "buttons", s_TurboButtons, m_configPath);
             g_ipcManager.sendReloadAutoFireCommand();
         });
+        m_toggleItems.push_back(item);
         list->addItem(item);
     }
     
     frame->setContent(list);
     return frame;
+}
+
+void SettingTurboButton::update() {
+    if (Refresh::RefrConsume(Refresh::TurboButton)) {
+        for (auto* item : m_toggleItems) item->setState(false);
+    }
 }
 
 bool SettingTurboButton::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, 
@@ -208,9 +218,8 @@ bool SettingTurboButton::handleInput(u64 keysDown, u64 keysHeld, const HidTouchS
     if (keysDown & HidNpadButton_Right) {
         s_TurboButtons = 0;
         IniHelper::setInt("AUTOFIRE", "buttons", s_TurboButtons, m_configPath);
+        Refresh::RefrRequest(Refresh::TurboButton);
         g_ipcManager.sendReloadAutoFireCommand();
-        tsl::goBack();
-        tsl::changeTo<SettingTurboButton>(m_configPath, m_isGlobal);
         return true;
     }
     

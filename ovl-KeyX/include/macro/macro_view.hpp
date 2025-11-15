@@ -5,8 +5,9 @@
 // 脚本查看类
 class MacroViewGui : public tsl::Gui {
 public:
-    MacroViewGui(const char* macroFilePath, const char* gameName);
+    MacroViewGui(const char* macroFilePath, const char* gameName, bool isRecord = false);
     virtual tsl::elm::Element* createUI() override;
+    virtual void update() override;
     virtual bool handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) override;
     
 private:
@@ -22,13 +23,12 @@ private:
     };
 
     MacroInfo m_info{};
-    char m_gameCfgPath[96];
     char m_macroFilePath[96];
-    u64 m_Hotkey;
-
-    // 删除按钮
+    bool m_isRecord;
+    u64 m_Hotkey = 0;
+    char m_gameCfgPath[96];
     tsl::elm::ListItem* m_deleteItem = nullptr;
-
+    tsl::elm::ListItem* m_listButton = nullptr;
 
     void ParsingMacros();
     void getHotkey();
@@ -48,6 +48,7 @@ private:
     char m_gameName[64];
     char m_gameCfgPath[96];
     u64 m_Hotkey;
+    std::vector<u64> m_usedHotkeys{};  // 已使用的快捷键列表
 };
     
 

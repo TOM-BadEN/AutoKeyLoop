@@ -1,24 +1,19 @@
 #include "macro_setting.hpp"
+#include "macro_record.hpp"
 #include "game.hpp"
 #include "ini_helper.hpp"
 #include "ipc.hpp"
 #include "sysmodule.hpp"
-#include "macro_record.hpp"
 #include "focus.hpp"
 #include "macro_list.hpp"
 
 // 录制消息全局变量
-static char g_recordMessage[32] = "";
-
-// 录制消息设置函数实现
-void setRecordingMessage(const char* msg) {
-    strncpy(g_recordMessage, msg, sizeof(g_recordMessage) - 1);
-    g_recordMessage[sizeof(g_recordMessage) - 1] = '\0';
-}
+std::string g_recordMessage = "";
 
 // 中间层用的 Frame
 interlayerFrame::interlayerFrame()
 {
+    tsl::disableComboHide.store(true, std::memory_order_release);  // 禁用特斯拉区域触摸和快捷键hide的功能
 }
 
 void interlayerFrame::draw(tsl::gfx::Renderer* renderer) {
@@ -40,7 +35,6 @@ tsl::elm::Element* interlayerGui::createUI() {
 }
 
 void interlayerGui::update() {
-    ult::internalTouchReleased.store(false, std::memory_order_release);
     tsl::changeTo<CountdownGui>();
 }
 
@@ -77,7 +71,6 @@ void CountdownFrame::layout(u16 parentX, u16 parentY, u16 parentWidth, u16 paren
 CountdownGui::CountdownGui()
  : m_startTime(armGetSystemTick())
  , m_countdown("")
- , m_lastFocusCheckMs(100)  // 初始化为100，跳过第一个100ms
 {
     // 移动到屏幕中间
     u16 centerX = (tsl::cfg::ScreenWidth - tsl::cfg::LayerWidth) / 2;
@@ -90,35 +83,36 @@ tsl::elm::Element* CountdownGui::createUI() {
 }
 
 void CountdownGui::update() {
+    // 每100ms检测一次焦点
     u64 elapsed_ms = armTicksToNs(armGetSystemTick() - m_startTime) / 1000000ULL;
     if (elapsed_ms >= m_lastFocusCheckMs + 100) {
         m_lastFocusCheckMs = elapsed_ms;
         FocusState focusState = FocusMonitor::GetState(GameMonitor::getCurrentTitleId());
         if (focusState == FocusState::OutOfFocus) {
             tsl::gfx::Renderer::get().setLayerPos(0, 0);
-            setRecordingMessage("请在游戏中录制");
-            tsl::goBack();
-            tsl::goBack();
+            tsl::disableComboHide.store(false, std::memory_order_release);  // 恢复特斯拉区域触摸和快捷键hide的功能
+            g_recordMessage = "请在游戏中录制";
+            tsl::goBack(2);
             return;
         }
     }
+    // 设置倒计时文本
     if (elapsed_ms < 1000)  strcpy(m_countdown, "3");
     else if (elapsed_ms < 2000) strcpy(m_countdown, "2");
     else if (elapsed_ms < 3000) strcpy(m_countdown, "1");
     else if (elapsed_ms < 3100) strcpy(m_countdown, "0");
-    else tsl::changeTo<RecordingGui>();
+    else tsl::changeTo<RecordingGui>();   // 跳转到录制界面
     m_frame->setCountdown(m_countdown);
 }
 
 bool CountdownGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos,
     HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) {
-    // 检测特斯拉快捷键或B键
+    // 如果按了特斯拉快捷键或者B取消录制
     const u64 combo = tsl::cfg::launchCombo;
     if ((((keysHeld & combo) == combo) && (keysDown & combo)) || (keysDown & HidNpadButton_B)) {
-        setRecordingMessage("已取消录制");
+        g_recordMessage = "已取消录制";
         tsl::gfx::Renderer::get().setLayerPos(0, 0);
-        tsl::goBack();
-        tsl::goBack();
+        tsl::goBack(2);
         return true;
     }
     return true;
@@ -128,7 +122,6 @@ bool CountdownGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &
 // 设置界面类
 SettingMacro::SettingMacro()
 {
-    tsl::disableComboHide.store(false, std::memory_order_release);  // 恢复特斯拉区域触摸和快捷键hide的功能
 }
 
 tsl::elm::Element* SettingMacro::createUI() {
@@ -191,26 +184,20 @@ tsl::elm::Element* SettingMacro::createUI() {
 
 bool SettingMacro::HandleRecordClick() {
     if (!SysModuleManager::isRunning()) {
-        setRecordingMessage("未启动系统模块");
+        g_recordMessage = "未启动系统模块";
         return true;
     }
-    
-    // 获取当前游戏TID
     u64 gameTid = GameMonitor::getCurrentTitleId();
     if (gameTid == 0) {
-        setRecordingMessage("未启动游戏");
+        g_recordMessage = "未启动游戏";
         return true;
     }
-    
-    // 检测游戏焦点状态
     FocusState focusState = FocusMonitor::GetState(gameTid);
     if (focusState == FocusState::OutOfFocus) {
-        setRecordingMessage("请在游戏中录制");
+        g_recordMessage = "请在游戏中录制";
         return true;
     }
-    
     // 跳转到倒计时界面
-    tsl::disableComboHide.store(true, std::memory_order_release);  // 禁用特斯拉区域触摸和快捷键hide的功能
     tsl::changeTo<interlayerGui>();
     return true;
 }

@@ -6,6 +6,7 @@
 #include <strings.h>
 #include "ini_helper.hpp"
 #include "hiddata.hpp"
+#include "refresh.hpp"
 
 namespace {
     const char* MACROS_DIR = "/config/KeyX/macros";
@@ -15,6 +16,7 @@ namespace {
 MacroListGui::MacroListGui() 
  : m_macroDirs()
 {
+    // 获取有脚本的所有游戏目录(目录名是titleId)
     auto dirs = ult::getSubdirectories(MACROS_DIR);
     m_macroDirs.reserve(dirs.size());
     for (const auto& dir : dirs) {
@@ -28,7 +30,6 @@ MacroListGui::MacroListGui()
 tsl::elm::Element* MacroListGui::createUI() {
     auto frame = new tsl::elm::OverlayFrame("脚本列表", "管理录制的脚本");
     auto list = new tsl::elm::List();
-    
     if (m_macroDirs.empty()) {
         auto noMacro = new tsl::elm::CustomDrawer([](tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h) {
             s32 textFont = 40;
@@ -88,18 +89,19 @@ void MacroListGui::update() {
 
 // 脚本清单具体游戏的脚本列表类
 MacroListGuiGame::MacroListGuiGame(u64 titleId)
- : m_macro()
+ : m_titleId(titleId)
 {
-    GameMonitor::getTitleIdGameName(titleId, m_gameName);
+    // 获取游戏名
+    GameMonitor::getTitleIdGameName(m_titleId, m_gameName);
+    // 获取所有宏文件
     char gameDirPath[64]{};
-    sprintf(gameDirPath, "sdmc:/config/KeyX/macros/%016lX/*.macro", titleId);
-    
+    sprintf(gameDirPath, "sdmc:/config/KeyX/macros/%016lX/*.macro", m_titleId);
     std::vector<std::string> allMacroFiles = ult::getFilesListByWildcards(gameDirPath);
+    // 按名称排序
     std::sort(allMacroFiles.begin(), allMacroFiles.end(),[](const std::string& a, const std::string& b) { return strcasecmp(a.c_str(), b.c_str()) < 0; });
-
-    // 获取完整的宏文件列表
+    // 获取已经设置了快捷键的宏文件
     char gameCfgPath[64];
-    sprintf(gameCfgPath, "sdmc:/config/KeyX/GameConfig/%016lX.ini", titleId);
+    sprintf(gameCfgPath, "sdmc:/config/KeyX/GameConfig/%016lX.ini", m_titleId);
     Macro entry;
     int macroCount = IniHelper::getInt("MACRO", "macroCount", 0, gameCfgPath);
     for (int idx = 1; idx <= macroCount; ++idx) {
@@ -113,11 +115,13 @@ MacroListGuiGame::MacroListGuiGame(u64 titleId)
         entry.Hotkey = Hotkey;
         m_macro.push_back(entry);
     }
+    // 按名称排序
     std::sort(m_macro.begin(), m_macro.end(),[](const Macro& lhs, const Macro& rhs) {
         std::string nameL = ult::getFileName(lhs.macroPath);
         std::string nameR = ult::getFileName(rhs.macroPath);
         return strcasecmp(nameL.c_str(), nameR.c_str()) < 0;
     });
+    // 去重和拼接成完整的宏文件列表
     std::unordered_set<std::string> boundPaths;
     boundPaths.reserve(m_macro.size());
     for (const auto& entry : m_macro) boundPaths.insert(entry.macroPath);
@@ -128,14 +132,11 @@ MacroListGuiGame::MacroListGuiGame(u64 titleId)
         extra.Hotkey = 0;                             
         m_macro.push_back(std::move(extra));
     }
-
 }
 
 tsl::elm::Element* MacroListGuiGame::createUI() {
-
     auto frame = new tsl::elm::OverlayFrame(m_gameName, "当前游戏的所有脚本");
     auto list = new tsl::elm::List();
-    
     if (m_macro.empty()) {
         auto noMacro = new tsl::elm::CustomDrawer([](tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h) {
             s32 textFont = 40;
@@ -178,5 +179,16 @@ tsl::elm::Element* MacroListGuiGame::createUI() {
     return frame;
 
 }
+
+void MacroListGuiGame::update() {
+    if (Refresh::RefrConsume(Refresh::MacroGameList)) {
+        u64 tid = m_titleId;
+        tsl::goBack(); 
+        tsl::changeTo<MacroListGuiGame>(tid);    // 删除当前界面重新创建
+    }
+}
+
+
+
 
 

@@ -32,6 +32,7 @@ SOURCES		:=	source \
 				source/remap \
 				source/macro \
 				source/util \
+				source/common \
 				libs/libultrahand/libultra/source \
 				libs/libultrahand/common
 DATA		:=	data

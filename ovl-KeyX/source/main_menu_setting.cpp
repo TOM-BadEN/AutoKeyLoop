@@ -5,7 +5,7 @@
 #include "ini_helper.hpp"
 #include "ipc.hpp"
 #include "sysmodule.hpp"
-#include "main_menu.hpp"
+#include "refresh.hpp"
 
 // 配置文件路径常量
 constexpr const char* CONFIG_PATH = "/config/KeyX/config.ini";
@@ -108,17 +108,13 @@ tsl::elm::Element* SettingMenu::createUI() {
 bool SettingMenu::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, 
     HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) {
     
-    // 监控 B 键返回，每次返回前刷新主页数据
-    if (keysDown & HidNpadButton_B) {
-        MainMenu::UpdateMainMenu();
-    }
-
-    if (keysDown & HidNpadButton_Left) {
-        MainMenu::UpdateMainMenu();
+    // 返回前申请刷新主页数据
+    if (keysDown & HidNpadButton_B || keysDown & HidNpadButton_Left) {
+        Refresh::RefrRequest(Refresh::MainMenu);
         tsl::goBack();
         return true;
     }
-    
-    return false;  // 让默认的返回逻辑继续执行
+
+    return false;
 }
 

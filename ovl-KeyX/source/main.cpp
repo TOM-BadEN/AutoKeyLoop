@@ -2,9 +2,14 @@
 #include <tesla.hpp>
 #include "main_menu.hpp"
 #include "language.hpp"
+#include "refresh.hpp"
 
 // KeyX 特斯拉覆盖层主类
 class KeyXOverlay : public tsl::Overlay {
+
+private:
+    bool m_isFirstShow = true;
+
 public:
     // 初始化系统服务
     virtual void initServices() override 
@@ -29,7 +34,8 @@ public:
 
     // 覆盖层显示时调用，用于更新游戏信息
     virtual void onShow() override {
-        MainMenu::UpdateMainMenu();  // 更新文本区域信息
+        if (m_isFirstShow) m_isFirstShow = false;
+        else Refresh::RefrRequest(Refresh::OnShow);
     }
 
     // 加载初始GUI界面

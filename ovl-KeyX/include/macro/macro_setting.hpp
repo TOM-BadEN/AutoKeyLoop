@@ -35,9 +35,9 @@ public:
 
 private:
     u64 m_startTime;
-    CountdownFrame* m_frame;
+    CountdownFrame* m_frame = nullptr;
     char m_countdown[4];
-    u64 m_lastFocusCheckMs;  // 上次焦点检测的时间（毫秒）
+    u64 m_lastFocusCheckMs = 100;  // 上次焦点检测的时间（毫秒）
 };
 
 // 中间层用的 Frame
@@ -64,5 +64,4 @@ private:
 
 };
 
-// 录制消息设置函数
-void setRecordingMessage(const char* msg);
+

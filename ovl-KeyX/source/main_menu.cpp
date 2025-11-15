@@ -6,6 +6,7 @@
 #include "main_menu_setting.hpp"
 #include <ultra.hpp>
 #include "hiddata.hpp"
+#include "refresh.hpp"
 
 // Tesla插件界面尺寸常量定义
 #define TESLA_VIEW_HEIGHT 720      // Tesla插件总高度
@@ -14,142 +15,107 @@
 #define LIST_ITEM_HEIGHT 70        // 列表项高度
 #define SPACING 20  // 间距常量
 
+// 全局配置文件路径
 constexpr const char* CONFIG_PATH = "/config/KeyX/config.ini";
 
+// 按键映射初始化结构体
+static MappingDef::ButtonMapping s_buttonMappings[MappingDef::BUTTON_COUNT] = {
+    {"A", "A"},
+    {"B", "B"},
+    {"X", "X"},
+    {"Y", "Y"},
+    {"Up", "Up"},
+    {"Down", "Down"},
+    {"Left", "Left"},
+    {"Right", "Right"},
+    {"L", "L"},
+    {"R", "R"},
+    {"ZL", "ZL"},
+    {"ZR", "ZR"},
+    {"StickL", "StickL"},
+    {"StickR", "StickR"},
+    {"Start", "Start"},
+    {"Select", "Select"}
+};
 
-namespace {
-
-    MappingDef::ButtonMapping s_ButtonMappings[] = {
-        {"A", "A"},
-        {"B", "B"},
-        {"X", "X"},
-        {"Y", "Y"},
-        {"Up", "Up"},
-        {"Down", "Down"},
-        {"Left", "Left"},
-        {"Right", "Right"},
-        {"L", "L"},
-        {"R", "R"},
-        {"ZL", "ZL"},
-        {"ZR", "ZR"},
-        {"StickL", "StickL"},
-        {"StickR", "StickR"},
-        {"Start", "Start"},
-        {"Select", "Select"}
-    };
+void MainMenu::RefreshData() {
     
-}
-
-// 静态成员变量定义
-TextAreaInfo MainMenu::s_TextAreaInfo;
-static tsl::elm::ListItem* s_AutoFireEnableItem = nullptr;          // 开启连发列表项
-static tsl::elm::ListItem* s_AutoRemapEnableItem = nullptr;          // 开启映射列表项
-
-
-// 静态方法：更新一次关键信息
-void MainMenu::UpdateMainMenu() {
-    
-    // 开局检查游戏TID
-    // 目标是根据游戏TID，确认当前是否在游戏中
-    // 如果不在游戏中，那配置文件使用全局配置
-    // 如果在游戏中，那配置文件根据游戏配置文件中的设置来决定
-
+    /* 
+     *   检查游戏TID
+     *   目标是根据游戏TID，确认当前是否在游戏中
+     *   如果不在游戏中，那配置文件使用全局配置
+     *   如果在游戏中，那配置文件根据游戏配置文件中的设置来决定
+     */
     u64 currentTitleId = GameMonitor::getCurrentTitleId();
-    s_TextAreaInfo.isInGame = (currentTitleId != 0) && SysModuleManager::isRunning();
-    snprintf(s_TextAreaInfo.gameId, sizeof(s_TextAreaInfo.gameId), "%016lX", currentTitleId);
-    s_TextAreaInfo.GameConfigPath = "/config/KeyX/GameConfig/" + std::string(s_TextAreaInfo.gameId) + ".ini";
-    s_TextAreaInfo.isGlobalConfig = IniHelper::getBool("AUTOFIRE", "globconfig", true, s_TextAreaInfo.GameConfigPath);
-    std::string SwitchConfigPath = (s_TextAreaInfo.isInGame && ult::isFile(s_TextAreaInfo.GameConfigPath)) ? s_TextAreaInfo.GameConfigPath : CONFIG_PATH;
-    s_TextAreaInfo.isAutoFireEnabled = IniHelper::getBool("AUTOFIRE", "autoenable", false, SwitchConfigPath);
-    s_TextAreaInfo.isAutoRemapEnabled = IniHelper::getBool("MAPPING", "autoenable", false, SwitchConfigPath);
-    if (s_AutoFireEnableItem != nullptr) s_AutoFireEnableItem->setValue(s_TextAreaInfo.isAutoFireEnabled ? "已开启" : "已关闭");
-    if (s_AutoRemapEnableItem != nullptr) s_AutoRemapEnableItem->setValue(s_TextAreaInfo.isAutoRemapEnabled ? "已开启" : "已关闭");
+    m_textAreaInfo.isInGame = (currentTitleId != 0) && SysModuleManager::isRunning();
+    snprintf(m_textAreaInfo.gameId, sizeof(m_textAreaInfo.gameId), "%016lX", currentTitleId);
+    m_textAreaInfo.GameConfigPath = "/config/KeyX/GameConfig/" + std::string(m_textAreaInfo.gameId) + ".ini";
+    m_textAreaInfo.isGlobalConfig = IniHelper::getBool("AUTOFIRE", "globconfig", true, m_textAreaInfo.GameConfigPath);
+    std::string SwitchConfigPath = (m_textAreaInfo.isInGame && ult::isFile(m_textAreaInfo.GameConfigPath)) ? m_textAreaInfo.GameConfigPath : CONFIG_PATH;
+    m_textAreaInfo.isAutoFireEnabled = IniHelper::getBool("AUTOFIRE", "autoenable", false, SwitchConfigPath);
+    m_textAreaInfo.isAutoRemapEnabled = IniHelper::getBool("MAPPING", "autoenable", false, SwitchConfigPath);
+    if (m_AutoFireEnableItem != nullptr) m_AutoFireEnableItem->setValue(m_textAreaInfo.isAutoFireEnabled ? "已开启" : "已关闭");
+    if (m_AutoRemapEnableItem != nullptr) m_AutoRemapEnableItem->setValue(m_textAreaInfo.isAutoRemapEnabled ? "已开启" : "已关闭");
 
     // 读取按钮掩码值用于绘制按钮图标
-    RefreshButtonsConfig();
-}
-
-// 刷新按钮配置，主要用于UI绘制
-void MainMenu::RefreshButtonsConfig() {
-    std::string ConfigPath = s_TextAreaInfo.isGlobalConfig ? CONFIG_PATH : s_TextAreaInfo.GameConfigPath;
+    std::string ConfigPath = m_textAreaInfo.isGlobalConfig ? CONFIG_PATH : m_textAreaInfo.GameConfigPath;
     std::string buttonsStr = IniHelper::getString("AUTOFIRE", "buttons", "0", ConfigPath);
-    s_TextAreaInfo.buttons = std::stoull(buttonsStr);
+    m_textAreaInfo.buttons = std::stoull(buttonsStr);
+    
     // 读取映射配置
     for (int i = 0; i < MappingDef::BUTTON_COUNT; i++) {
-        std::string temp = IniHelper::getString("MAPPING", s_ButtonMappings[i].source,
-                                                 s_ButtonMappings[i].source, ConfigPath);
-        strncpy(s_ButtonMappings[i].target, temp.c_str(), 7);
-        s_ButtonMappings[i].target[7] = '\0';
+        std::string temp = IniHelper::getString("MAPPING", s_buttonMappings[i].source, s_buttonMappings[i].source, ConfigPath);
+        strncpy(s_buttonMappings[i].target, temp.c_str(), 7);
+        s_buttonMappings[i].target[7] = '\0';
     }
 }
+
 
 // 连发功能开关
 void MainMenu::AutoKeyToggle() {
-    if (!s_TextAreaInfo.isInGame) return;
-
-    // 根据状态发送命令
-    Result rc = s_TextAreaInfo.isAutoFireEnabled 
-        ? g_ipcManager.sendDisableAutoFireCommand()   // 关闭
-        : g_ipcManager.sendEnableAutoFireCommand();   // 开启
-
-    if (R_FAILED(rc)) {
-        s_AutoFireEnableItem->setValue("IPC通信失败");
-        return;
-    }
-
+    if (!m_textAreaInfo.isInGame) return;
+    // 根据状态发送IPC命令
+    Result rc = m_textAreaInfo.isAutoFireEnabled ? g_ipcManager.sendDisableAutoFireCommand() : g_ipcManager.sendEnableAutoFireCommand();
+    if (R_FAILED(rc)) return;
     // 切换状态，开变关-关变开
-    s_TextAreaInfo.isAutoFireEnabled = !s_TextAreaInfo.isAutoFireEnabled;
-    s_AutoFireEnableItem->setValue(s_TextAreaInfo.isAutoFireEnabled ? "已开启" : "已关闭");
-    IniHelper::setBool("AUTOFIRE", "globconfig", s_TextAreaInfo.isGlobalConfig, s_TextAreaInfo.GameConfigPath);
-    IniHelper::setBool("AUTOFIRE", "autoenable", s_TextAreaInfo.isAutoFireEnabled, s_TextAreaInfo.GameConfigPath);
+    m_textAreaInfo.isAutoFireEnabled = !m_textAreaInfo.isAutoFireEnabled;
+    m_AutoFireEnableItem->setValue(m_textAreaInfo.isAutoFireEnabled ? "已开启" : "已关闭");
+    IniHelper::setBool("AUTOFIRE", "globconfig", m_textAreaInfo.isGlobalConfig, m_textAreaInfo.GameConfigPath);
+    IniHelper::setBool("AUTOFIRE", "autoenable", m_textAreaInfo.isAutoFireEnabled, m_textAreaInfo.GameConfigPath);
 }
 
 // 映射功能开关
 void MainMenu::AutoRemapToggle() {
-    if (!s_TextAreaInfo.isInGame) return;
-
-    // 根据状态发送命令
-    Result rc = s_TextAreaInfo.isAutoRemapEnabled 
-        ? g_ipcManager.sendDisableMappingCommand()   // 关闭
-        : g_ipcManager.sendEnableMappingCommand();   // 开启
-        
-    if (R_FAILED(rc)) {
-        s_AutoRemapEnableItem->setValue("IPC通信失败");
-        return;
-    }
-
+    if (!m_textAreaInfo.isInGame) return;
+    // 根据状态发送IPC命令
+    Result rc = m_textAreaInfo.isAutoRemapEnabled ? g_ipcManager.sendDisableMappingCommand() : g_ipcManager.sendEnableMappingCommand();
+    if (R_FAILED(rc)) return;
     // 切换状态，开变关-关变开
-    s_TextAreaInfo.isAutoRemapEnabled = !s_TextAreaInfo.isAutoRemapEnabled;
-    s_AutoRemapEnableItem->setValue(s_TextAreaInfo.isAutoRemapEnabled ? "已开启" : "已关闭");
-    IniHelper::setBool("AUTOFIRE", "globconfig", s_TextAreaInfo.isGlobalConfig, s_TextAreaInfo.GameConfigPath);
-    IniHelper::setBool("MAPPING", "autoenable", s_TextAreaInfo.isAutoRemapEnabled, s_TextAreaInfo.GameConfigPath);
+    m_textAreaInfo.isAutoRemapEnabled = !m_textAreaInfo.isAutoRemapEnabled;
+    m_AutoRemapEnableItem->setValue(m_textAreaInfo.isAutoRemapEnabled ? "已开启" : "已关闭");
+    IniHelper::setBool("AUTOFIRE", "globconfig", m_textAreaInfo.isGlobalConfig, m_textAreaInfo.GameConfigPath);
+    IniHelper::setBool("MAPPING", "autoenable", m_textAreaInfo.isAutoRemapEnabled, m_textAreaInfo.GameConfigPath);
 }
 
 // 配置切换（全局/独立）
 void MainMenu::ConfigToggle() {
-    if (!s_TextAreaInfo.isInGame) return;
-    s_TextAreaInfo.isGlobalConfig = !s_TextAreaInfo.isGlobalConfig;
-    IniHelper::setBool("AUTOFIRE", "globconfig", s_TextAreaInfo.isGlobalConfig, s_TextAreaInfo.GameConfigPath);
-    IniHelper::setBool("AUTOFIRE", "autoenable", s_TextAreaInfo.isAutoFireEnabled, s_TextAreaInfo.GameConfigPath);
-    IniHelper::setBool("MAPPING", "autoenable", s_TextAreaInfo.isAutoRemapEnabled, s_TextAreaInfo.GameConfigPath);
-    
+    if (!m_textAreaInfo.isInGame) return;
+    m_textAreaInfo.isGlobalConfig = !m_textAreaInfo.isGlobalConfig;
+    IniHelper::setBool("AUTOFIRE", "globconfig", m_textAreaInfo.isGlobalConfig, m_textAreaInfo.GameConfigPath);
+    IniHelper::setBool("AUTOFIRE", "autoenable", m_textAreaInfo.isAutoFireEnabled, m_textAreaInfo.GameConfigPath);
+    IniHelper::setBool("MAPPING", "autoenable", m_textAreaInfo.isAutoRemapEnabled, m_textAreaInfo.GameConfigPath);
     // 刷新界面显示
-    UpdateMainMenu();
-
+    RefreshData();
     // 发送重载配置命令
     Result rc = g_ipcManager.sendReloadBasicCommand();
-    if (R_FAILED(rc)) {
-        s_AutoFireEnableItem->setValue("IPC通信失败");
-        s_AutoRemapEnableItem->setValue("IPC通信失败");
-        return;
-    }
+    if (R_FAILED(rc)) return;
 }
 
 // 主菜单构造函数
 MainMenu::MainMenu()
 {
-    // 初始化时更新文本区域信息
-    UpdateMainMenu();
+    // 刷新数据（初始化数据）
+    RefreshData();
 }
 
 // 创建用户界面
@@ -162,7 +128,7 @@ tsl::elm::Element* MainMenu::createUI()
     auto frame = new tsl::elm::HeaderOverlayFrame(TESLA_TITLE_HEIGHT);
     
     // 自定义头部绘制器
-    frame->setHeader(new tsl::elm::CustomDrawer([](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
+    frame->setHeader(new tsl::elm::CustomDrawer([this](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
         // 左侧：标题和版本
         renderer->drawString("按键助手", false, 20, 50+2, 32, renderer->a(tsl::defaultOverlayColor));
         renderer->drawString(APP_VERSION_STRING, false, 20, 50+23, 15, renderer->a(tsl::bannerVersionTextColor));
@@ -170,10 +136,10 @@ tsl::elm::Element* MainMenu::createUI()
         // 右侧：两行信息（往左移，避免截断，屏幕可见宽度约615px）
         // 垂直居中：高度97，行间距25，第一行Y=36，第二行Y=61
         renderer->drawString("TID :", false, 235, 36, 15, renderer->a(tsl::style::color::ColorText));
-        renderer->drawString(s_TextAreaInfo.gameId, false, 275, 36, 15, renderer->a(tsl::style::color::ColorHighlight));
+        renderer->drawString(m_textAreaInfo.gameId, false, 275, 36, 15, renderer->a(tsl::style::color::ColorHighlight));
         
         renderer->drawString("配置:", false, 235, 61, 15, renderer->a(tsl::style::color::ColorText));
-        const char* config = s_TextAreaInfo.isGlobalConfig ? "全局配置" : "独立配置";
+        const char* config = m_textAreaInfo.isGlobalConfig ? "全局配置" : "独立配置";
         renderer->drawString(config, false, 275, 61, 15, renderer->a(tsl::style::color::ColorHighlight));
 
         // 底部按钮（使用绝对坐标）
@@ -186,11 +152,11 @@ tsl::elm::Element* MainMenu::createUI()
 
     // ============= 上半部分：纯文本显示区域 =============
     // 创建自定义绘制器来显示纯文本内容（使用结构体成员数量）
-    auto textArea = new tsl::elm::CustomDrawer([](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
+    auto textArea = new tsl::elm::CustomDrawer([this](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
         
         
         // 如果在游戏中，绘制按键图标
-        if (s_TextAreaInfo.isInGame) {
+        if (m_textAreaInfo.isInGame) {
             tsl::Color whiteColor = {0xFF, 0xFF, 0xFF, 0xFF};          // 白色：未映射
             tsl::Color blueColor = {0x00, 0xDD, 0xFF, 0xFF};           // 亮天蓝色：已映射
             tsl::Color yellowColor = {0xFF, 0xFF, 0x00, 0xFF};         // 黄色：连发小点
@@ -229,10 +195,10 @@ tsl::elm::Element* MainMenu::createUI()
                 bool isMapped = false;
                 
                 for (int i = 0; i < MappingDef::BUTTON_COUNT; i++) {
-                    if (strcmp(s_ButtonMappings[i].source, sourceName) == 0) {
-                        targetIcon = HidHelper::getButtonIcon(s_ButtonMappings[i].target);
-                        targetName = s_ButtonMappings[i].target;
-                        isMapped = (strcmp(s_ButtonMappings[i].source, s_ButtonMappings[i].target) != 0);
+                    if (strcmp(s_buttonMappings[i].source, sourceName) == 0) {
+                        targetIcon = HidHelper::getButtonIcon(s_buttonMappings[i].target);
+                        targetName = s_buttonMappings[i].target;
+                        isMapped = (strcmp(s_buttonMappings[i].source, s_buttonMappings[i].target) != 0);
                         break;
                     }
                 }
@@ -248,7 +214,7 @@ tsl::elm::Element* MainMenu::createUI()
                 
                 // 检查目标按键是否有连发，绘制黄色小点
                 u64 flag = HidHelper::getButtonFlag(targetName);
-                if (s_TextAreaInfo.buttons & flag) {
+                if (m_textAreaInfo.buttons & flag) {
                     s32 dotX = posX + buttonSize - 3;  // 往右移动 2（-5 → -3）
                     s32 dotY = posY - buttonSize + 3;  // 往上移动 2（+5 → +3）
                     renderer->drawCircle(dotX, dotY, 3, true, renderer->a(yellowColor));
@@ -309,25 +275,25 @@ tsl::elm::Element* MainMenu::createUI()
 
     // ============= 下半部分：列表区域 =============
     // 创建开启连发列表项
-    s_AutoFireEnableItem = new tsl::elm::ListItem("按键连发", s_TextAreaInfo.isAutoFireEnabled ? "已开启" : "已关闭");
-    s_AutoFireEnableItem->setClickListener([](u64 keys) {
+    m_AutoFireEnableItem = new tsl::elm::ListItem("按键连发", m_textAreaInfo.isAutoFireEnabled ? "已开启" : "已关闭");
+    m_AutoFireEnableItem->setClickListener([this](u64 keys) {
         if (keys & HidNpadButton_A) {
-            MainMenu::AutoKeyToggle();
+            AutoKeyToggle();
             return true;
         }
         return false;
     });
-    mainList->addItem(s_AutoFireEnableItem);
+    mainList->addItem(m_AutoFireEnableItem);
 
-    s_AutoRemapEnableItem = new tsl::elm::ListItem("按键映射", s_TextAreaInfo.isAutoRemapEnabled ? "已开启" : "已关闭");
-    s_AutoRemapEnableItem->setClickListener([](u64 keys) {
+    m_AutoRemapEnableItem = new tsl::elm::ListItem("按键映射", m_textAreaInfo.isAutoRemapEnabled ? "已开启" : "已关闭");
+    m_AutoRemapEnableItem->setClickListener([this](u64 keys) {
         if (keys & HidNpadButton_A) {
-            MainMenu::AutoRemapToggle();
+            AutoRemapToggle();
             return true;
         }
         return false;
     });
-    mainList->addItem(s_AutoRemapEnableItem);
+    mainList->addItem(m_AutoRemapEnableItem);
 
     // 创建设置列表项
     auto listItemMacro = new tsl::elm::ListItem("按键脚本","已关闭");
@@ -341,9 +307,9 @@ tsl::elm::Element* MainMenu::createUI()
 
     // 创建切换配置列表项
     auto ConfigSwitchItem = new tsl::elm::ListItem("切换配置",">");
-    ConfigSwitchItem->setClickListener([](u64 keys) {
+    ConfigSwitchItem->setClickListener([this](u64 keys) {
         if (keys & HidNpadButton_A) {
-            MainMenu::ConfigToggle();
+            ConfigToggle();
             return true;
         }
         return false;
@@ -355,6 +321,11 @@ tsl::elm::Element* MainMenu::createUI()
 
     // 返回创建的界面元素
     return frame;
+}
+
+void MainMenu::update() {
+    // 刷新机制
+    if (Refresh::RefrConsume(Refresh::MainMenu)) RefreshData();
 }
 
 // 处理输入事件

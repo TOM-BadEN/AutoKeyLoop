@@ -6,6 +6,8 @@
 #include <ultra.hpp>
 #include <time.h>
 
+extern std::string g_recordMessage;
+
 namespace {
     constexpr u64 STICK_PSEUDO_MASK = 0xFF0000ULL;  // 伪按键，必须过滤
 }
@@ -48,15 +50,13 @@ void RecordingFrame::draw(tsl::gfx::Renderer* renderer) {
 }
 
 void RecordingFrame::layout(u16 parentX, u16 parentY, u16 parentWidth, u16 parentHeight) {
+    // 设置边界
     this->setBoundaries(0, 0, tsl::cfg::FramebufferWidth, tsl::cfg::FramebufferHeight);
 }
 
 // 录制时界面类
 RecordingGui::RecordingGui()
  : m_startTime(armGetSystemTick())
- , m_frame(nullptr)
- , m_lastUpdatedSeconds(0)
- , m_lastFocusCheckMs(0)  // 录制期间立即开始检查
 {
     // 移动到屏幕中间
     u16 centerX = (tsl::cfg::ScreenWidth - tsl::cfg::LayerWidth);
@@ -105,31 +105,31 @@ void RecordingGui::saveToFile() {
 
     char gameName[64];
     GameMonitor::getTitleIdGameName(header.titleId, gameName);
-    exitRecording();
-    tsl::changeTo<MacroRenameGui>(filename, gameName, true);
+    tsl::disableComboHide.store(false, std::memory_order_release);  // 恢复特斯拉区域触摸和快捷键hide的功能
+    tsl::gfx::Renderer::get().setLayerPos(0, 0);                    // 恢复特斯拉区默认位置
+    tsl::hlp::requestForeground(true);                              // 恢复特斯拉的输入焦点
+    g_recordMessage = "";                                           // 清空录制消息
+    tsl::changeTo<MacroRenameGui>(filename, gameName, true);        // 录制成功，跳转到保存与命名界面
 }
 
 // 退出录制并返回主界面
 void RecordingGui::exitRecording() {
+    tsl::disableComboHide.store(false, std::memory_order_release);  
     tsl::gfx::Renderer::get().setLayerPos(0, 0);
     tsl::hlp::requestForeground(true);
-    tsl::goBack();
-    tsl::goBack();
-    tsl::goBack();
+    tsl::goBack(3);  // 返回脚本主界面
 }
 
 void RecordingGui::update() {
-    
-    if (ult::currentForeground.load(std::memory_order_acquire)) tsl::hlp::requestForeground(false);
-    
+    // 检查焦点，如果不在当前游戏，中断录制
+    if (ult::currentForeground.load(std::memory_order_acquire)) tsl::hlp::requestForeground(false); 
     u64 elapsed_ms = armTicksToNs(armGetSystemTick() - m_startTime) / 1000000ULL;
-    
     // 每100ms检查一次焦点
     if (elapsed_ms >= m_lastFocusCheckMs + 100) {
         m_lastFocusCheckMs = elapsed_ms;
         FocusState focusState = FocusMonitor::GetState(GameMonitor::getCurrentTitleId());
         if (focusState == FocusState::OutOfFocus) {
-            setRecordingMessage("录制已中断");
+            g_recordMessage = "录制已中断";
             exitRecording();
             return;
         }
@@ -143,32 +143,30 @@ void RecordingGui::update() {
     
     // 超时检测
     if (elapsed_ms > 30000) {
-        setRecordingMessage("录制超时");
+        g_recordMessage = "录制超时";
         exitRecording();
     }
 }
 
 bool RecordingGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) {
-    // 检测特斯拉快捷键
+    // 录制期间使用特斯拉快捷键结束录制
     const u64 combo = tsl::cfg::launchCombo;
     if (((keysHeld & combo) == combo) && (keysDown & combo)) {
-        while (!m_frames.empty() && (m_frames.back().keysHeld & combo)) {
-            m_frames.pop_back();
-        }
-        saveToFile();  // 界面挑战写在这个函数末尾了
+        // 移除最后一个快捷键帧
+        while (!m_frames.empty() && (m_frames.back().keysHeld & combo)) m_frames.pop_back();
+        saveToFile();  // 界面跳转写在这个函数末尾了
         return true;
     }
     
     // 录制当前帧数据
     MacroFrame frame;
-    // 过滤摇杆虚拟按键（bit 16-23），只保留物理按键
-    frame.keysHeld = keysHeld & ~STICK_PSEUDO_MASK;
+    frame.keysHeld = keysHeld & ~STICK_PSEUDO_MASK;    // 过滤摇杆虚拟按键（bit 16-23）
     frame.leftX = joyStickPosLeft.x;
     frame.leftY = joyStickPosLeft.y;
     frame.rightX = joyStickPosRight.x;
     frame.rightY = joyStickPosRight.y;
     m_frames.push_back(frame);
-    
-    // 录制期间忽略所有其他按键
+
+    // 录制期间不接受其他输入
     return true;
 }

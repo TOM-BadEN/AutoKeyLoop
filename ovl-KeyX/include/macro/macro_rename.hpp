@@ -10,8 +10,8 @@ public:
     virtual bool handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) override;
 
 private:
-    char m_gameName[64];
     char m_macroFilePath[96];
+    char m_gameName[64];
     bool m_isRecord;
     int m_row = 0;
     int m_col = 0;
@@ -26,4 +26,7 @@ private:
 
     // 改名函数
     void MacroRename();
+    
+    // 更新配置文件中的脚本路径
+    void updateConfigPath(const char* newPath);
 };

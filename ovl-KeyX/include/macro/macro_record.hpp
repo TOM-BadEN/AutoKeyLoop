@@ -44,9 +44,9 @@ public:
 
 private:
     u64 m_startTime;
-    RecordingFrame* m_frame;
-    u64 m_lastUpdatedSeconds;
-    u64 m_lastFocusCheckMs;  // 上次焦点检测的时间（毫秒）
+    RecordingFrame* m_frame = nullptr;
+    u64 m_lastUpdatedSeconds = 0;           // 上次更新时间（秒）
+    u64 m_lastFocusCheckMs = 0;             // 上次焦点检测的时间（毫秒）
     
     // 宏录制数据
     std::vector<MacroFrame> m_frames;  // 录制的帧数据

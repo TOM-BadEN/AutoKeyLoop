@@ -3,6 +3,8 @@
 #include "macro_view.hpp"
 #include <ultra.hpp>
 #include <cstdio>
+#include "refresh.hpp"
+#include "ini_helper.hpp"
 
 namespace {
     constexpr const char* KeyboardRowsUpper[] = {
@@ -19,16 +21,16 @@ namespace {
         "zxcvbnm"
     };
 
-    constexpr const int kRowCount = 4;
-    constexpr const u8 kMaxInputLen = 20;
-    constexpr const u8 kRepeatFrames = 8;
+    constexpr const int kRowCount = 4;        // 键盘行数
+    constexpr const u8 kMaxInputLen = 20;     // 最大输入长度
+    constexpr const u8 kRepeatFrames = 8;     // 重复帧数(用来控制按键的重复触发)
 }
 
 MacroRenameGui::MacroRenameGui(const char* macroFilePath, const char* gameName, bool isRecord)
  : m_isRecord(isRecord)
 {
-    strcpy(m_gameName, gameName);
     strcpy(m_macroFilePath, macroFilePath);
+    strcpy(m_gameName, gameName);
     std::string fileName = ult::getFileName(macroFilePath);
     auto dot = fileName.rfind('.');
     if (dot != std::string::npos) fileName = fileName.substr(0, dot); 
@@ -101,15 +103,13 @@ tsl::elm::Element* MacroRenameGui::createUI() {
 
     });
 
-    
-
     frame->setContent(keyboard);
     return frame;
 }
 
 
 void MacroRenameGui::update() {
-    m_cursorBlink++;
+    m_cursorBlink++;   // 光标闪烁
 }
 
 bool MacroRenameGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) {
@@ -188,8 +188,10 @@ bool MacroRenameGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState
 
     // 功能按键
     if (keysDown & HidNpadButton_Minus) {           // - 返回
-        if (m_isRecord) ult::deleteFileOrDirectory(m_macroFilePath);
-        tsl::goBack();
+        if (m_isRecord) {
+            ult::deleteFileOrDirectory(m_macroFilePath);
+            tsl::goBack(4);
+        } else tsl::goBack();
         return true;
     } else if (keysDown & HidNpadButton_Plus) {     // + 保存
         MacroRename();
@@ -221,28 +223,44 @@ bool MacroRenameGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState
 }
 
 void MacroRenameGui::MacroRename(){
-
     if (m_inputLen == 0) return;
-    const char* tidStart = m_macroFilePath + 25;
-    char tidBuf[17];
-    memcpy(tidBuf, tidStart, 16);
-    tidBuf[16] = '\0';
-    u64 tid = strtoull(tidBuf, NULL, 16);
+    const char* lastSlash = strrchr(m_macroFilePath, '/');
+    if (!lastSlash) return;
+    // 构造新路径
+    size_t dirLen = lastSlash - m_macroFilePath + 1;  // 包括 '/'
+    // 复制目录部分
     char newMacroFilePath[96];
-    snprintf(newMacroFilePath, sizeof(newMacroFilePath), "sdmc:/config/KeyX/macros/%016lX/%s.macro", tid, m_input);
+    memcpy(newMacroFilePath, m_macroFilePath, dirLen);
+    snprintf(newMacroFilePath + dirLen, sizeof(newMacroFilePath) - dirLen, "%s.macro", m_input);
     rename(m_macroFilePath, newMacroFilePath);
+    char gameName[64];
+    strcpy(gameName, m_gameName);
+    bool isRecord = m_isRecord;
+    if (!isRecord) {  // 如果不是从录制中跳转进来的
+        updateConfigPath(newMacroFilePath);    
+        Refresh::RefrRequest(Refresh::MacroGameList);                       
+        tsl::goBack(2);
+    } 
+    tsl::changeTo<MacroViewGui>(newMacroFilePath, gameName, isRecord);
+}
 
-    if (!m_isRecord) {
-        tsl::goBack(); 
-        tsl::goBack();                            
-        tsl::goBack();
-        tsl::changeTo<MacroListGuiGame>(tid);
-    } else {
-        char name[64];
-        strcpy(name, m_gameName);
-        tsl::goBack();
-        tsl::changeTo<MacroViewGui>(newMacroFilePath, name);
+// 当修改名称后，更新配置文件中的脚本路径
+void MacroRenameGui::updateConfigPath(const char* newPath) {
+    // 从路径中提取 titleId: sdmc:/config/KeyX/macros/{titleId}/filename.macro
+    const char* macrosDir = strstr(m_macroFilePath, "/macros/");
+    char titleId[17];
+    memcpy(titleId, macrosDir + 8, 16);
+    titleId[16] = '\0';
+    // 构造配置文件路径
+    char gameCfgPath[96];
+    sprintf(gameCfgPath, "sdmc:/config/KeyX/GameConfig/%s.ini", titleId);
+    int macroCount = IniHelper::getInt("MACRO", "macroCount", 0, gameCfgPath);
+    for (int i = 1; i <= macroCount; i++) {
+        std::string key = "macro_path_" + std::to_string(i);
+        std::string path = IniHelper::getString("MACRO", key, "", gameCfgPath);
+        if (path == m_macroFilePath) {
+            IniHelper::setString("MACRO", key, newPath, gameCfgPath);
+            break;
+        }
     }
-    
-
 }
