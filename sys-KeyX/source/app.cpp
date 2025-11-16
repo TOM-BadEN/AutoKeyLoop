@@ -274,11 +274,11 @@ void App::ShowNotification(const char* message) {
 
 void App::CreateNotification(bool Enable) {
     if (!m_notifEnabled) return;
-    if (!m_CurrentAutoEnable && !m_CurrentAutoRemapEnable) return;
+    if (!m_CurrentAutoEnable && !m_CurrentAutoRemapEnable && !m_CurrentAutoMacroEnable) return;
     const char* message = nullptr;
-    if (m_CurrentAutoEnable && m_CurrentAutoRemapEnable) {
+    if (m_CurrentAutoEnable && m_CurrentAutoRemapEnable && m_CurrentAutoMacroEnable) {
         message = Enable ? g_NOTIF_ALL_ON : g_NOTIF_ALL_OFF;
-    } else if (m_CurrentAutoEnable) {
+    } else if (m_CurrentAutoEnable || m_CurrentAutoMacroEnable) {
         message = Enable ? g_NOTIF_AUTOFIRE_ON : g_NOTIF_AUTOFIRE_OFF;
     } else if (m_CurrentAutoRemapEnable) {
         message = Enable ? g_NOTIF_MAPPING_ON : g_NOTIF_MAPPING_OFF;

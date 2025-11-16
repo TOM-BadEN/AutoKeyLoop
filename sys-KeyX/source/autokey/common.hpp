@@ -6,8 +6,9 @@ enum class FeatureEvent {
     PAUSED,       // 模块暂停0
     IDLE,         // 无操作/待机1
     STARTING,     // 启动功能2
-    EXECUTING,    // 执行中3
-    FINISHING     // 功能结束4
+    Turbo_EXECUTING,    // 执行中3
+    Macro_EXECUTING,    // 执行中4
+    FINISHING     // 功能结束5
 };
 
 // 处理结果（连发和宏共用）

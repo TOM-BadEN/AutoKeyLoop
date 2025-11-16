@@ -41,13 +41,15 @@ void Turbo::Process(ProcessResult& result) {
         case FeatureEvent::STARTING:
             TurboStarting();
             return;
-        case FeatureEvent::EXECUTING:
+        case FeatureEvent::Turbo_EXECUTING:
             TurboExecuting(autokey_buttons, normal_buttons, result);
             return;
         case FeatureEvent::FINISHING:
             TurboFinishing();
             result.OtherButtons = result.buttons;
             result.JoyconButtons = 0;
+            return;
+        default:
             return;
     }
 }
@@ -57,7 +59,7 @@ FeatureEvent Turbo::DetermineEvent(u64 autokey_buttons) {
     bool has_autokey = (autokey_buttons != 0);
     bool turbo_active = m_IsActive;
     if (turbo_active && CheckRelease(autokey_buttons)) return FeatureEvent::FINISHING;
-    else if (turbo_active) return FeatureEvent::EXECUTING;
+    else if (turbo_active) return FeatureEvent::Turbo_EXECUTING;
     else if (has_autokey) {
         if (m_InitialPressTime == 0) m_InitialPressTime = armGetSystemTick();
         u64 elapsed_ns = armTicksToNs(armGetSystemTick() - m_InitialPressTime);

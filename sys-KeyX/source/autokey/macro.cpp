@@ -40,11 +40,13 @@ void Macro::Process(ProcessResult& result) {
         case FeatureEvent::STARTING:
             MacroStarting();
             return;
-        case FeatureEvent::EXECUTING:
+        case FeatureEvent::Macro_EXECUTING:
             MacroExecuting(result);
             return;
         case FeatureEvent::FINISHING:
             MacroFinishing();
+            return;
+        default:
             return;
     }
 }
@@ -75,7 +77,7 @@ FeatureEvent Macro::HandlePlayingState(u64 buttons) {
         m_PlaybackStartTick = armGetSystemTick();
         m_CurrentFrameIndex = 0;
     }
-    return FeatureEvent::EXECUTING;
+    return FeatureEvent::Macro_EXECUTING;
 }
 
 // 从FINISHING状态进入IDLE状态
@@ -182,7 +184,7 @@ void Macro::MacroExecuting(ProcessResult& result) {
     const MacroFrame& frame = m_Frames[m_CurrentFrameIndex];
     
     // 应用按键和摇杆数据
-    result.OtherButtons |= frame.keysHeld;  // 合并物理输入
+    result.OtherButtons = frame.keysHeld;  // 覆盖
     result.JoyconButtons = frame.keysHeld;  // 覆盖
     // 摇杆：宏数据不为0时覆盖物理输入，为0时保持物理输入
     if (frame.leftX != 0) result.analog_stick_l.x = frame.leftX;

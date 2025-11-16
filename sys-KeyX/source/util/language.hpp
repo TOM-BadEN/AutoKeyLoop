@@ -2,8 +2,8 @@
 #include <switch.h>
 
 // 定义全局变量
-const char* g_NOTIF_AUTOFIRE_ON = "连发功能已开启";
-const char* g_NOTIF_AUTOFIRE_OFF = "连发功能已关闭";
+const char* g_NOTIF_AUTOFIRE_ON = "连发或宏已开启";
+const char* g_NOTIF_AUTOFIRE_OFF = "连发或宏已关闭";
 const char* g_NOTIF_MAPPING_ON = "映射功能已开启";
 const char* g_NOTIF_MAPPING_OFF = "映射功能已关闭";
 const char* g_NOTIF_ALL_ON = "全部功能已开启";
@@ -29,24 +29,24 @@ inline void getSetNotifLanguage() {
             break;
         case SetLanguage_ZHTW:
         case SetLanguage_ZHHANT:
-            g_NOTIF_AUTOFIRE_ON = "連發功能已啟用";
-            g_NOTIF_AUTOFIRE_OFF = "連發功能已停用";
+            g_NOTIF_AUTOFIRE_ON = "連發或巨集已啟用";
+            g_NOTIF_AUTOFIRE_OFF = "連發或巨集已停用";
             g_NOTIF_MAPPING_ON = "映射功能已啟用";
             g_NOTIF_MAPPING_OFF = "映射功能已停用";
             g_NOTIF_ALL_ON = "全部功能已啟用";
             g_NOTIF_ALL_OFF = "全部功能已停用";
             break;
         case SetLanguage_JA:
-            g_NOTIF_AUTOFIRE_ON = "連射機能有効";
-            g_NOTIF_AUTOFIRE_OFF = "連射機能無効";
+            g_NOTIF_AUTOFIRE_ON = "連射/マクロ有効";
+            g_NOTIF_AUTOFIRE_OFF = "連射/マクロ無効";
             g_NOTIF_MAPPING_ON = "配置機能有効";
             g_NOTIF_MAPPING_OFF = "配置機能無効";
             g_NOTIF_ALL_ON = "全機能有効";
             g_NOTIF_ALL_OFF = "全機能無効";
             break;
         case SetLanguage_KO:
-            g_NOTIF_AUTOFIRE_ON = "연사 기능 활성화";
-            g_NOTIF_AUTOFIRE_OFF = "연사 기능 해제됨";
+            g_NOTIF_AUTOFIRE_ON = "연사/매크로 활성화";
+            g_NOTIF_AUTOFIRE_OFF = "연사/매크로 해제됨";
             g_NOTIF_MAPPING_ON = "매핑 기능 활성화";
             g_NOTIF_MAPPING_OFF = "매핑 기능 해제됨";
             g_NOTIF_ALL_ON = "전체 기능 활성화";
@@ -54,66 +54,66 @@ inline void getSetNotifLanguage() {
             break;
         case SetLanguage_FR:
         case SetLanguage_FRCA:
-            g_NOTIF_AUTOFIRE_ON = "Turbo Actif";
-            g_NOTIF_AUTOFIRE_OFF = "Turbo Inactif";
-            g_NOTIF_MAPPING_ON = "Mapping Actif";
-            g_NOTIF_MAPPING_OFF = "Mapping Inactif";
-            g_NOTIF_ALL_ON = "Tout Actif";
-            g_NOTIF_ALL_OFF = "Tout Inactif";
+            g_NOTIF_AUTOFIRE_ON = "Turbo/Macro ON";
+            g_NOTIF_AUTOFIRE_OFF = "Turbo/Macro OFF";
+            g_NOTIF_MAPPING_ON = "Mapping ON";
+            g_NOTIF_MAPPING_OFF = "Mapping OFF";
+            g_NOTIF_ALL_ON = "All ON";
+            g_NOTIF_ALL_OFF = "All OFF";
             break;
         case SetLanguage_DE:
-            g_NOTIF_AUTOFIRE_ON = "Turbo Aktiv";
-            g_NOTIF_AUTOFIRE_OFF = "Turbo Inaktiv";
-            g_NOTIF_MAPPING_ON = "Mapping Aktiv";
-            g_NOTIF_MAPPING_OFF = "Mapping Inaktiv";
-            g_NOTIF_ALL_ON = "Alles Aktiv";
-            g_NOTIF_ALL_OFF = "Alles Inaktiv";
+            g_NOTIF_AUTOFIRE_ON = "Turbo/Macro ON";
+            g_NOTIF_AUTOFIRE_OFF = "Turbo/Macro OFF";
+            g_NOTIF_MAPPING_ON = "Mapping ON";
+            g_NOTIF_MAPPING_OFF = "Mapping OFF";
+            g_NOTIF_ALL_ON = "All ON";
+            g_NOTIF_ALL_OFF = "All OFF";
             break;
         case SetLanguage_IT:
-            g_NOTIF_AUTOFIRE_ON = "Turbo Attivo";
-            g_NOTIF_AUTOFIRE_OFF = "Turbo Inattivo";
-            g_NOTIF_MAPPING_ON = "Mapping Attivo";
-            g_NOTIF_MAPPING_OFF = "Mapping Inattivo";
-            g_NOTIF_ALL_ON = "Tutto Attivo";
-            g_NOTIF_ALL_OFF = "Tutto Inattivo";
+            g_NOTIF_AUTOFIRE_ON = "Turbo/Macro ON";
+            g_NOTIF_AUTOFIRE_OFF = "Turbo/Macro OFF";
+            g_NOTIF_MAPPING_ON = "Mapping ON";
+            g_NOTIF_MAPPING_OFF = "Mapping OFF";
+            g_NOTIF_ALL_ON = "All ON";
+            g_NOTIF_ALL_OFF = "All OFF";
             break;
         case SetLanguage_ES:
         case SetLanguage_ES419:
-            g_NOTIF_AUTOFIRE_ON = "Turbo Activo";
-            g_NOTIF_AUTOFIRE_OFF = "Turbo Inactivo";
-            g_NOTIF_MAPPING_ON = "Mapeo Activo";
-            g_NOTIF_MAPPING_OFF = "Mapeo Inactivo";
-            g_NOTIF_ALL_ON = "Todo Activo";
-            g_NOTIF_ALL_OFF = "Todo Inactivo";
+            g_NOTIF_AUTOFIRE_ON = "Turbo/Macro ON";
+            g_NOTIF_AUTOFIRE_OFF = "Turbo/Macro OFF";
+            g_NOTIF_MAPPING_ON = "Mapping ON";
+            g_NOTIF_MAPPING_OFF = "Mapping OFF";
+            g_NOTIF_ALL_ON = "All ON";
+            g_NOTIF_ALL_OFF = "All OFF";
             break;
         case SetLanguage_PT:
         case SetLanguage_PTBR:
-            g_NOTIF_AUTOFIRE_ON = "Turbo Ativo";
-            g_NOTIF_AUTOFIRE_OFF = "Turbo Inativo";
-            g_NOTIF_MAPPING_ON = "Mapeamento Ativo";
-            g_NOTIF_MAPPING_OFF = "Mapeamento Inativo";
-            g_NOTIF_ALL_ON = "Tudo Ativo";
-            g_NOTIF_ALL_OFF = "Tudo Inativo";
+            g_NOTIF_AUTOFIRE_ON = "Turbo/Macro ON";
+            g_NOTIF_AUTOFIRE_OFF = "Turbo/Macro OFF";
+            g_NOTIF_MAPPING_ON = "Mapping ON";
+            g_NOTIF_MAPPING_OFF = "Mapping OFF";
+            g_NOTIF_ALL_ON = "All ON";
+            g_NOTIF_ALL_OFF = "All OFF";
             break;
         case SetLanguage_RU:
-            g_NOTIF_AUTOFIRE_ON = "Турбо Включен";
-            g_NOTIF_AUTOFIRE_OFF = "Турбо Выключен";
+            g_NOTIF_AUTOFIRE_ON = "Турбо/Макрос Включен";
+            g_NOTIF_AUTOFIRE_OFF = "Турбо/Макрос Выключен";
             g_NOTIF_MAPPING_ON = "Маппинг Включен";
             g_NOTIF_MAPPING_OFF = "Маппинг Выключен";
             g_NOTIF_ALL_ON = "Всё Включено";
             g_NOTIF_ALL_OFF = "Всё Выключено";
             break;
         case SetLanguage_NL:
-            g_NOTIF_AUTOFIRE_ON = "Turbo Actief";
-            g_NOTIF_AUTOFIRE_OFF = "Turbo Inactief";
-            g_NOTIF_MAPPING_ON = "Mapping Actief";
-            g_NOTIF_MAPPING_OFF = "Mapping Inactief";
-            g_NOTIF_ALL_ON = "Alles Actief";
-            g_NOTIF_ALL_OFF = "Alles Inactief";
+            g_NOTIF_AUTOFIRE_ON = "Turbo/Macro ON";
+            g_NOTIF_AUTOFIRE_OFF = "Turbo/Macro OFF";
+            g_NOTIF_MAPPING_ON = "Mapping ON";
+            g_NOTIF_MAPPING_OFF = "Mapping OFF";
+            g_NOTIF_ALL_ON = "All ON";
+            g_NOTIF_ALL_OFF = "All OFF";
             break;
         default:
-            g_NOTIF_AUTOFIRE_ON = "Turbo ON";
-            g_NOTIF_AUTOFIRE_OFF = "Turbo OFF";
+            g_NOTIF_AUTOFIRE_ON = "Turbo/Macro ON";
+            g_NOTIF_AUTOFIRE_OFF = "Turbo/Macro OFF";
             g_NOTIF_MAPPING_ON = "Mapping ON";
             g_NOTIF_MAPPING_OFF = "Mapping OFF";
             g_NOTIF_ALL_ON = "All ON";

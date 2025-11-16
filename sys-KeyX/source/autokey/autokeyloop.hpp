@@ -73,6 +73,7 @@ private:
     
     // 逆映射相关辅助方法
     void ApplyReverseMapping(u64& buttons) const;
+    void ApplyForwardMapping(u64& buttons) const;
     u64 ButtonNameToMask(const char* name) const;
 };
 

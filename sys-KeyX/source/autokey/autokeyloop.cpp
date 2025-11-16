@@ -1,6 +1,7 @@
 #include "autokeyloop.hpp"
 #include <cstring>
 #include "minIni.h"
+#include "common.hpp"
 
 namespace {
     // 摇杆伪按键位掩码 (BIT16-23)，必须过滤
@@ -122,7 +123,14 @@ void AutoKeyLoop::MainLoop() {
             case FeatureEvent::STARTING:
                 hiddbgDumpHdlsStates(m_HdlsSessionId, &m_StateList);
                 break;
-            case FeatureEvent::EXECUTING:
+            case FeatureEvent::Turbo_EXECUTING:
+                ApplyReverseMapping(result.OtherButtons);
+                ApplyReverseMapping(result.JoyconButtons);
+                ApplyHdlsState(result);
+                break;
+            case FeatureEvent::Macro_EXECUTING:
+                ApplyHdlsState(result);
+                break;
             case FeatureEvent::FINISHING:
                 ApplyHdlsState(result);
                 break;
@@ -323,9 +331,6 @@ void AutoKeyLoop::ReadPhysicalInput(ProcessResult& result) {
 // jc有未知机制，反正只注入我们修改的按键，其他的强制归0，不然即使注入结束，还会一直触发
 // 其他手柄，发送所有按键+摇杆
 void AutoKeyLoop::ApplyHdlsState(ProcessResult& result) {
-    // 应用逆映射（直接修改result中的按键）
-    ApplyReverseMapping(result.OtherButtons);
-    ApplyReverseMapping(result.JoyconButtons);
     
     for (int i = 0; i < m_StateList.total_entries; i++) {
         memset(&m_StateList.entries[i].state, 0, sizeof(HiddbgHdlsState));
