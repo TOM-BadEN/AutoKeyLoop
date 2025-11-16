@@ -54,7 +54,8 @@ void MainMenu::RefreshData() {
     std::string SwitchConfigPath = (m_textAreaInfo.isInGame && ult::isFile(m_textAreaInfo.GameConfigPath)) ? m_textAreaInfo.GameConfigPath : CONFIG_PATH;
     m_textAreaInfo.isAutoFireEnabled = IniHelper::getBool("AUTOFIRE", "autoenable", false, SwitchConfigPath);
     m_textAreaInfo.isAutoRemapEnabled = IniHelper::getBool("MAPPING", "autoenable", false, SwitchConfigPath);
-    m_textAreaInfo.isAutoMacroEnabled = IniHelper::getBool("MACRO", "autoenable", false, m_textAreaInfo.GameConfigPath);   // 宏只读独立游戏配置
+    if (m_textAreaInfo.isInGame) m_textAreaInfo.isAutoMacroEnabled = IniHelper::getBool("MACRO", "autoenable", false, m_textAreaInfo.GameConfigPath);   // 宏只读独立游戏配置
+    else m_textAreaInfo.isAutoMacroEnabled = false;
     if (m_AutoFireEnableItem != nullptr) m_AutoFireEnableItem->setValue(m_textAreaInfo.isAutoFireEnabled ? "已开启" : "已关闭");
     if (m_AutoRemapEnableItem != nullptr) m_AutoRemapEnableItem->setValue(m_textAreaInfo.isAutoRemapEnabled ? "已开启" : "已关闭");
     if (m_AutoMacroEnableItem != nullptr) m_AutoMacroEnableItem->setValue(m_textAreaInfo.isAutoMacroEnabled ? "已开启" : "已关闭");
@@ -128,6 +129,7 @@ void MainMenu::ConfigToggle() {
     IniHelper::setBool("AUTOFIRE", "globconfig", m_textAreaInfo.isGlobalConfig, m_textAreaInfo.GameConfigPath);
     IniHelper::setBool("AUTOFIRE", "autoenable", m_textAreaInfo.isAutoFireEnabled, m_textAreaInfo.GameConfigPath);
     IniHelper::setBool("MAPPING", "autoenable", m_textAreaInfo.isAutoRemapEnabled, m_textAreaInfo.GameConfigPath);
+    IniHelper::setBool("MACRO", "autoenable", m_textAreaInfo.isAutoMacroEnabled, m_textAreaInfo.GameConfigPath);
     // 刷新界面显示
     RefreshData();
     // 发送重载配置命令

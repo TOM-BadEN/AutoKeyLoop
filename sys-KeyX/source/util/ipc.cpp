@@ -2,7 +2,7 @@
 #include <cstring>
 
 // 静态线程栈定义
-alignas(0x1000) char IPCServer::ipc_thread_stack[4 * 1024];
+alignas(0x1000) char IPCServer::ipc_thread_stack[8 * 1024];
 
 // 构造函数
 IPCServer::IPCServer() : 

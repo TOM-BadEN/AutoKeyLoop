@@ -45,7 +45,7 @@ namespace {
 }
 
 // 静态成员定义
-alignas(0x1000) char AutoKeyLoop::thread_stack[32 * 1024];
+alignas(0x1000) char AutoKeyLoop::thread_stack[4 * 1024];
 alignas(0x1000) u8 AutoKeyLoop::hdls_work_buffer[0x1000];
 
 // 构造函数

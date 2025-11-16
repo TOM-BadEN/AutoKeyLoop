@@ -55,7 +55,7 @@ private:
     
     // 线程相关
     Thread m_IpcThread;
-    alignas(0x1000) static char ipc_thread_stack[4 * 1024];  // 4KB线程栈
+    alignas(0x1000) static char ipc_thread_stack[8 * 1024];  // 4KB线程栈
     bool m_ThreadCreated = false;
     bool m_ThreadRunning = false;
     
