@@ -49,13 +49,20 @@ private:
     u64 m_PlaybackStartTick = 0;            // 播放开始时间
     u16 m_FrameRate = 0;                    // 宏帧率
     std::vector<MacroFrame> m_Frames{};     // 宏帧数据
-    bool m_LastHotkeyPressed = false;       // 上一帧快捷键状态
+    bool m_HotkeyPressed = false;           // 上一次快捷键状态
+    u64 m_HotkeyPressTime = 0;              // 快捷键按下时间
+    bool m_RepeatMode = false;              // 循环播放标志
+    u64 m_LastFinishTime = 0;               // 上次停止的时间
+    bool m_JustStopped = false;             // 刚停止，等待冷静期
 
-    FeatureEvent DetermineEvent(u64 buttons);    // 判定事件
-    int CheckHotkeyTriggered(u64 buttons);       // 检查快捷键触发
-    u32 CalculateTargetFrame() const;            // 计算当前应该播放第几帧
-    void MacroStarting();                        // 宏启动
-    void LoadMacroFile(const char* filePath);    // 加载宏文件
-    void MacroExecuting(ProcessResult& result);  // 宏执行
+    FeatureEvent DetermineEvent(u64 buttons);         // 判定事件
+    FeatureEvent HandlePlayingState(u64 buttons);     // 处理播放中状态
+    FeatureEvent HandleStopCooldown(u64 buttons);     // 处理停止后冷静期
+    FeatureEvent HandleNormalTrigger(u64 buttons);    // 处理正常触发检测
+    int CheckHotkeyTriggered(u64 buttons);            // 检查快捷键触发
+    u32 CalculateTargetFrame() const;                 // 计算当前应该播放第几帧
+    void MacroStarting();                             // 宏启动
+    void LoadMacroFile(const char* filePath);         // 加载宏文件
+    void MacroExecuting(ProcessResult& result);       // 宏执行
     
 };

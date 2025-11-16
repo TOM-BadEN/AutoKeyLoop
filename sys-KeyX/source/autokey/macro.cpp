@@ -2,6 +2,10 @@
 #include "minIni.h"
 #include <cstdio>
 
+// 常量定义
+static constexpr u64 STOP_COOLDOWN_NS = 200000000ULL;        // 200ms 停止后延迟
+static constexpr u64 LONG_PRESS_THRESHOLD_NS = 500000000ULL; // 500ms 长按阈值
+
 // 构造函数
 Macro::Macro(const char* macroCfgPath) {
     LoadConfig(macroCfgPath);
@@ -48,27 +52,74 @@ void Macro::Process(ProcessResult& result) {
 // 判定事件
 FeatureEvent Macro::DetermineEvent(u64 buttons) {
     if (m_Macros.empty()) return FeatureEvent::IDLE;
-    if (m_IsPlaying) {
-        int triggered = CheckHotkeyTriggered(buttons);
-        bool currentPressed = (triggered == m_CurrentMacroIndex);
-        if (currentPressed && !m_LastHotkeyPressed) {
-            m_LastHotkeyPressed = currentPressed;
-            return FeatureEvent::FINISHING;
-        }
-        m_LastHotkeyPressed = currentPressed;
-        if (m_Frames.empty()) return FeatureEvent::FINISHING;
-        u32 targetFrameIndex = CalculateTargetFrame();
-        if (targetFrameIndex >= m_Frames.size()) return FeatureEvent::FINISHING;
-        return FeatureEvent::EXECUTING;
+    if (m_IsPlaying) return HandlePlayingState(buttons);
+    if (m_JustStopped) return HandleStopCooldown(buttons);
+    return HandleNormalTrigger(buttons);
+}
+
+// 处理播放中状态
+FeatureEvent Macro::HandlePlayingState(u64 buttons) {
+    u64 currentCombo = m_Macros[m_CurrentMacroIndex].combo;
+    bool isCurrentMacroPressed = (buttons & currentCombo) == currentCombo;
+    // 检测到按下播放中的宏对应的快捷键，立即停止播放
+    if (isCurrentMacroPressed && !m_HotkeyPressed) {
+        m_HotkeyPressed = true;
+        return FeatureEvent::FINISHING;
     }
-    if (CheckHotkeyTriggered(buttons) != -1) return FeatureEvent::STARTING;
+    // 记录快捷键处于按下状态还是松开状态
+    m_HotkeyPressed = isCurrentMacroPressed;
+    if (m_Frames.empty()) return FeatureEvent::FINISHING;
+    // 检查播放进度，如果是循环模式则重新开始
+    if (CalculateTargetFrame() >= m_Frames.size()) {
+        if (!m_RepeatMode) return FeatureEvent::FINISHING;
+        m_PlaybackStartTick = armGetSystemTick();
+        m_CurrentFrameIndex = 0;
+    }
+    return FeatureEvent::EXECUTING;
+}
+
+// 从FINISHING状态进入IDLE状态
+FeatureEvent Macro::HandleStopCooldown(u64 buttons) {
+    // 因为注入会污染数据，导致按键状态异常，所以等待一段时间
+    u64 elapsedSinceStop = armTicksToNs(armGetSystemTick() - m_LastFinishTime);
+    if (elapsedSinceStop < STOP_COOLDOWN_NS) return FeatureEvent::IDLE;
+    // 检查对应的快捷键是否松开了
+    u64 currentCombo = m_Macros[m_CurrentMacroIndex].combo;
+    if ((buttons & currentCombo) != currentCombo) {
+        m_JustStopped = false;
+        m_HotkeyPressed = false;
+        m_CurrentMacroIndex = -1;
+    }
+    return FeatureEvent::IDLE;
+}
+
+// 处理正常触发检测
+FeatureEvent Macro::HandleNormalTrigger(u64 buttons) {
+    // 检查是否有任何宏对应的快捷键被按下
+    int triggered = CheckHotkeyTriggered(buttons);
+    bool isAnyMacroPressed = (triggered != -1);
+    // 检测到快捷键刚按下
+    if (isAnyMacroPressed && !m_HotkeyPressed) {
+        m_HotkeyPressTime = armGetSystemTick();
+        m_CurrentMacroIndex = triggered;
+    }
+    // 检测到快捷键刚松开
+    else if (!isAnyMacroPressed && m_HotkeyPressed) {
+        u64 pressDuration = armTicksToNs(armGetSystemTick() - m_HotkeyPressTime);
+        m_RepeatMode = (pressDuration >= LONG_PRESS_THRESHOLD_NS);
+        m_HotkeyPressed = false;
+        m_HotkeyPressTime = 0;
+        return FeatureEvent::STARTING;
+    }
+    // 记录快捷键处于按下状态还是松开状态
+    m_HotkeyPressed = isAnyMacroPressed;
     return FeatureEvent::IDLE;
 }
 
 int Macro::CheckHotkeyTriggered(u64 buttons) {
     for (size_t i = 0; i < m_Macros.size(); i++) {
         u64 combo = m_Macros[i].combo;
-        if ((buttons & combo) == combo) return m_CurrentMacroIndex = i;
+        if ((buttons & combo) == combo) return i;
     }
     return -1; 
 }
@@ -88,7 +139,7 @@ void Macro::MacroStarting() {
     LoadMacroFile(m_Macros[m_CurrentMacroIndex].MacroFilePath);
     m_CurrentFrameIndex = 0;
     m_PlaybackStartTick = armGetSystemTick();
-    m_LastHotkeyPressed = true;
+    m_HotkeyPressed = false;  // 重置状态，因为松开才触发
 }
 
 // 加载宏文件
@@ -131,21 +182,24 @@ void Macro::MacroExecuting(ProcessResult& result) {
     const MacroFrame& frame = m_Frames[m_CurrentFrameIndex];
     
     // 应用按键和摇杆数据
-    result.OtherButtons = frame.keysHeld;
-    result.JoyconButtons = frame.keysHeld;
-    result.analog_stick_l.x = frame.leftX;
-    result.analog_stick_l.y = frame.leftY;
-    result.analog_stick_r.x = frame.rightX;
-    result.analog_stick_r.y = frame.rightY;
+    result.OtherButtons |= frame.keysHeld;  // 合并物理输入
+    result.JoyconButtons = frame.keysHeld;  // 覆盖
+    // 摇杆：宏数据不为0时覆盖物理输入，为0时保持物理输入
+    if (frame.leftX != 0) result.analog_stick_l.x = frame.leftX;
+    if (frame.leftY != 0) result.analog_stick_l.y = frame.leftY;
+    if (frame.rightX != 0) result.analog_stick_r.x = frame.rightX;
+    if (frame.rightY != 0) result.analog_stick_r.y = frame.rightY;
 }
 
 void Macro::MacroFinishing() {
     m_IsPlaying = false;
-    m_CurrentMacroIndex = -1;
     m_CurrentFrameIndex = 0;
     m_PlaybackStartTick = 0;
     m_FrameRate = 0;
     m_Frames.clear();
-    m_LastHotkeyPressed = false;
+    m_HotkeyPressTime = 0;
+    m_RepeatMode = false;
+    m_LastFinishTime = armGetSystemTick();
+    m_JustStopped = true;  // 标记刚停止，需要等待冷静期
 }
 
