@@ -49,7 +49,7 @@ Nintendo Switch 按键助手，支持连发与按键重新分配，拥有全局�
 
 ## 内存占用
 
-- 系统模块仅占用 297 KB
+- 系统模块仅占用 343 KB
 - 弹窗额外占用 688 KB
 - **弹窗只有触发的时候才有内存占用**
 
@@ -156,7 +156,7 @@ Consists of Tesla overlay and system module.
 
 ## Memory Usage
 
-- System module: only 297 KB
+- System module: only 343 KB
 - Notification popup: extra 688 KB
 - **Popup only uses memory when triggered**
 
