@@ -337,8 +337,10 @@ void AutoKeyLoop::ApplyHdlsState(ProcessResult& result) {
         HidDeviceType device_type = (HidDeviceType)m_StateList.entries[i].device.deviceType;
         if (IsLeftController(device_type)) {    
             m_StateList.entries[i].state.buttons = result.JoyconButtons & LEFT_JOYCON_BUTTONS;
+            if (result.event == FeatureEvent::Macro_EXECUTING) m_StateList.entries[i].state.analog_stick_l = result.analog_stick_l;
         } else if (IsRightController(device_type)) { 
             m_StateList.entries[i].state.buttons = result.JoyconButtons & RIGHT_JOYCON_BUTTONS;
+            if (result.event == FeatureEvent::Macro_EXECUTING) m_StateList.entries[i].state.analog_stick_r = result.analog_stick_r;
         } else {  
             m_StateList.entries[i].state.buttons = result.OtherButtons;
             m_StateList.entries[i].state.analog_stick_l = result.analog_stick_l;
