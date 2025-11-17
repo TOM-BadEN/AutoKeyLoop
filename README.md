@@ -180,7 +180,7 @@ My OLED+JC will arrive in the next few days. I will conduct detailed testing and
 |--------------------|--------|------|
 | Turbo + Mapping | Same as Turbo | Perfect |
 | Turbo + Macro | Turbo function temporarily disabled during macro playback | Turbo function temporarily disabled during macro playback |
-| Mapping + Macro | May have incorrect input if macro buttons are remapped buttons | May have incorrect input if macro buttons are remapped buttons |
+| Mapping + Macro | If the keys being played have been remapped, incorrect input may occur | If the keys being played have been remapped, incorrect input may occur |
 
 ## Project Implementation Principle
 
