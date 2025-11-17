@@ -172,7 +172,7 @@ My OLED+JC will arrive in the next few days. I will conduct detailed testing and
 
 | Function | Joycon | LITE |
 |----------|--------|------|
-| Turbo | Perfect for turbo only, but poor integration when performing other operations during turbo | Perfect |
+| Turbo | Pressing only the turbo button works fine, but inputting other buttons or using the joystick during turbo performs poorly (to be fixed) | Perfect |
 | Key Mapping | Perfect | Perfect |
 | Macro | After macro ends, stick may fail to reset, touch the stick to restore | Perfect |
 
