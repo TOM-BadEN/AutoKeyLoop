@@ -146,12 +146,6 @@ cd ovl-KeyX && make -j
 cd KeyX && make
 ```
 
-## 许可证
-
-MIT License
-
-本项目仅供学习和研究使用。
-
 ## 感谢
 
 - [libnx](https://github.com/switchbrew/libnx) - Switch 开发库
@@ -303,12 +297,6 @@ Or from root directory:
 ```bash
 cd KeyX && make
 ```
-
-## License
-
-MIT License
-
-This project is for learning and research purposes only.
 
 ## Credits
 
