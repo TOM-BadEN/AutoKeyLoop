@@ -53,6 +53,7 @@ https://github.com/user-attachments/assets/d7f530b9-baed-455c-9887-5b7a96a9dadf
 
 # KeyX 按键助手
 
+[![Latest Version](https://img.shields.io/github/v/release/TOM-BadEN/KeyX?label=latest&color=blue)](https://github.com/TOM-BadEN/KeyX/releases/latest)
 [![GitHub Downloads](https://img.shields.io/github/downloads/TOM-BadEN/KeyX/total?color=6f42c1)](https://somsubhra.github.io/github-release-stats/?username=TOM-BadEN&repository=KeyX&page=1&per_page=300)
 
 Nintendo Switch 按键助手，支持连发、按键重新分配、按键宏三大功能。且拥有全局或游戏独立配置，根据记忆自动启动功能。
