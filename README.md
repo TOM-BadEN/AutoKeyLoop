@@ -53,7 +53,7 @@ https://github.com/user-attachments/assets/d7f530b9-baed-455c-9887-5b7a96a9dadf
 
 # KeyX 按键助手
 
-[![platform](https://img.shields.io/badge/bilibili-゚゚゙゚゚゚゚玩家-898c8c?logo=bilibili)](https://www.bilibili.com/video/BV1u12cBvEmD/?spm_id_from=333.1387.homepage.video_card.click&vd_source=ee56f275632e70ae7ca2577aa1a56b81)
+[![platform](https://img.shields.io/badge/bilibili-玩家-898c8c?logo=bilibili)](https://www.bilibili.com/video/BV1u12cBvEmD/?spm_id_from=333.1387.homepage.video_card.click&vd_source=ee56f275632e70ae7ca2577aa1a56b81)
 [![bilibili](https://img.shields.io/badge/゚゚゙゚゚゚゚玩家?logo=C++.svg)](https://www.bilibili.com/video/BV1u12cBvEmD/?spm_id_from=333.1387.homepage.video_card.click&vd_source=ee56f275632e70ae7ca2577aa1a56b81)
 [![Latest Version](https://img.shields.io/github/v/release/TOM-BadEN/KeyX?label=latest&color=blue)](https://github.com/TOM-BadEN/KeyX/releases/latest)
 [![GitHub Downloads](https://img.shields.io/github/downloads/TOM-BadEN/KeyX/total?color=6f42c1)](https://somsubhra.github.io/github-release-stats/?username=TOM-BadEN&repository=KeyX&page=1&per_page=300)
