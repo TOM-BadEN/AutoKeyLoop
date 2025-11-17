@@ -3,6 +3,8 @@
 
 const std::string LANG_PATH = "/switch/.overlays/lang/KeyX/";
 
+SetLanguage g_systemLanguage = SetLanguage_ENUS;
+
 // 初始化语言系统
 void LanguageManager::initialize() {
     std::string langFileName = getSystemLanguageCode();
@@ -28,12 +30,11 @@ std::string LanguageManager::getSystemLanguageCode() {
         return "en.json";
     }
     
-    SetLanguage setLanguage;
-    if (R_FAILED(setMakeLanguage(languageCode, &setLanguage))) {
+    if (R_FAILED(setMakeLanguage(languageCode, &g_systemLanguage))) {
         return "en.json";
     }
     
-    switch (setLanguage) {
+    switch (g_systemLanguage) {
         case SetLanguage_ZHCN:
         case SetLanguage_ZHHANS:
             return "zh-cn.json";

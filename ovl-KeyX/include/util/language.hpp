@@ -1,5 +1,10 @@
 #pragma once
 #include <string>
+#include <switch.h>
+
+
+// 全局变量声明（方便game.cpp访问系统语言）
+extern SetLanguage g_systemLanguage;
 
 /**
  * 语言管理类 - 提供语言自动检测和加载功能
