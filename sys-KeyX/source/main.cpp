@@ -47,7 +47,16 @@ void __appInit(void) {
   hidsysInitialize();
   pmdmntInitialize();
   pmshellInitialize();
-  pdmqryInitialize();
+
+  // pdmqry服务会话数量限制，用这个方法可以绕开限制，以防和别的插件或者游戏发生冲突引发崩溃
+  Result rc = pdmqryInitialize();
+  if (R_SUCCEEDED(rc)) {
+      Service* pdmqrySrv = pdmqryGetServiceSession();
+      Service pdmqryClone;
+      serviceClone(pdmqrySrv, &pdmqryClone);
+      serviceClose(pdmqrySrv);
+      memcpy(pdmqrySrv, &pdmqryClone, sizeof(Service));
+  }
 }
 
 void __appExit(void) {

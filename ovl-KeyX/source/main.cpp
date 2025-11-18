@@ -14,13 +14,22 @@ public:
     // 初始化系统服务
     virtual void initServices() override 
     {
-        fsdevMountSdmc();     // 挂载SD卡
-        pmdmntInitialize();   // 进程管理服务
-        pmshellInitialize();  // 进程Shell服务（用于启动/停止系统模块）
-        setInitialize();      // 初始化set服务（获取系统语言）
-        LanguageManager::initialize();  // 初始化语言系统
-        setExit();            // 退出set服务
-        pdmqryInitialize();
+        fsdevMountSdmc();                                             // 挂载SD卡
+        pmdmntInitialize();                                           // 进程管理服务
+        pmshellInitialize();                                          // 进程Shell服务（用于启动/停止系统模块）
+        setInitialize();                                              // 初始化set服务（获取系统语言）
+        LanguageManager::initialize();                                // 初始化语言系统
+        setExit();                                                    // 退出set服务
+
+        // pdmqry服务会话数量限制，用这个方法可以绕开限制，以防和别的插件或者游戏发生冲突引发崩溃
+        Result rc = pdmqryInitialize();
+        if (R_SUCCEEDED(rc)) {
+            Service* pdmqrySrv = pdmqryGetServiceSession();
+            Service pdmqryClone;
+            serviceClone(pdmqrySrv, &pdmqryClone);
+            serviceClose(pdmqrySrv);
+            memcpy(pdmqrySrv, &pdmqryClone, sizeof(Service));
+        }
     }
     
     // 退出系统服务
