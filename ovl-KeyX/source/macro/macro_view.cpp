@@ -187,10 +187,7 @@ bool MacroViewGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &
             tsl::goBack();
             return true;
         }
-    } else if (m_isRecord && (keysDown & HidNpadButton_B)) {
-        tsl::goBack(5); // 返回到脚本设置界面
-        return true;
-    }
+    } 
 
     return false;
 }

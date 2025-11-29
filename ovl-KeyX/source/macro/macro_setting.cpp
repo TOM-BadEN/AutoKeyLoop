@@ -35,7 +35,7 @@ tsl::elm::Element* interlayerGui::createUI() {
 }
 
 void interlayerGui::update() {
-    tsl::changeTo<CountdownGui>();
+    tsl::swapTo<CountdownGui>();
 }
 
 // 倒计时界面重写的Frame类
@@ -92,7 +92,7 @@ void CountdownGui::update() {
             tsl::gfx::Renderer::get().setLayerPos(0, 0);
             tsl::disableComboHide.store(false, std::memory_order_release);  // 恢复特斯拉区域触摸和快捷键hide的功能
             g_recordMessage = "请在游戏中录制";
-            tsl::goBack(2);
+            tsl::goBack();
             return;
         }
     }
@@ -101,7 +101,7 @@ void CountdownGui::update() {
     else if (elapsed_ms < 2000) strcpy(m_countdown, "2");
     else if (elapsed_ms < 3000) strcpy(m_countdown, "1");
     else if (elapsed_ms < 3100) strcpy(m_countdown, "0");
-    else tsl::changeTo<RecordingGui>();   // 跳转到录制界面
+    else tsl::swapTo<RecordingGui>();   // 跳转到录制界面
     m_frame->setCountdown(m_countdown);
 }
 
@@ -112,7 +112,7 @@ bool CountdownGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &
     if ((((keysHeld & combo) == combo) && (keysDown & combo)) || (keysDown & HidNpadButton_B)) {
         g_recordMessage = "已取消录制";
         tsl::gfx::Renderer::get().setLayerPos(0, 0);
-        tsl::goBack(2);
+        tsl::goBack();
         return true;
     }
     return true;
@@ -144,8 +144,8 @@ tsl::elm::Element* SettingMacro::createUI() {
     listItemView->setClickListener([this](u64 keys) {
         if (keys & HidNpadButton_A) {
             u64 tid = GameMonitor::getCurrentTitleId();
-            if ( tid == 0) tsl::changeTo<MacroListGui>();
-            else tsl::changeTo<MacroListGuiGame>(tid);
+            if ( tid == 0) tsl::changeTo<MacroListGui>();    // 如果不在游戏中跳到总的脚步游戏界面
+            else tsl::changeTo<MacroListGuiGame>(tid);       // 如果在游戏中跳到当前游戏的脚步详细列表界面
             return true;
         }
         return false;

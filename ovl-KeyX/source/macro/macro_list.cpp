@@ -183,8 +183,7 @@ tsl::elm::Element* MacroListGuiGame::createUI() {
 void MacroListGuiGame::update() {
     if (Refresh::RefrConsume(Refresh::MacroGameList)) {
         u64 tid = m_titleId;
-        tsl::goBack(); 
-        tsl::changeTo<MacroListGuiGame>(tid);    // 删除当前界面重新创建
+        tsl::swapTo<MacroListGuiGame>(SwapDepth(1), tid);
     }
 }
 

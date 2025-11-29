@@ -109,7 +109,7 @@ void RecordingGui::saveToFile() {
     tsl::gfx::Renderer::get().setLayerPos(0, 0);                    // 恢复特斯拉区默认位置
     tsl::hlp::requestForeground(true);                              // 恢复特斯拉的输入焦点
     g_recordMessage = "";                                           // 清空录制消息
-    tsl::changeTo<MacroRenameGui>(filename, gameName, true);        // 录制成功，跳转到保存与命名界面
+    tsl::swapTo<MacroRenameGui>(SwapDepth(1), filename, gameName, true); // 录制成功，跳转到保存与命名界面
 }
 
 // 退出录制并返回主界面
@@ -117,7 +117,7 @@ void RecordingGui::exitRecording() {
     tsl::disableComboHide.store(false, std::memory_order_release);  
     tsl::gfx::Renderer::get().setLayerPos(0, 0);
     tsl::hlp::requestForeground(true);
-    tsl::goBack(3);  // 返回脚本主界面
+    tsl::goBack();  // 返回脚本主界面
 }
 
 void RecordingGui::update() {

@@ -189,10 +189,8 @@ bool MacroRenameGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState
 
     // 功能按键
     if (keysDown & HidNpadButton_Minus) {           // - 返回
-        if (m_isRecord) {
-            ult::deleteFileOrDirectory(m_macroFilePath);
-            tsl::goBack(4);
-        } else tsl::goBack();
+        if (m_isRecord) ult::deleteFileOrDirectory(m_macroFilePath);
+        tsl::goBack();
         return true;
     } else if (keysDown & HidNpadButton_Plus) {     // + 保存
         MacroRename();
@@ -239,10 +237,10 @@ void MacroRenameGui::MacroRename(){
     bool isRecord = m_isRecord;
     if (!isRecord) {  // 如果不是从录制中跳转进来的
         if (updateConfigPath(newMacroFilePath)) g_ipcManager.sendReloadMacroCommand();    
-        Refresh::RefrRequest(Refresh::MacroGameList);                       
-        tsl::goBack(2);
+        Refresh::RefrRequest(Refresh::MacroGameList);  
+        tsl::swapTo<MacroViewGui>(SwapDepth(2), newMacroFilePath, gameName, isRecord);
     } 
-    tsl::changeTo<MacroViewGui>(newMacroFilePath, gameName, isRecord);
+    else tsl::swapTo<MacroViewGui>(SwapDepth(1), newMacroFilePath, gameName, isRecord);
 }
 
 // 当修改名称后，更新配置文件中的脚本路径
