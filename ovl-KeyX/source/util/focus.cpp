@@ -63,7 +63,7 @@ FocusState FocusMonitor::GetState(u64 tid) {
         m_LastTid = tid;
         ResetForNewGame();
         return m_CurrentState;  // 返回初始化后的状态
-    }
+    } 
     
     // 获取事件范围
     s32 total = 0, start_index = 0, end_index = 0;
