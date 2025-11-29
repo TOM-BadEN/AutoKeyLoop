@@ -101,8 +101,10 @@ void CountdownGui::update() {
     else if (elapsed_ms < 2000) strcpy(m_countdown, "2");
     else if (elapsed_ms < 3000) strcpy(m_countdown, "1");
     else if (elapsed_ms < 3100) strcpy(m_countdown, "0");
-    else tsl::swapTo<RecordingGui>();   // 跳转到录制界面
     m_frame->setCountdown(m_countdown);
+
+    // 倒计时结束，跳转到录制界面
+    if (elapsed_ms >= 3100) tsl::swapTo<RecordingGui>();
 }
 
 bool CountdownGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos,

@@ -91,6 +91,9 @@ void MacroListGui::update() {
 MacroListGuiGame::MacroListGuiGame(u64 titleId)
  : m_titleId(titleId)
 {
+    // 如果这个界面是首次创建，则消耗刷新标志，避免引发崩溃
+    Refresh::RefrConsume(Refresh::MacroGameList);
+
     // 获取游戏名
     GameMonitor::getTitleIdGameName(m_titleId, m_gameName);
     // 获取所有宏文件
