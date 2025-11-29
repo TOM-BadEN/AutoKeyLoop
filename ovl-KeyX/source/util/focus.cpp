@@ -53,6 +53,11 @@ void FocusMonitor::ResetForNewGame() {
 FocusState FocusMonitor::GetState(u64 tid) {
     if (tid == 0) return FocusState::OutOfFocus;
 
+    // pdmqry返回的是基础 titleid
+    // 传入的 tid 可能是完整 titleid（包含 DLC）
+    // 因此需要清除低12位
+    tid &= ~0xFFF;
+
     // 游戏切换了，重置状态
     if (tid != m_LastTid) {
         m_LastTid = tid;
