@@ -180,19 +180,46 @@ cd KeyX && make
 
 ## Current Function Performance Issues
 
-My OLED+JC will arrive in the next few days. I will conduct detailed testing and attempt to fix the issues, but based on what I currently know and previous failed attempts, both mine and others’ tests, the probability of successfully fixing the JC-related problems is very low.
+| Function | Joycon | 3rd-Party Split (MoPai Twin Star Gen2) | JC(Bluetooth) | LITE | 3rd-Party Regular (Octopus 4) | PRO
+|:------------:|:--------:|:------:|:------:|:------:|:------:|:------:|
+| Turbo | Perfect ① | Perfect ① | Not Available | Perfect | Available ② | Not Tested ③ |
+| Key Mapping | Perfect | Perfect | Perfect | Perfect | Perfect | Perfect |
+| Macro | Available ④ | Available ④ | Not Available | Perfect | Available ④ | Not Tested ③ |
 
-| Function | Joycon | LITE |
-|----------|--------|------|
-| Turbo | Pressing only the turbo button works fine, but inputting other buttons or using the joystick during turbo performs poorly (to be fixed) | Perfect |
-| Key Mapping | Perfect | Perfect |
-| Macro | After macro ends, stick may fail to reset, touch the stick to restore | Perfect |
+<table>
+  <tr>
+    <th align="center">Combined Functions</th>
+    <th align="center">Joycon</th>
+    <th align="center">3rd-Party Split (MoPai Twin Star Gen2)</th>
+    <th align="center">JC(Bluetooth)</th>
+    <th align="center">LITE</th>
+    <th align="center">3rd-Party Regular (Octopus 4)</th>
+    <th align="center">PRO</th>
+  </tr>
+  <tr>
+    <td align="center">Turbo + Mapping</td>
+    <td align="center">Perfect ①</td>
+    <td align="center">Perfect ①</td>
+    <td align="center">Not Available</td>
+    <td align="center">Perfect</td>
+    <td align="center">Available ②</td>
+    <td align="center">Not Tested ③</td>
+  </tr>
+  <tr>
+    <td align="center">Turbo + Macro</td>
+    <td align="center" colspan="6">Turbo function temporarily disabled during macro playback</td>
+  </tr>
+  <tr>
+    <td align="center">Mapping + Macro</td>
+    <td align="center" colspan="6">If the keys being played have been remapped, incorrect input may occur</td>
+  </tr>
+</table> 
 
-| Combined Functions | Joycon | LITE |
-|--------------------|--------|------|
-| Turbo + Mapping | Same as Turbo | Perfect |
-| Turbo + Macro | Turbo function temporarily disabled during macro playback | Turbo function temporarily disabled during macro playback |
-| Mapping + Macro | If the keys being played have been remapped, incorrect input may occur | If the keys being played have been remapped, incorrect input may occur |
+**Notes:**
+- ① Only the right Joy-Con supports turbo. For unknown reasons, if both sides support turbo, the joystick may fail to auto-reset after completely stopping button presses, requiring manual touch to restore.
+- ② Low probability that after completely stopping button presses, the joystick may fail to auto-reset, requiring manual touch to restore.
+- ③ Theoretically the same effect as Octopus, but I don't have a PRO controller, so it's just theoretical.
+- ④ After macro ends, there's a probability the joystick may fail to auto-reset, requiring manual touch to restore.
 
 # KeyX Button Assistant
 
