@@ -17,7 +17,7 @@ https://github.com/user-attachments/assets/d7f530b9-baed-455c-9887-5b7a96a9dadf
 
 ## 当前功能瑕疵表现
 
-<table style="font-size: 12px;">
+<table style="font-size: 8px;">
   <tr>
     <th>功能</th>
     <th>Joycon</th>
