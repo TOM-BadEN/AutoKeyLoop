@@ -13,6 +13,7 @@ namespace Refresh {
         RemapConfig     = 1 << 3,   // 映射按键设置界面
         MacroGameList   = 1 << 4,   // 单个游戏的脚本列表
         MacroView       = 1 << 5,   // 单个脚本的详情界面
+        MacroHotKey     = 1 << 6,   // 单个脚本的快捷键设置界面
         // 可继续添加更多界面...
     };
     

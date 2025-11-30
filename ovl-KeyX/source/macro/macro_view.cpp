@@ -51,6 +51,32 @@ namespace {
         IniHelper::setInt("MACRO", "macroCount", macroCount - 1, gameCfgPath);
         return true;
     }
+
+
+    constexpr const u64 buttons[] = {
+        BTN_ZL,
+        BTN_ZR,
+        BTN_L,
+        BTN_R,
+        BTN_A,
+        BTN_B,
+        BTN_X,
+        BTN_Y,
+        BTN_UP,
+        BTN_DOWN,
+        BTN_LEFT,
+        BTN_RIGHT,
+        BTN_START,
+        BTN_SELECT
+    };
+
+    struct MacroHotkeySlots {
+        u64 slot1 = 0;  // 一号按键
+        u64 slot2 = 0;  // 二号按键
+        u64 slot3 = 0;  // 三号按键
+    };
+
+    MacroHotkeySlots s_hotkeySlots{};
 }
 
 // 脚本查看类
@@ -192,6 +218,8 @@ bool MacroViewGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &
     return false;
 }
 
+
+
 // 快捷键设置
 MacroHotKeySettingGui::MacroHotKeySettingGui(const char* macroFilePath, const char* gameName, const char* gameCfgPath, u64 Hotkey) 
  : m_Hotkey(Hotkey)
@@ -199,7 +227,19 @@ MacroHotKeySettingGui::MacroHotKeySettingGui(const char* macroFilePath, const ch
     strcpy(m_macroFilePath, macroFilePath);
     strcpy(m_gameName, gameName);
     strcpy(m_gameCfgPath, gameCfgPath);
+
+    s_hotkeySlots = {};
+    int slotIndex = 0;
+    for (u64 btn : buttons) {
+        if (!(m_Hotkey & btn)) continue;
+        if (slotIndex == 0) s_hotkeySlots.slot1 = btn;
+        else if (slotIndex == 1) s_hotkeySlots.slot2 = btn;
+        else if (slotIndex == 2) s_hotkeySlots.slot3 = btn;
+        slotIndex++;
+        if (slotIndex >= 3) break;
+    }
     // 读取所有已使用的快捷键（排除当前脚本）
+    m_usedHotkeys.clear();
     int macroCount = IniHelper::getInt("MACRO", "macroCount", 0, m_gameCfgPath);
     for (int i = 1; i <= macroCount; i++) {
         std::string pathKey = "macro_path_" + std::to_string(i);
@@ -214,11 +254,121 @@ MacroHotKeySettingGui::MacroHotKeySettingGui(const char* macroFilePath, const ch
 tsl::elm::Element* MacroHotKeySettingGui::createUI() {
     auto frame = new tsl::elm::OverlayFrame("设置快捷键", m_gameName);
     auto list = new tsl::elm::List();
-    list->addItem(new tsl::elm::CategoryHeader(" 选择触发脚本的快捷键"));
-    // 添加"删除快捷键"选项
-    auto deleteItem = new tsl::elm::ListItem("删除快捷键");
-    deleteItem->setClickListener([this](u64 keys) {
+    auto textArea = new tsl::elm::CustomDrawer([this](tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h) {
+        u64 combo = s_hotkeySlots.slot1 | s_hotkeySlots.slot2 | s_hotkeySlots.slot3;
+        if (combo != 0) m_displayText = HidHelper::getCombinedIcons(combo, " + ");  
+        else m_displayText = "未设置快捷键";
+        s32 fontSize = 32;
+        auto textDim = r->getTextDimensions(m_displayText, false, fontSize);
+        s32 textWidth = textDim.first;
+        s32 textHeight = textDim.second;
+        s32 centerX = x + (w - textWidth) / 2;
+        s32 centerY = y + (h - textHeight) / 2 + textHeight - 10;
+        
+        // 根据快捷键是否合法选择颜色(合法=青色，不合法=红色)
+        tsl::Color iconColor = isHotkeyValid() ? tsl::style::color::ColorHighlight : tsl::Color(0xF, 0x5, 0x5, 0xF);  
+        
+        r->drawStringWithColoredSections(
+            m_displayText,              
+            false,
+            {" + "},                          
+            centerX, centerY, fontSize,
+            iconColor,             
+            tsl::defaultTextColor             
+        );
+
+    });
+    list->addItem(textArea, 150);
+
+
+    m_HotKeyNO1 = new tsl::elm::ListItem("一号按键", s_hotkeySlots.slot1 ? HidHelper::getIconByMask(s_hotkeySlots.slot1) : "无");
+    m_HotKeyNO1->setClickListener([](u64 keys) {
         if (keys & HidNpadButton_A) {
+            tsl::changeTo<ButtonSelectGui>(1);
+            return true;
+        }
+        return false;
+    });
+    list->addItem(m_HotKeyNO1);
+    
+    m_HotKeyNO2 = new tsl::elm::ListItem("二号按键", s_hotkeySlots.slot2 ? HidHelper::getIconByMask(s_hotkeySlots.slot2) : "无");
+    m_HotKeyNO2->setClickListener([](u64 keys) {
+        if (keys & HidNpadButton_A) {
+            if (s_hotkeySlots.slot1 > 0) tsl::changeTo<ButtonSelectGui>(2);
+            return true;
+        }
+        return false;
+    });
+    list->addItem(m_HotKeyNO2);
+
+    m_HotKeyNO3 = new tsl::elm::ListItem("三号按键", s_hotkeySlots.slot3 ? HidHelper::getIconByMask(s_hotkeySlots.slot3) : "无");
+    m_HotKeyNO3->setClickListener([](u64 keys) {
+        if (keys & HidNpadButton_A) {
+            if (s_hotkeySlots.slot2 > 0) tsl::changeTo<ButtonSelectGui>(3);
+            return true;
+        }
+        return false;
+    });
+    list->addItem(m_HotKeyNO3);
+
+    bool isSaveValid = isHotkeyValid();
+    const char* saveText = isSaveValid ? "按  保存" : "按键不合法";
+    m_HotKeySave = new tsl::elm::ListItem("保存按键", saveText);
+    m_HotKeySave->setValueColor(isSaveValid ? tsl::style::color::ColorHighlight : tsl::Color(0xF, 0x5, 0x5, 0xF));
+    list->addItem(m_HotKeySave);
+    m_HotKeyDelete = new tsl::elm::ListItem("删除按键", "按  删除");
+    list->addItem(m_HotKeyDelete);
+    
+    
+    frame->setContent(list);
+    return frame;
+}
+
+void MacroHotKeySettingGui::update() {
+    if (Refresh::RefrConsume(Refresh::MacroHotKey)) {
+        m_HotKeyNO1->setValue(s_hotkeySlots.slot1 ? HidHelper::getIconByMask(s_hotkeySlots.slot1) : "无");
+        m_HotKeyNO2->setValue(s_hotkeySlots.slot2 ? HidHelper::getIconByMask(s_hotkeySlots.slot2) : "无");
+        m_HotKeyNO3->setValue(s_hotkeySlots.slot3 ? HidHelper::getIconByMask(s_hotkeySlots.slot3) : "无");
+        bool isSaveValid = isHotkeyValid();
+        const char* saveText = isSaveValid ? "按  保存" : "按键不合法";
+        m_HotKeySave->setValue(saveText);
+        m_HotKeySave->setValueColor(isSaveValid ? tsl::style::color::ColorHighlight : tsl::Color(0xF, 0x5, 0x5, 0xF));
+    }
+}
+
+// 检查快捷键是否合法
+// 1. 至少有一个按键
+// 2. 组合不能与其他脚本冲突
+// 3. 组合不能与特斯拉快捷键冲突
+bool MacroHotKeySettingGui::isHotkeyValid() const {
+    u64 combo = s_hotkeySlots.slot1 | s_hotkeySlots.slot2 | s_hotkeySlots.slot3;
+    if (combo == 0) return false;
+    for (u64 used : m_usedHotkeys) if (used == combo) return false;
+    if (combo == tsl::cfg::launchCombo) return false;
+    return true;
+}
+
+bool MacroHotKeySettingGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) {
+    // 保存按键触发
+    if ((keysDown & HidNpadButton_Plus) && m_HotKeySave) {
+        if (getFocusedElement() == m_HotKeySave) {
+            if (!isHotkeyValid()) return true;
+            removeHotkeyIfExists(m_macroFilePath, m_gameCfgPath);
+            u64 combo = s_hotkeySlots.slot1 | s_hotkeySlots.slot2 | s_hotkeySlots.slot3;
+            int macroCount = IniHelper::getInt("MACRO", "macroCount", 0, m_gameCfgPath) + 1;
+            IniHelper::setInt("MACRO", "macroCount", macroCount, m_gameCfgPath);
+            IniHelper::setString("MACRO", "macro_path_" + std::to_string(macroCount), m_macroFilePath, m_gameCfgPath);
+            IniHelper::setInt("MACRO", "macro_combo_" + std::to_string(macroCount), combo, m_gameCfgPath);
+            g_ipcManager.sendReloadMacroCommand();
+            Refresh::RefrSetMultiple(Refresh::MacroGameList | Refresh::MacroView);
+            tsl::goBack();
+            return true;
+        }
+    }
+    
+    // 删除按键触发
+    else if ((keysDown & HidNpadButton_Minus) && m_HotKeyDelete) {
+        if (getFocusedElement() == m_HotKeyDelete) {
             if (removeHotkeyIfExists(m_macroFilePath, m_gameCfgPath)) {
                 g_ipcManager.sendReloadMacroCommand();
                 Refresh::RefrSetMultiple(Refresh::MacroGameList | Refresh::MacroView);
@@ -226,44 +376,85 @@ tsl::elm::Element* MacroHotKeySettingGui::createUI() {
             tsl::goBack();
             return true;
         }
-        return false;
-    });
-    list->addItem(deleteItem);
+    }
+    
+    return false;
+}
 
-    for (const u64 combo : MacroHotkeys::Hotkeys) {
-        if (combo == tsl::cfg::launchCombo) continue;  // 跳过特斯拉快捷键
-        // 跳过已被其他脚本使用的快捷键
-        if (std::find(m_usedHotkeys.begin(), m_usedHotkeys.end(), combo) != m_usedHotkeys.end()) continue;
-        std::string iconStr = HidHelper::getCombinedIcons(combo);
-        auto listSetHotKey = new tsl::elm::ListItem(iconStr);
-        if (combo == m_Hotkey) listSetHotKey->setValue("");
-        listSetHotKey->setClickListener([this, combo](u64 keys) {
+
+
+// 按键选择类
+ButtonSelectGui::ButtonSelectGui(int slotIndex) 
+    : m_slotIndex(slotIndex) 
+{
+    // 判断是否可以删除
+    if (m_slotIndex == 1) m_canDelete = (s_hotkeySlots.slot2 == 0);
+    else if (m_slotIndex == 2) m_canDelete = (s_hotkeySlots.slot3 == 0);
+    else if (m_slotIndex == 3) m_canDelete = true;
+}
+
+tsl::elm::Element* ButtonSelectGui::createUI() {
+    auto frame = new tsl::elm::HeaderOverlayFrame(97);
+    frame->setHeader(new tsl::elm::CustomDrawer([this](tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h) {
+        r->drawString("选择按键", false, 20, 52, 32, r->a(tsl::defaultOverlayColor));
+        r->drawString("选择第" + std::to_string(m_slotIndex) + "号按键", false, 20, 73, 15, r->a(tsl::bannerVersionTextColor));
+        if (m_canDelete) r->drawString("\uE0EE  删除", false, 280, 693, 23, r->a(tsl::style::color::ColorText));
+    }));
+    auto list = new tsl::elm::List();
+    list->addItem(new tsl::elm::CategoryHeader(" 选择要使用的快捷键"));
+
+    // 获取当前槽位的值
+    u64 currentSlotValue = 0;
+    if (m_slotIndex == 1) currentSlotValue = s_hotkeySlots.slot1;
+    else if (m_slotIndex == 2) currentSlotValue = s_hotkeySlots.slot2;
+    else if (m_slotIndex == 3) currentSlotValue = s_hotkeySlots.slot3;
+    
+    // 遍历所有可选按键
+    for (u64 btn : buttons) {
+        // 过滤掉其他两个槽位已使用的按键
+        if (m_slotIndex == 1 && (btn == s_hotkeySlots.slot2 || btn == s_hotkeySlots.slot3)) continue;
+        else if (m_slotIndex == 2 && (btn == s_hotkeySlots.slot1 || btn == s_hotkeySlots.slot3)) continue;
+        else if (m_slotIndex == 3 && (btn == s_hotkeySlots.slot1 || btn == s_hotkeySlots.slot2)) continue;
+        
+        // 判断是否是当前选中
+        bool isCurrent = (currentSlotValue == btn);
+        auto item = new tsl::elm::ListItem(
+            std::string("按键  ") + HidHelper::getIconByMask(btn),
+            isCurrent ? "当前" : ""
+        );
+        
+        item->setClickListener([this, btn](u64 keys) {
             if (keys & HidNpadButton_A) {
-                removeHotkeyIfExists(m_macroFilePath, m_gameCfgPath);
-                int macroCount = IniHelper::getInt("MACRO", "macroCount", 0, m_gameCfgPath) + 1;
-                IniHelper::setInt("MACRO", "macroCount", macroCount, m_gameCfgPath);
-                IniHelper::setString("MACRO", "macro_path_" + std::to_string(macroCount), m_macroFilePath, m_gameCfgPath);
-                IniHelper::setInt("MACRO", "macro_combo_" + std::to_string(macroCount), combo, m_gameCfgPath);
-                g_ipcManager.sendReloadMacroCommand();
-                Refresh::RefrSetMultiple(Refresh::MacroGameList | Refresh::MacroView);
+                if (m_slotIndex == 1) s_hotkeySlots.slot1 = btn;
+                else if (m_slotIndex == 2) s_hotkeySlots.slot2 = btn;
+                else if (m_slotIndex == 3) s_hotkeySlots.slot3 = btn;
+                Refresh::RefrRequest(Refresh::MacroHotKey);
                 tsl::goBack();
                 return true;
-            } 
+            }
             return false;
         });
-        list->addItem(listSetHotKey);
+        list->addItem(item);
     }
-
-    // 如果已有快捷键，跳转到对应的项
-    if (m_Hotkey != 0) {
-        std::string currentIconStr = HidHelper::getCombinedIcons(m_Hotkey);
-        list->jumpToItem(currentIconStr, "");
-    }
-
+    
+    // 跳转到当前选中项
+    list->jumpToItem("", "当前");
+    
     frame->setContent(list);
     return frame;
 }
 
+bool ButtonSelectGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) {
+    if (m_canDelete && (keysDown & HidNpadButton_Right)) {
+        if (m_slotIndex == 1) s_hotkeySlots.slot1 = 0;
+        else if (m_slotIndex == 2) s_hotkeySlots.slot2 = 0;
+        else if (m_slotIndex == 3) s_hotkeySlots.slot3 = 0;
+        Refresh::RefrRequest(Refresh::MacroHotKey);
+        tsl::goBack();
+        return true;
+    }
+    return false;
+}
 
 
 
