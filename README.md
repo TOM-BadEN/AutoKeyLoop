@@ -17,44 +17,18 @@ https://github.com/user-attachments/assets/d7f530b9-baed-455c-9887-5b7a96a9dadf
 
 ## 当前功能瑕疵表现
 
-<table>
-  <tr>
-    <th><sub>功能</sub></th>
-    <th><sub>Joycon</sub></th>
-    <th><sub>第三方分体手柄<br>（魔派双子星2代）</sub></th>
-    <th><sub>Joycon<br>(蓝牙)</sub></th>
-    <th><sub>LITE</sub></th>
-    <th><sub>第三方常规手柄<br>(八爪鱼4)</sub></th>
-    <th><sub>PRO</sub></th>
-  </tr>
-  <tr>
-    <td><sub>按键连发</sub></td>
-    <td><sub>仅右手柄支持连发（完美）</sub></td>
-    <td><sub>同JC</sub></td>
-    <td><sub>连发不稳，原因未知</sub></td>
-    <td><sub>完美</sub></td>
-    <td><sub>小概率完全停止按键后，部分摇杆或者按键无法自动归0</sub></td>
-    <td><sub>理论同八爪鱼，但是我没设备仅理论</sub></td>
-  </tr>
-  <tr>
-    <td><sub>按键映射</sub></td>
-    <td><sub>完美</sub></td>
-    <td><sub>完美</sub></td>
-    <td><sub>完美</sub></td>
-    <td><sub>完美</sub></td>
-    <td><sub>完美</sub></td>
-    <td><sub>完美</sub></td>
-  </tr>
-  <tr>
-    <td><sub>按键宏</sub></td>
-    <td><sub>概率结束后部分摇杆或按键无法自动归0</sub></td>
-    <td><sub>同JC</sub></td>
-    <td><sub>未测试，理论不可用</sub></td>
-    <td><sub>完美</sub></td>
-    <td><sub>同JC</sub></td>
-    <td><sub>同上</sub></td>
-  </tr>
-</table>
+| 功能 | Joycon | 三方分体（双子星2代） |JC(蓝牙) | LITE | 三方常规 (八爪鱼4) | PRO
+|------------|--------|------|------|------|------|------|
+| 按键连发 | 完美 ① | 完美 ① |不可用 | 完美 | 可用 ② | 未测试 ③ |
+| 按键映射 | 完美 | 完美 | 完美 | 完美 | 完美 | 完美 |
+| 按键宏 | 可用 ④ | 可用 ④ | 不可用 | 完美 | 可用 ④ | 未测试 ③ |
+
+**说明：**
+① 仅右手柄支持连发。因为未知原因，若两侧都支持连发的话，会出现完全停止按键后，摇杆无法自动归0，需要手动碰一下才能恢复正常。
+② 小概率完全停止按键后，摇杆无法自动归0，需要手动碰一下才能恢复正常。
+③ 理论上与八爪鱼效果一致，但是我没有PRO手柄，所以只能说理论
+④ 宏结束，有概率摇杆无法自动归0，需要手动碰一下才能恢复正常。
+
 
 | 组合功能 | Joycon | LITE |
 |----------|--------|------|
