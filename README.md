@@ -17,42 +17,42 @@ https://github.com/user-attachments/assets/d7f530b9-baed-455c-9887-5b7a96a9dadf
 
 ## 当前功能瑕疵表现
 
-<table style="font-size: 8px;">
+<table>
   <tr>
-    <th>功能</th>
-    <th>Joycon</th>
-    <th>第三方分体手柄<br>（魔派双子星2代）</th>
-    <th>Joycon<br>(蓝牙)</th>
-    <th>LITE</th>
-    <th>第三方常规手柄<br>(八爪鱼4)</th>
-    <th>PRO</th>
+    <th><sub>功能</sub></th>
+    <th><sub>Joycon</sub></th>
+    <th><sub>第三方分体手柄<br>（魔派双子星2代）</sub></th>
+    <th><sub>Joycon<br>(蓝牙)</sub></th>
+    <th><sub>LITE</sub></th>
+    <th><sub>第三方常规手柄<br>(八爪鱼4)</sub></th>
+    <th><sub>PRO</sub></th>
   </tr>
   <tr>
-    <td>按键连发</td>
-    <td>仅右手柄支持连发（完美）</td>
-    <td>同JC</td>
-    <td>连发不稳，原因未知</td>
-    <td>完美</td>
-    <td>小概率完全停止按键后，部分摇杆或者按键无法自动归0</td>
-    <td>理论同八爪鱼，但是我没设备仅理论</td>
+    <td><sub>按键连发</sub></td>
+    <td><sub>仅右手柄支持连发（完美）</sub></td>
+    <td><sub>同JC</sub></td>
+    <td><sub>连发不稳，原因未知</sub></td>
+    <td><sub>完美</sub></td>
+    <td><sub>小概率完全停止按键后，部分摇杆或者按键无法自动归0</sub></td>
+    <td><sub>理论同八爪鱼，但是我没设备仅理论</sub></td>
   </tr>
   <tr>
-    <td>按键映射</td>
-    <td>完美</td>
-    <td>完美</td>
-    <td>完美</td>
-    <td>完美</td>
-    <td>完美</td>
-    <td>完美</td>
+    <td><sub>按键映射</sub></td>
+    <td><sub>完美</sub></td>
+    <td><sub>完美</sub></td>
+    <td><sub>完美</sub></td>
+    <td><sub>完美</sub></td>
+    <td><sub>完美</sub></td>
+    <td><sub>完美</sub></td>
   </tr>
   <tr>
-    <td>按键宏</td>
-    <td>概率结束后部分摇杆或者按键无法自动归0</td>
-    <td>同JC</td>
-    <td>未测试，理论不可用</td>
-    <td>完美</td>
-    <td>同JC</td>
-    <td>同上</td>
+    <td><sub>按键宏</sub></td>
+    <td><sub>概率结束后部分摇杆或按键无法自动归0</sub></td>
+    <td><sub>同JC</sub></td>
+    <td><sub>未测试，理论不可用</sub></td>
+    <td><sub>完美</sub></td>
+    <td><sub>同JC</sub></td>
+    <td><sub>同上</sub></td>
   </tr>
 </table>
 
