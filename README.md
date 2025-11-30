@@ -18,37 +18,37 @@ https://github.com/user-attachments/assets/d7f530b9-baed-455c-9887-5b7a96a9dadf
 ## 当前功能瑕疵表现
 
 | 功能 | Joycon | 三方分体（双子星2代） |JC(蓝牙) | LITE | 三方常规 (八爪鱼4) | PRO
-|------------|--------|------|------|------|------|------|
+|:------------:|:--------:|:------:|:------:|:------:|:------:|:------:|
 | 按键连发 | 完美 ① | 完美 ① |不可用 | 完美 | 可用 ② | 未测试 ③ |
 | 按键映射 | 完美 | 完美 | 完美 | 完美 | 完美 | 完美 |
 | 按键宏 | 可用 ④ | 可用 ④ | 不可用 | 完美 | 可用 ④ | 未测试 ③ |
 
 <table>
   <tr>
-    <th>组合功能</th>
-    <th>Joycon</th>
-    <th>三方分体（双子星2代）</th>
-    <th>JC(蓝牙)</th>
-    <th>LITE</th>
-    <th>三方常规 (八爪鱼4)</th>
-    <th>PRO</th>
+    <th align="center">组合功能</th>
+    <th align="center">Joycon</th>
+    <th align="center">三方分体（双子星2代）</th>
+    <th align="center">JC(蓝牙)</th>
+    <th align="center">LITE</th>
+    <th align="center">三方常规 (八爪鱼4)</th>
+    <th align="center">PRO</th>
   </tr>
   <tr>
-    <td>连发 + 映射</td>
-    <td>完美 ①</td>
-    <td>完美 ①</td>
-    <td>不可用</td>
-    <td>完美</td>
-    <td>可用 ②</td>
-    <td>未测试 ③</td>
+    <td align="center">连发 + 映射</td>
+    <td align="center">完美 ①</td>
+    <td align="center">完美 ①</td>
+    <td align="center">不可用</td>
+    <td align="center">完美</td>
+    <td align="center">可用 ②</td>
+    <td align="center">未测试 ③</td>
   </tr>
   <tr>
-    <td>连发 + 宏</td>
-    <td colspan="6">宏播放期间，自动屏蔽连发功能</td>
+    <td align="center">连发 + 宏</td>
+    <td align="center" colspan="6">宏播放期间，自动屏蔽连发功能</td>
   </tr>
   <tr>
-    <td>映射 + 宏</td>
-    <td colspan="6">如果播放的宏的按键，恰好是修改了映射的按键，可能出现输入不对的情况</td>
+    <td align="center">映射 + 宏</td>
+    <td align="center" colspan="6">如果播放的宏的按键，恰好是修改了映射的按键，可能出现输入不对的情况</td>
   </tr>
 </table> 
 
