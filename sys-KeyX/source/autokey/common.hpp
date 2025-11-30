@@ -17,7 +17,6 @@ struct ProcessResult {
     u64 buttons;                            // 原始物理输入的按键
     HidAnalogStickState analog_stick_l;     // 左摇杆
     HidAnalogStickState analog_stick_r;     // 右摇杆
-    u64 OtherButtons;                       // 修改后的完整按键（给Pro/Lite用）
-    u64 JoyconButtons;                      // 修改后的连发按键（给JoyCon用）
+    u64 OtherButtons;                       // 修改后的完整按键
 };
 

@@ -185,7 +185,6 @@ void Macro::MacroExecuting(ProcessResult& result) {
     
     // 应用按键和摇杆数据
     result.OtherButtons = frame.keysHeld;  // 覆盖
-    result.JoyconButtons = frame.keysHeld;  // 覆盖
     // 摇杆：宏数据不为0时覆盖物理输入，为0时保持物理输入
     if (frame.leftX != 0) result.analog_stick_l.x = frame.leftX;
     if (frame.leftY != 0) result.analog_stick_l.y = frame.leftY;

@@ -47,7 +47,6 @@ void Turbo::Process(ProcessResult& result) {
         case FeatureEvent::FINISHING:
             TurboFinishing();
             result.OtherButtons = result.buttons;
-            result.JoyconButtons = 0;
             return;
         default:
             return;
@@ -88,7 +87,6 @@ void Turbo::TurboExecuting(u64 autokey_buttons, u64 normal_buttons, ProcessResul
         m_LastSwitchTime = current_time;
     }
     result.OtherButtons = m_IsPressed ? (normal_buttons | autokey_buttons) : normal_buttons;
-    result.JoyconButtons = m_IsPressed ? autokey_buttons : 0;
 }
 
 // 事件处理：停止连发
@@ -104,7 +102,7 @@ bool Turbo::CheckRelease(u64 autokey_buttons) {
     if (!m_IsPressed) return false;
     u64 current_time = armGetSystemTick();
     u64 time_since_last_switch_ns = armTicksToNs(current_time - m_LastSwitchTime);
-    if (time_since_last_switch_ns < 10000000ULL) return false;
+    if (time_since_last_switch_ns < 30000000ULL) return false;
     if (autokey_buttons == 0) return true;
     return false;
 }

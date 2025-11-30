@@ -28,6 +28,18 @@ public:
     void Resume();
 
 private:
+    // 手柄类型枚举
+    enum class ControllerType {
+        C_NONE = 0,
+        C_PRO,
+        C_JOYDUAL,
+        C_SYSTEMEXT,
+        C_HANDHELD
+    };
+
+    // 当前手柄类型
+    ControllerType m_ControllerType;
+    
     // HDLS 硬件资源
     HiddbgHdlsSessionId m_HdlsSessionId;
     HiddbgHdlsStateList m_StateList;
@@ -42,13 +54,15 @@ private:
     bool m_ShouldExit;
     bool m_IsPaused;
     
-    alignas(0x1000) static char thread_stack[4 * 1024];
+    alignas(0x1000) static char thread_stack[32 * 1024];
     
     // 功能模块
     std::unique_ptr<Turbo> m_Turbo;
     std::unique_ptr<Macro> m_Macro;
     bool m_EnableTurbo;
     bool m_EnableMacro;
+    
+    
     
     // 逆映射表（用于解决 HDLS 注入污染问题）
     static constexpr int MAX_MAPPINGS = 16;  // 最多16个按键映射
@@ -70,6 +84,11 @@ private:
     
     // 注入输出（将按键写入 HDLS）
     void ApplyHdlsState(ProcessResult& result);
+    
+    // 各类型手柄的注入实现
+    void InjectPro(ProcessResult& result);
+    void InjectJoyDual(ProcessResult& result);
+    void InjectHandheld(ProcessResult& result);
     
     // 逆映射相关辅助方法
     void ApplyReverseMapping(u64& buttons) const;
