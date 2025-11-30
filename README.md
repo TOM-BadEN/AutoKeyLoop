@@ -17,39 +17,17 @@ https://github.com/user-attachments/assets/d7f530b9-baed-455c-9887-5b7a96a9dadf
 
 ## 当前功能瑕疵表现
 
-我的OLED+JC将在这几天到货，到时候我会进行详细的测试，以及尝试修复，但是据我目前的了解以及之前的通过别人测试， 我来修复的失败经验来看，JC的相关问题修复的概率很低。
-
-| 功能 | Joycon | LITE |
-|------|--------|------|
-| 按键连发 | 只按连发完美，但若在连发过程中进行别的操作，融合的不好 | 完美 |
-| 按键映射 | 完美 | 完美 |
-| 按键宏 | 宏结束后，可能出现摇杆无法归位的情况，碰一下摇杆恢复正常 | 完美 |
+| 功能 | Joycon | 第三方分体手柄（魔派双子星2代） |Joycon(蓝牙) | LITE | 第三方常规手柄 (八爪鱼4) | PRO
+|------|--------|------|------|------|------|------|
+| 按键连发 | 仅右边手柄支持连发（完美） | 同JC |连发不稳，原因未知 | 完美 | 小概率完全停止按键后，部分摇杆或者按键无法自动归0 | 理论同八爪鱼，但是我没设备仅理论 |
+| 按键映射 | 完美 | 完美 | 完美 | 完美 | 完美 | 完美 |
+| 按键宏 | 概率结束后部分摇杆或者按键无法自动归0 | 同JC | 未测试，理论不可用 | 完美 | 同JC | 同上 |
 
 | 组合功能 | Joycon | LITE |
 |----------|--------|------|
 | 连发+映射 | 同按键连发 | 完美 |
 | 连发+宏 | 宏播放期间插件将暂时屏蔽连发功能 | 宏播放期间插件将暂时屏蔽连发功能 |
 | 映射+宏 | 如果播放的宏的按键，恰好是修改了映射的按键，可能出现输入不对的情况 | 如果播放的宏的按键，恰好是修改了映射的按键，可能出现输入不对的情况 | 
-
-## 项目实现原理
-
-通过在'HID内存'上，申请一块'HDLs的缓冲区'。
-使用'hidGetNpadStatesHandheld'等API，读取手柄的按键与摇杆数据（实际上就是从HID内存读取），
-进过算法判断，修改按键与摇杆数据，
-再使用'hiddbgApplyHdlsStateList'注入回HID内存（此时按键生效）。
-
-但是该方法存在以下问题。
-
-1. 注入的按键和摇杆数据，会被hidGetNpadStatesHandheld再次读取到，从而导致无法读取到真正的用户输入。不过好在通过算法控制，勉强的让程序能正确的运行起来。目前JC存在上面表格的问题，LITE则表现完美。
-
-2. JOYCON不知道存在什么特殊机制，如果注入摇杆或者其他按键，就会导致即使代码停止注入，用户完全不碰手柄，但是摇杆仍旧一直触发，通过读取发现一直触发的最后注入的数据，但是对于SWITCH LITE就没有这个问题，这就非常奇怪，不知道到底是什么原因。为了解决这个问题，我暂时强制JC注入的时候强制将非连发按键以及摇杆修改为0，但是这会导致在连发期间无法正常的进行其他按键的操作。
-
-3. 通过标准的API，修改按键映射后，如X->Y,Y->X。接着我们持续注入Y，但是游戏中实际表现为Y中掺入了X。针对连发功能，采用了逆映射的算法，修正了这个问题，但是导致问题的机制，仍然搞不清楚。而针对宏功能，则完全无论能力，因此正如上表所说，如果播放的宏的按键，恰好是修改了映射的按键，可能出现输入不对的情况。
-
-**如果有大佬知道如何解决，或者导致问题的根本原因，还请劳烦传道一下。**
-
-目前已知的可能的完美解决办法，就是改用AMS的MITM，通过拦截游戏对HID内存的访问，设置一个影子内存，让游戏只访问完全受我们控制的影子内存。但是我不是程序员，而且MITM太复杂了，没有模板和文档，我无能为力。
-
 
 # KeyX 按键助手
 
@@ -185,25 +163,6 @@ My OLED+JC will arrive in the next few days. I will conduct detailed testing and
 | Turbo + Mapping | Same as Turbo | Perfect |
 | Turbo + Macro | Turbo function temporarily disabled during macro playback | Turbo function temporarily disabled during macro playback |
 | Mapping + Macro | If the keys being played have been remapped, incorrect input may occur | If the keys being played have been remapped, incorrect input may occur |
-
-## Project Implementation Principle
-
-By allocating a 'HDLs buffer' on 'HID memory'.
-Using APIs like 'hidGetNpadStatesHandheld' to read button and stick data from the controller (which actually reads from HID memory),
-processing the data through algorithms to modify button and stick data,
-then using 'hiddbgApplyHdlsStateList' to inject it back into HID memory (where the buttons take effect).
-
-However, this method has the following issues:
-
-1. The injected button and joystick data can be read again by hidGetNpadStatesHandheld, which prevents the program from reading the actual user input. Fortunately, through algorithmic control, the program can still run correctly, albeit imperfectly. Currently, the JC has the issues listed in the table above, while the LITE performs perfectly.
-
-2. JOY-CON seems to have some unknown special mechanism: if joystick or other buttons are injected, even when the code stops injecting and the user does not touch the controller at all, the joystick continues to trigger. Reading the input shows that the last injected data keeps being read. This issue does not occur on the SWITCH LITE, which is very strange and the cause is unclear. To work around this problem, I temporarily force the JC to set non-Tubro buttons and the joystick to 0 during injection, but this prevents other button operations from working normally while Tubro is active.
-
-3. Using the standard API, after remapping buttons, for example X → Y and Y → X, if we continuously inject Y, the game actually registers Y mixed with X. For the Tubro function, a reverse-mapping algorithm is used to correct this issue, but the underlying cause remains unclear. As for the macro function, it is completely powerless against this problem. Therefore, as mentioned in the table above, if a macro plays a button that happens to be remapped, the input may be incorrect.
-
-**If any experts know how to solve this or the root cause, please enlighten me.**
-
-Currently, the only known perfect solution is to use AMS MITM, by intercepting the game's access to HID memory and setting up a shadow memory, so the game only accesses the shadow memory that we fully control. However, I'm not a programmer, and MITM is too complex with no templates or documentation, so I'm unable to do it.
 
 # KeyX Button Assistant
 
