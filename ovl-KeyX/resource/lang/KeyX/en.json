@@ -119,6 +119,21 @@
     " 用户指南": " User Guide",
     "  重置输入     切换大小写": "  Reset input     Switch case",
     "  取消修改     保存修改": "  Cancel     Save",
-    "  删除脚本     保存脚本": "  Delete     Save"
+    "  删除脚本     保存脚本": "  Delete     Save",
+    "未设置快捷键": "No Hotkey Set",
+    "一号按键": "HotKey 1",
+    "二号按键": "HotKey 2",
+    "三号按键": "HotKey 3",
+    "无": "None",
+    "按  保存": "Press  Save",
+    "按键不合法": "Invalid Hotkey",
+    "保存按键": "Save HotKey",
+    "删除按键": "Del HotKey",
+    "选择按键": "Select Key",
+    "选择第1号按键": "Select Key 1",
+    "选择第2号按键": "Select Key 2",
+    "选择第3号按键": "Select Key 3",
+    "  删除": "  Delete",
+    " 选择要使用的快捷键": "Select Key"
 }
 

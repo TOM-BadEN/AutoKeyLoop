@@ -419,8 +419,8 @@ tsl::elm::Element* ButtonSelectGui::createUI() {
         // 判断是否是当前选中
         bool isCurrent = (currentSlotValue == btn);
         auto item = new tsl::elm::ListItem(
-            std::string("按键  ") + HidHelper::getIconByMask(btn),
-            isCurrent ? "当前" : ""
+            ult::i18n("按键  ") + HidHelper::getIconByMask(btn),
+            isCurrent ? ult::i18n("当前") : ""
         );
         
         item->setClickListener([this, btn](u64 keys) {
@@ -438,7 +438,7 @@ tsl::elm::Element* ButtonSelectGui::createUI() {
     }
     
     // 跳转到当前选中项
-    list->jumpToItem("", "当前");
+    list->jumpToItem("", ult::i18n("当前"));
     
     frame->setContent(list);
     return frame;
