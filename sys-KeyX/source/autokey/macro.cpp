@@ -3,7 +3,7 @@
 #include <cstdio>
 
 // 常量定义
-static constexpr u64 STOP_COOLDOWN_NS = 200000000ULL;        // 200ms 停止后延迟
+static constexpr u64 STOP_COOLDOWN_NS = 250000000ULL;        // 250ms 停止后延迟
 static constexpr u64 LONG_PRESS_THRESHOLD_NS = 500000000ULL; // 500ms 长按阈值
 
 // 构造函数

@@ -79,7 +79,6 @@ void MainMenu::RefreshData() {
         u64 combo = static_cast<u64>(IniHelper::getInt("MACRO", "macro_combo_" + std::to_string(i), 0, m_textAreaInfo.GameConfigPath));
         m_macroHotKey |= combo;
     }
-    m_macroHotKey &= ~ (ButtonMask::BTN_ZL | ButtonMask::BTN_ZR);
     
 }
 

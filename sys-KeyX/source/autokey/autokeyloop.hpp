@@ -54,7 +54,7 @@ private:
     bool m_ShouldExit;
     bool m_IsPaused;
     
-    alignas(0x1000) static char thread_stack[32 * 1024];
+    alignas(0x1000) static char thread_stack[4 * 1024];
     
     // 功能模块
     std::unique_ptr<Turbo> m_Turbo;
