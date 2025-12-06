@@ -26,6 +26,9 @@ void Turbo::LoadConfig(const char* config_path) {
     int release_ms = ini_getl("AUTOFIRE", "fireinterval", 100, config_path);
     m_PressDurationNs = (u64)press_ms * 1000000ULL;
     m_ReleaseDurationNs = (u64)release_ms * 1000000ULL;
+    // 读取防止误触开关
+    m_DelayStart = ini_getbool("AUTOFIRE", "delaystart", 1, config_path);
+
 }
 
 // 核心函数：处理输入
@@ -62,7 +65,7 @@ FeatureEvent Turbo::DetermineEvent(u64 autokey_buttons) {
     else if (has_autokey) {
         if (m_InitialPressTime == 0) m_InitialPressTime = armGetSystemTick();
         u64 elapsed_ns = armTicksToNs(armGetSystemTick() - m_InitialPressTime);
-        if (elapsed_ns < 200000000ULL) return FeatureEvent::IDLE;
+        if (m_DelayStart && elapsed_ns < 200000000ULL) return FeatureEvent::IDLE;
         m_InitialPressTime = 0;
         return FeatureEvent::STARTING;
     }

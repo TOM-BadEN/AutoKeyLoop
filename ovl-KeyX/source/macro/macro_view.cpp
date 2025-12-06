@@ -67,7 +67,9 @@ namespace {
         BTN_LEFT,
         BTN_RIGHT,
         BTN_START,
-        BTN_SELECT
+        BTN_SELECT,
+        BTN_STICKL,
+        BTN_STICKR
     };
 
     struct MacroHotkeySlots {

@@ -45,7 +45,7 @@ tsl::elm::Element* SettingTurbo::createUI() {
     auto ItemBasicSetting = new tsl::elm::CategoryHeader(" 基础功能设置");
     list->addItem(ItemBasicSetting);
     list->addItem(new tsl::elm::CustomDrawer([](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
-        renderer->drawString("  开启后自动启用连发功能", false, x + 5, y + 20-7, 16, (tsl::highlightColor2));
+        renderer->drawString("  自动启用连发（仅全局配置）", false, x + 5, y + 20-7, 16, (tsl::highlightColor2));
     }), 30);
 
     auto listItemDefaultAuto = new tsl::elm::ListItem("默认连发", m_defaultAuto ? "开" : "关");
@@ -61,16 +61,16 @@ tsl::elm::Element* SettingTurbo::createUI() {
     });
     list->addItem(listItemDefaultAuto);
 
-    auto ItemWarningSetting = new tsl::elm::CategoryHeader(" 注意事项");
+    auto ItemWarningSetting = new tsl::elm::CategoryHeader(" 适配情况");
     list->addItem(ItemWarningSetting);
     list->addItem(new tsl::elm::CustomDrawer([](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
-        renderer->drawString("  连发功能已适配全部机型，欢迎使用", false, x + 5, y + 20-7, 16, (tsl::highlightColor2));
+        renderer->drawString("  switch LITE 连发功能完美", false, x + 5, y + 20-7, 16, (tsl::highlightColor2));
     }), 30);
     list->addItem(new tsl::elm::CustomDrawer([](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
-        renderer->drawString("  非LITE机型的连发体验可能不够丝滑", false, x + 5, y + 20-7, 16, (tsl::highlightColor2));
+        renderer->drawString("  Joycon 仅右手柄按键支持连发", false, x + 5, y + 20-7, 16, (tsl::highlightColor2));
     }), 30);
     list->addItem(new tsl::elm::CustomDrawer([](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
-        renderer->drawString("  已尽全力但底层限制，LITE连发完美", false, x + 5, y + 20-7, 16, (tsl::highlightColor2));
+        renderer->drawString("  PRO 摇杆概率卡住，触碰后恢复", false, x + 5, y + 20-7, 16, (tsl::highlightColor2));
     }), 30);
     
     frame->setContent(list);

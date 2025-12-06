@@ -12,6 +12,7 @@ private:
     char m_gameName[64];  // 当前游戏名称
     char m_ConfigPath[256];  // 配置文件路径
     bool m_TurboSpeed;  // 是否高速连发
+    bool m_DelayStart;  // 是否延迟启动
 };
 
 // 按键设置界面

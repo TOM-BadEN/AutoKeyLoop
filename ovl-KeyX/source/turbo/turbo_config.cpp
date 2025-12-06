@@ -26,6 +26,8 @@ SettingTurboConfig::SettingTurboConfig(bool isGlobal, u64 currentTitleId)
 
     // 读取速度配置（0=普通，1=高速）
     m_TurboSpeed = (IniHelper::getInt("AUTOFIRE", "presstime", 100, m_ConfigPath) == 100);
+    // 读取防止误触配置（0=关闭，1=开启）
+    m_DelayStart = IniHelper::getInt("AUTOFIRE", "delaystart", 1, m_ConfigPath);
     // 读取连发按键配置（默认值：0 = 未设置连发）
     s_TurboButtons = static_cast<u64>(IniHelper::getInt("AUTOFIRE", "buttons", 0, m_ConfigPath));
 }
@@ -50,46 +52,45 @@ tsl::elm::Element* SettingTurboConfig::createUI() {
     });
     list->addItem(listItemTurboKey);
 
-    auto listItemTurboHighSpeed = new tsl::elm::ListItem("高速连发", m_TurboSpeed ? "\uE14B" : "");
-    auto listItemTurboLowSpeed = new tsl::elm::ListItem("普通连发", !m_TurboSpeed ? "\uE14B" : "");
 
-    listItemTurboHighSpeed->setClickListener([listItemTurboHighSpeed, listItemTurboLowSpeed, this](u64 keys) {
+    auto listItemTurboSpeed = new tsl::elm::ListItem("连发速度", m_TurboSpeed ? "高速" : "普通");
+    listItemTurboSpeed->setClickListener([listItemTurboSpeed, this](u64 keys) {
         if (keys & HidNpadButton_A) {
-            m_TurboSpeed = true;
-            IniHelper::setInt("AUTOFIRE", "presstime", 100, m_ConfigPath);
-            IniHelper::setInt("AUTOFIRE", "fireinterval", 100, m_ConfigPath);
+            m_TurboSpeed = !m_TurboSpeed;
+            IniHelper::setInt("AUTOFIRE", "presstime", m_TurboSpeed ? 100 : 200, m_ConfigPath);
+            IniHelper::setInt("AUTOFIRE", "fireinterval", m_TurboSpeed ? 100 : 50, m_ConfigPath);
             g_ipcManager.sendReloadAutoFireCommand();
-            listItemTurboHighSpeed->setValue("\uE14B");
-            listItemTurboLowSpeed->setValue("");
+            listItemTurboSpeed->setValue(m_TurboSpeed ? "高速" : "普通");
             return true;
         }
         return false;
     });
+    list->addItem(listItemTurboSpeed);
 
-    listItemTurboLowSpeed->setClickListener([listItemTurboHighSpeed, listItemTurboLowSpeed, this](u64 keys) {
+    list->addItem(new tsl::elm::CategoryHeader(" 延迟启动连发功能避免误触"));
+
+    auto listItemDelayStart = new tsl::elm::ListItem("防止误触", m_DelayStart ? "开" : "关");
+    listItemDelayStart->setClickListener([listItemDelayStart, this](u64 keys) {
         if (keys & HidNpadButton_A) {
-            m_TurboSpeed = false;
-            IniHelper::setInt("AUTOFIRE", "presstime", 200, m_ConfigPath);
-            IniHelper::setInt("AUTOFIRE", "fireinterval", 50, m_ConfigPath);
+            m_DelayStart = !m_DelayStart;
+            IniHelper::setInt("AUTOFIRE", "delaystart", m_DelayStart ? 1 : 0, m_ConfigPath);
             g_ipcManager.sendReloadAutoFireCommand();
-            listItemTurboHighSpeed->setValue("");
-            listItemTurboLowSpeed->setValue("\uE14B");
+            listItemDelayStart->setValue(m_DelayStart ? "开" : "关");
             return true;
         }
         return false;
     });
+    list->addItem(listItemDelayStart);
     
-    list->addItem(listItemTurboHighSpeed);
-    list->addItem(listItemTurboLowSpeed);
 
     // 按键显示区域高度（720 - 标题97 - 底部73 - 分类标题63 - 3个列表项210 = 277）
-    s32 buttonDisplayHeight = 277;
+    s32 buttonDisplayHeight = 225;
     // 添加按键布局显示区域（根据 s_TurboButtons 动态显示颜色）
     auto buttonDisplay = new tsl::elm::CustomDrawer([](tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h) {
         tsl::Color whiteColor = {0xFF, 0xFF, 0xFF, 0xFF};
         tsl::Color lightBlueColor = {0x00, 0xDD, 0xFF, 0xFF};  // 亮天蓝色
         
-        const s32 buttonSize = 30;   // 按钮大小
+        const s32 buttonSize = 30 * 0.8;   // 按钮大小
         const s32 rowSpacing = 10;   // 行间距
         
         // === 水平位置计算 ===

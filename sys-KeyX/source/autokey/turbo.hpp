@@ -27,6 +27,7 @@ private:
     bool m_IsPressed;           // 当前是按下还是松开周期
     u64 m_LastSwitchTime;       // 上次切换时间
     u64 m_InitialPressTime;     // 首次按下时间（用于200ms延迟）
+    bool m_DelayStart;          // 是否启用延迟启动
     
     // 事件判定
     FeatureEvent DetermineEvent(u64 autokey_buttons);
