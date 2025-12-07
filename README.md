@@ -226,7 +226,7 @@ cd KeyX && make
 
 [![platform](https://img.shields.io/badge/bilibili-玩家-FB7299?logo=bilibili&logoColor=FFFFFF)](https://www.bilibili.com/video/BV1u12cBvEmD/?spm_id_from=333.1387.homepage.video_card.click&vd_source=ee56f275632e70ae7ca2577aa1a56b81)
 [![Latest Version](https://img.shields.io/github/v/release/TOM-BadEN/KeyX?label=latest&color=blue)](https://github.com/TOM-BadEN/KeyX/releases/latest)
-[![GitHub Downloads](https://img.shields.io/github/GitHub/TOM-BadEN/KeyX/total?color=6f42c1)](https://somsubhra.github.io/github-release-stats/?username=TOM-BadEN&repository=KeyX&page=1&per_page=300)
+[![GitHub Downloads](https://img.shields.io/github/downloads/TOM-BadEN/KeyX/total?color=6f42c1)](https://somsubhra.github.io/github-release-stats/?username=TOM-BadEN&repository=KeyX&page=1&per_page=300)
 [![HB App Store](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/TOM-BadEN/KeyX/main/.github/hbappstore.json&label=hb%20app%20store&color=6f42c1)](https://hb-app.store/switch/KeyX)
 
 Nintendo Switch button assistant supporting turbo, key remapping, and macro recording. Features global or per-game configuration with auto-start memory.
