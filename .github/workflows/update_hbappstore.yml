@@ -33,7 +33,7 @@ jobs:
 
           # Write JSON to file
           mkdir -p .github
-          echo "{\"schemaVersion\":1,\"label\":\"hb app store\",\"message\":\"$display\"}" > .github/hbappstore.json
+          echo "{\"schemaVersion\":1,\"label\":\"HB store\",\"message\":\"$display\",\"color\":\"green\"}" > .github/hbappstore.json
 
       - name: Commit and push
         run: |
