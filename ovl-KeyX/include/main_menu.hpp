@@ -3,7 +3,7 @@
 #include "about.hpp"  // 包含关于插件界面头文件
 
 // 游戏状态结构体
-struct TextAreaInfo {
+struct KeyXInfo {
     bool isInGame;                      // 是否在游戏中
     char gameId[17];                    // 游戏ID
     bool isGlobalConfig;                // 全局配置还是自定义配置
@@ -12,6 +12,7 @@ struct TextAreaInfo {
     u64 buttons;                        // 连发按键
     bool isAutoRemapEnabled;            // 映射开关
     bool isAutoMacroEnabled;            // 宏开关
+    u64 macroHotKey;                    // 宏快捷键
 };
 
 // 主菜单类定义
@@ -27,7 +28,7 @@ public:
 
 private:
 
-    TextAreaInfo m_textAreaInfo{};
+    KeyXInfo m_KeyXinfo{};
     tsl::elm::ListItem* m_AutoFireEnableItem = nullptr;
     tsl::elm::ListItem* m_AutoRemapEnableItem = nullptr;
     tsl::elm::ListItem* m_AutoMacroEnableItem = nullptr;

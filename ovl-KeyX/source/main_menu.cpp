@@ -39,31 +39,50 @@ static MappingDef::ButtonMapping s_buttonMappings[MappingDef::BUTTON_COUNT] = {
 };
 
 void MainMenu::RefreshData() {
-    
-    /* 
-     *   检查游戏TID
-     *   目标是根据游戏TID，确认当前是否在游戏中
-     *   如果不在游戏中，那配置文件使用全局配置
-     *   如果在游戏中，那配置文件根据游戏配置文件中的设置来决定
-     */
     u64 currentTitleId = GameMonitor::getCurrentTitleId();
-    m_textAreaInfo.isInGame = (currentTitleId != 0) && SysModuleManager::isRunning();
-    snprintf(m_textAreaInfo.gameId, sizeof(m_textAreaInfo.gameId), "%016lX", currentTitleId);
-    m_textAreaInfo.GameConfigPath = "/config/KeyX/GameConfig/" + std::string(m_textAreaInfo.gameId) + ".ini";
-    m_textAreaInfo.isGlobalConfig = IniHelper::getBool("AUTOFIRE", "globconfig", true, m_textAreaInfo.GameConfigPath);
-    std::string SwitchConfigPath = (m_textAreaInfo.isInGame && ult::isFile(m_textAreaInfo.GameConfigPath) && !m_textAreaInfo.isGlobalConfig) ? m_textAreaInfo.GameConfigPath : CONFIG_PATH;
-    m_textAreaInfo.isAutoFireEnabled = IniHelper::getBool("AUTOFIRE", "autoenable", false, SwitchConfigPath);
-    m_textAreaInfo.isAutoRemapEnabled = IniHelper::getBool("MAPPING", "autoenable", false, SwitchConfigPath);
-    if (m_textAreaInfo.isInGame) m_textAreaInfo.isAutoMacroEnabled = IniHelper::getBool("MACRO", "autoenable", false, m_textAreaInfo.GameConfigPath);   // 宏只读独立游戏配置
-    else m_textAreaInfo.isAutoMacroEnabled = false;
-    if (m_AutoFireEnableItem != nullptr) m_AutoFireEnableItem->setValue(m_textAreaInfo.isAutoFireEnabled ? "已开启" : "已关闭");
-    if (m_AutoRemapEnableItem != nullptr) m_AutoRemapEnableItem->setValue(m_textAreaInfo.isAutoRemapEnabled ? "已开启" : "已关闭");
-    if (m_AutoMacroEnableItem != nullptr) m_AutoMacroEnableItem->setValue(m_textAreaInfo.isAutoMacroEnabled ? "已开启" : "已关闭");
+    m_KeyXinfo.isInGame = (currentTitleId != 0) && SysModuleManager::isRunning();
+    snprintf(m_KeyXinfo.gameId, sizeof(m_KeyXinfo.gameId), "%016lX", currentTitleId);
+    m_KeyXinfo.GameConfigPath = "/config/KeyX/GameConfig/" + std::string(m_KeyXinfo.gameId) + ".ini";  // 独立配置文件路径
+    m_KeyXinfo.isGlobalConfig = IniHelper::getBool("AUTOFIRE", "globconfig", true, m_KeyXinfo.GameConfigPath);  // 是否使用全局配置
+    const std::string switchCfgPath = m_KeyXinfo.isGlobalConfig ? CONFIG_PATH : m_KeyXinfo.GameConfigPath;  // 开关状态配置文件路径
+
+    /**
+     *  1. 如果不在游戏中则三个开关全部为false
+     *  2. 如果在游戏中，则先检查是否使用的是全局配置
+     *  3. 如果使用全局配置则检查是否是首次进入游戏（由系统模块写入标志）
+     *  4. 如果是首次进入游戏，重置掉首次进入游戏的标志，读取是否自动开启的配置项作为开关状态
+     *  6. 如果使用独立配置，直接读独立配置中的开关状态
+     *  7. 宏的开关状态只读取独立配置
+     */
+
+    if (!m_KeyXinfo.isInGame) { 
+        m_KeyXinfo.isAutoFireEnabled = false;
+        m_KeyXinfo.isAutoRemapEnabled = false;
+        m_KeyXinfo.isAutoMacroEnabled = false;
+    } else { 
+        bool firstLaunch = IniHelper::getBool("Launch", "firstlaunch", false, CONFIG_PATH);
+        if (firstLaunch) IniHelper::setBool("Launch", "firstlaunch", false, CONFIG_PATH);
+        if (firstLaunch && m_KeyXinfo.isGlobalConfig){ 
+            bool defaultAutoEnable = IniHelper::getBool("AUTOFIRE", "defaultautoenable", false, CONFIG_PATH);
+            bool defaultRemapEnable = IniHelper::getBool("MAPPING", "defaultautoenable", false, CONFIG_PATH);
+            IniHelper::setBool("AUTOFIRE", "autoenable", defaultAutoEnable, CONFIG_PATH);
+            IniHelper::setBool("MAPPING", "autoenable", defaultRemapEnable, CONFIG_PATH);
+        }
+        m_KeyXinfo.isAutoFireEnabled = IniHelper::getBool("AUTOFIRE", "autoenable", false, switchCfgPath);
+        m_KeyXinfo.isAutoRemapEnabled = IniHelper::getBool("MAPPING", "autoenable", false, switchCfgPath);
+        m_KeyXinfo.isAutoMacroEnabled = IniHelper::getBool("MACRO", "autoenable", false, m_KeyXinfo.GameConfigPath);
+    } 
+
+
+    // 更新功能开关
+    if (m_AutoFireEnableItem != nullptr) m_AutoFireEnableItem->setValue(m_KeyXinfo.isAutoFireEnabled ? "已开启" : "已关闭");
+    if (m_AutoRemapEnableItem != nullptr) m_AutoRemapEnableItem->setValue(m_KeyXinfo.isAutoRemapEnabled ? "已开启" : "已关闭");
+    if (m_AutoMacroEnableItem != nullptr) m_AutoMacroEnableItem->setValue(m_KeyXinfo.isAutoMacroEnabled ? "已开启" : "已关闭");
 
     // 读取按钮掩码值用于绘制按钮图标
-    std::string ConfigPath = m_textAreaInfo.isGlobalConfig ? CONFIG_PATH : m_textAreaInfo.GameConfigPath;
+    std::string ConfigPath = m_KeyXinfo.isGlobalConfig ? CONFIG_PATH : m_KeyXinfo.GameConfigPath;
     std::string buttonsStr = IniHelper::getString("AUTOFIRE", "buttons", "0", ConfigPath);
-    m_textAreaInfo.buttons = std::stoull(buttonsStr);
+    m_KeyXinfo.buttons = std::stoull(buttonsStr);
     
     // 读取映射配置
     for (int i = 0; i < MappingDef::BUTTON_COUNT; i++) {
@@ -73,11 +92,11 @@ void MainMenu::RefreshData() {
     }
 
     // 读取所有宏的快捷键
-    m_macroHotKey = 0;
-    int macroCount = IniHelper::getInt("MACRO", "macroCount", 0, m_textAreaInfo.GameConfigPath);
+    m_KeyXinfo.macroHotKey = 0;
+    int macroCount = IniHelper::getInt("MACRO", "macroCount", 0, m_KeyXinfo.GameConfigPath);
     for (int i = 1; i <= macroCount; i++) {
-        u64 combo = static_cast<u64>(IniHelper::getInt("MACRO", "macro_combo_" + std::to_string(i), 0, m_textAreaInfo.GameConfigPath));
-        m_macroHotKey |= combo;
+        u64 combo = static_cast<u64>(IniHelper::getInt("MACRO", "macro_combo_" + std::to_string(i), 0, m_KeyXinfo.GameConfigPath));
+        m_KeyXinfo.macroHotKey |= combo;
     }
     
 }
@@ -85,53 +104,54 @@ void MainMenu::RefreshData() {
 
 // 连发功能开关
 void MainMenu::AutoKeyToggle() {
-    if (!m_textAreaInfo.isInGame) return;
+    if (!m_KeyXinfo.isInGame) return;
     // 根据状态发送IPC命令
-    Result rc = m_textAreaInfo.isAutoFireEnabled ? g_ipcManager.sendDisableAutoFireCommand() : g_ipcManager.sendEnableAutoFireCommand();
+    Result rc = m_KeyXinfo.isAutoFireEnabled ? g_ipcManager.sendDisableAutoFireCommand() : g_ipcManager.sendEnableAutoFireCommand();
     if (R_FAILED(rc)) return;
     // 切换状态，开变关-关变开
-    m_textAreaInfo.isAutoFireEnabled = !m_textAreaInfo.isAutoFireEnabled;
-    m_AutoFireEnableItem->setValue(m_textAreaInfo.isAutoFireEnabled ? "已开启" : "已关闭");
-    IniHelper::setBool("AUTOFIRE", "globconfig", m_textAreaInfo.isGlobalConfig, m_textAreaInfo.GameConfigPath);
-    IniHelper::setBool("AUTOFIRE", "autoenable", m_textAreaInfo.isAutoFireEnabled, m_textAreaInfo.GameConfigPath);
+    m_KeyXinfo.isAutoFireEnabled = !m_KeyXinfo.isAutoFireEnabled;
+    m_AutoFireEnableItem->setValue(m_KeyXinfo.isAutoFireEnabled ? "已开启" : "已关闭");
+    IniHelper::setBool("AUTOFIRE", "globconfig", m_KeyXinfo.isGlobalConfig, m_KeyXinfo.GameConfigPath);
+    IniHelper::setBool("AUTOFIRE", "autoenable", m_KeyXinfo.isAutoFireEnabled, CONFIG_PATH);
+    IniHelper::setBool("AUTOFIRE", "autoenable", m_KeyXinfo.isAutoFireEnabled, m_KeyXinfo.GameConfigPath);
 }
 
 // 映射功能开关
 void MainMenu::AutoRemapToggle() {
-    if (!m_textAreaInfo.isInGame) return;
+    if (!m_KeyXinfo.isInGame) return;
     // 根据状态发送IPC命令
-    Result rc = m_textAreaInfo.isAutoRemapEnabled ? g_ipcManager.sendDisableMappingCommand() : g_ipcManager.sendEnableMappingCommand();
+    Result rc = m_KeyXinfo.isAutoRemapEnabled ? g_ipcManager.sendDisableMappingCommand() : g_ipcManager.sendEnableMappingCommand();
     if (R_FAILED(rc)) return;
     // 切换状态，开变关-关变开
-    m_textAreaInfo.isAutoRemapEnabled = !m_textAreaInfo.isAutoRemapEnabled;
-    m_AutoRemapEnableItem->setValue(m_textAreaInfo.isAutoRemapEnabled ? "已开启" : "已关闭");
-    IniHelper::setBool("AUTOFIRE", "globconfig", m_textAreaInfo.isGlobalConfig, m_textAreaInfo.GameConfigPath);
-    IniHelper::setBool("MAPPING", "autoenable", m_textAreaInfo.isAutoRemapEnabled, m_textAreaInfo.GameConfigPath);
+    m_KeyXinfo.isAutoRemapEnabled = !m_KeyXinfo.isAutoRemapEnabled;
+    m_AutoRemapEnableItem->setValue(m_KeyXinfo.isAutoRemapEnabled ? "已开启" : "已关闭");
+    IniHelper::setBool("AUTOFIRE", "globconfig", m_KeyXinfo.isGlobalConfig, m_KeyXinfo.GameConfigPath);
+    IniHelper::setBool("MAPPING", "autoenable", m_KeyXinfo.isAutoRemapEnabled, CONFIG_PATH);
+    IniHelper::setBool("MAPPING", "autoenable", m_KeyXinfo.isAutoRemapEnabled, m_KeyXinfo.GameConfigPath);
 }
 
 // 宏功能开关
 void MainMenu::AutoMacroToggle() {
-    if (!m_textAreaInfo.isInGame) return;
+    if (!m_KeyXinfo.isInGame) return;
     // 根据状态发送IPC命令
-    Result rc = m_textAreaInfo.isAutoMacroEnabled ? g_ipcManager.sendDisableMacroCommand() : g_ipcManager.sendEnableMacroCommand();
+    Result rc = m_KeyXinfo.isAutoMacroEnabled ? g_ipcManager.sendDisableMacroCommand() : g_ipcManager.sendEnableMacroCommand();
     if (R_FAILED(rc)) return;
     // 切换状态，开变关-关变开
-    m_textAreaInfo.isAutoMacroEnabled = !m_textAreaInfo.isAutoMacroEnabled;
-    m_AutoMacroEnableItem->setValue(m_textAreaInfo.isAutoMacroEnabled ? "已开启" : "已关闭");
-    IniHelper::setBool("MACRO", "autoenable", m_textAreaInfo.isAutoMacroEnabled, m_textAreaInfo.GameConfigPath);
+    m_KeyXinfo.isAutoMacroEnabled = !m_KeyXinfo.isAutoMacroEnabled;
+    m_AutoMacroEnableItem->setValue(m_KeyXinfo.isAutoMacroEnabled ? "已开启" : "已关闭");
+    IniHelper::setBool("MACRO", "autoenable", m_KeyXinfo.isAutoMacroEnabled, m_KeyXinfo.GameConfigPath);
 }
 
 // 配置切换（全局/独立）
 void MainMenu::ConfigToggle() {
-    if (!m_textAreaInfo.isInGame) return;
-    m_textAreaInfo.isGlobalConfig = !m_textAreaInfo.isGlobalConfig;
-    IniHelper::setBool("AUTOFIRE", "globconfig", m_textAreaInfo.isGlobalConfig, m_textAreaInfo.GameConfigPath);
-    IniHelper::setBool("AUTOFIRE", "autoenable", m_textAreaInfo.isAutoFireEnabled, m_textAreaInfo.GameConfigPath);
-    IniHelper::setBool("MAPPING", "autoenable", m_textAreaInfo.isAutoRemapEnabled, m_textAreaInfo.GameConfigPath);
-    IniHelper::setBool("MACRO", "autoenable", m_textAreaInfo.isAutoMacroEnabled, m_textAreaInfo.GameConfigPath);
-    // 刷新界面显示
-    RefreshData();
-    // 发送重载配置命令
+    if (!m_KeyXinfo.isInGame) return;
+    IniHelper::setBool("AUTOFIRE", "autoenable", m_KeyXinfo.isAutoFireEnabled, CONFIG_PATH);
+    IniHelper::setBool("MAPPING", "autoenable", m_KeyXinfo.isAutoRemapEnabled, CONFIG_PATH);
+    IniHelper::setBool("AUTOFIRE", "autoenable", m_KeyXinfo.isAutoFireEnabled, m_KeyXinfo.GameConfigPath);
+    IniHelper::setBool("MAPPING", "autoenable", m_KeyXinfo.isAutoRemapEnabled, m_KeyXinfo.GameConfigPath);
+    m_KeyXinfo.isGlobalConfig = !m_KeyXinfo.isGlobalConfig;
+    IniHelper::setBool("AUTOFIRE", "globconfig", m_KeyXinfo.isGlobalConfig, m_KeyXinfo.GameConfigPath);
+    RefreshData();   // 刷新界面显示
     Result rc = g_ipcManager.sendReloadBasicCommand();
     if (R_FAILED(rc)) return;
 }
@@ -161,10 +181,10 @@ tsl::elm::Element* MainMenu::createUI()
         // 右侧：两行信息（往左移，避免截断，屏幕可见宽度约615px）
         // 垂直居中：高度97，行间距25，第一行Y=36，第二行Y=61
         renderer->drawString("TID :", false, 235, 36, 15, renderer->a(tsl::style::color::ColorText));
-        renderer->drawString(m_textAreaInfo.gameId, false, 275, 36, 15, renderer->a(tsl::style::color::ColorHighlight));
+        renderer->drawString(m_KeyXinfo.gameId, false, 275, 36, 15, renderer->a(tsl::style::color::ColorHighlight));
         
         renderer->drawString("配置:", false, 235, 61, 15, renderer->a(tsl::style::color::ColorText));
-        const char* config = m_textAreaInfo.isGlobalConfig ? "全局配置" : "独立配置";
+        const char* config = m_KeyXinfo.isGlobalConfig ? "全局配置" : "独立配置";
         renderer->drawString(config, false, 275, 61, 15, renderer->a(tsl::style::color::ColorHighlight));
 
         // 底部按钮（使用绝对坐标）
@@ -181,7 +201,7 @@ tsl::elm::Element* MainMenu::createUI()
         
         
         // 如果在游戏中，绘制按键图标
-        if (m_textAreaInfo.isInGame) {
+        if (m_KeyXinfo.isInGame) {
             tsl::Color whiteColor = {0xFF, 0xFF, 0xFF, 0xFF};          // 白色：未映射
             tsl::Color blueColor = {0x00, 0xDD, 0xFF, 0xFF};           // 亮天蓝色：已映射
             tsl::Color yellowColor = {0xFF, 0xFF, 0x00, 0xFF};         // 黄色：连发小点
@@ -240,8 +260,8 @@ tsl::elm::Element* MainMenu::createUI()
                 
                 // 检查目标按键是否有连发和宏
                 u64 flag = HidHelper::getButtonFlag(targetName);
-                bool hasTurbo = (m_textAreaInfo.buttons & flag) != 0;
-                bool hasMacro = (m_macroHotKey & flag) != 0;
+                bool hasTurbo = (m_KeyXinfo.buttons & flag) != 0;
+                bool hasMacro = (m_KeyXinfo.macroHotKey & flag) != 0;
                 
                 // 绘制黄色小点（连发）
                 if (hasTurbo) {
@@ -318,7 +338,7 @@ tsl::elm::Element* MainMenu::createUI()
 
     // ============= 下半部分：列表区域 =============
     // 创建开启连发列表项
-    m_AutoFireEnableItem = new tsl::elm::ListItem("按键连发", m_textAreaInfo.isAutoFireEnabled ? "已开启" : "已关闭");
+    m_AutoFireEnableItem = new tsl::elm::ListItem("按键连发", m_KeyXinfo.isAutoFireEnabled ? "已开启" : "已关闭");
     m_AutoFireEnableItem->setClickListener([this](u64 keys) {
         if (keys & HidNpadButton_A) {
             AutoKeyToggle();
@@ -328,7 +348,7 @@ tsl::elm::Element* MainMenu::createUI()
     });
     mainList->addItem(m_AutoFireEnableItem);
 
-    m_AutoRemapEnableItem = new tsl::elm::ListItem("按键映射", m_textAreaInfo.isAutoRemapEnabled ? "已开启" : "已关闭");
+    m_AutoRemapEnableItem = new tsl::elm::ListItem("按键映射", m_KeyXinfo.isAutoRemapEnabled ? "已开启" : "已关闭");
     m_AutoRemapEnableItem->setClickListener([this](u64 keys) {
         if (keys & HidNpadButton_A) {
             AutoRemapToggle();
@@ -339,7 +359,7 @@ tsl::elm::Element* MainMenu::createUI()
     mainList->addItem(m_AutoRemapEnableItem);
 
     // 创建设置列表项
-    m_AutoMacroEnableItem = new tsl::elm::ListItem("按键脚本", m_textAreaInfo.isAutoMacroEnabled ? "已开启" : "已关闭");
+    m_AutoMacroEnableItem = new tsl::elm::ListItem("按键脚本", m_KeyXinfo.isAutoMacroEnabled ? "已开启" : "已关闭");
     m_AutoMacroEnableItem->setClickListener([this](u64 keys) {
         if (keys & HidNpadButton_A) {
             AutoMacroToggle();

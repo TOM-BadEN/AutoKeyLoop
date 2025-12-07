@@ -159,6 +159,7 @@ void App::Loop() {
 
 // 处理游戏启动事件
 void App::OnGameLaunched(u64 tid) {
+    ini_putl("Launch", "firstlaunch", 1, CONFIG_PATH); // 在全局文件中标记是首次进入游戏
     m_GameInFocus = true;
     m_CurrentTid = tid;
     LoadGameConfig(tid);
@@ -207,14 +208,18 @@ void App::LoadBasicConfig(u64 tid) {
     m_notifEnabled = ini_getbool("NOTIFICATION", "notif", false, CONFIG_PATH);
     snprintf(m_GameConfigPath, sizeof(m_GameConfigPath), "/config/KeyX/GameConfig/%016lX.ini", tid);
     // 此处用来设定是否使用全局配置，还是独立配置
-    // 功能的开关，是m_SwitchConfigPath
     // 功能的详细参数，是m_ConfigPath
     m_CurrentGlobConfig = ini_getbool("AUTOFIRE", "globconfig", 1, m_GameConfigPath);
-    m_ConfigPath = m_CurrentGlobConfig ? CONFIG_PATH : m_GameConfigPath;
-    m_SwitchConfigPath = (FileExists(m_GameConfigPath) && !m_CurrentGlobConfig) ? m_GameConfigPath : CONFIG_PATH; 
-    m_CurrentAutoEnable = ini_getbool("AUTOFIRE", "autoenable", 0, m_SwitchConfigPath);
-    m_CurrentAutoRemapEnable = ini_getbool("MAPPING", "autoenable", 0, m_SwitchConfigPath);
     m_CurrentAutoMacroEnable = ini_getbool("MACRO", "autoenable", 0, m_GameConfigPath);  // 宏只读取独立配置
+    if (m_CurrentGlobConfig) {
+        m_ConfigPath = CONFIG_PATH;
+        m_CurrentAutoEnable = ini_getbool("AUTOFIRE", "defaultautoenable", 0, CONFIG_PATH);
+        m_CurrentAutoRemapEnable = ini_getbool("MAPPING", "defaultautoenable", 0, CONFIG_PATH);
+    } else {
+        m_ConfigPath = m_GameConfigPath;
+        m_CurrentAutoEnable = ini_getbool("AUTOFIRE", "autoenable", 0, m_GameConfigPath);
+        m_CurrentAutoRemapEnable = ini_getbool("MAPPING", "autoenable", 0, m_GameConfigPath);
+    }
 }
 
 // 开启按键模块

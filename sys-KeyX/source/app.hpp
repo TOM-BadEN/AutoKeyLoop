@@ -24,7 +24,6 @@ private:
     // 当前使用的配置文件路径
     char m_GameConfigPath[64];               // 游戏配置文件路径
     const char* m_ConfigPath;                // 其他配置路径（根据globconfig决定）
-    const char* m_SwitchConfigPath;          // 开关配置路径（优先游戏配置）
 
     // 当前游戏是否在焦点中
     bool m_GameInFocus = false;

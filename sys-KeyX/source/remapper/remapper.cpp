@@ -175,8 +175,11 @@ Result ButtonRemapper::SetMapping(const char* config_path) {
     std::vector<ButtonMapping> mappings;
     LoadMappingsFromConfig(config_path, mappings);
 
-    // 如果是空的代表不需要修改配置，直接返回
-    if (mappings.empty()) return 0;
+    // 如果是空的代表不需要修改配置，直接恢复
+    if (mappings.empty()) {
+        RestoreMapping();
+        return 0;
+    }
 
     // 获取所有手柄的ID
     HidsysUniquePadId pad_ids[8];

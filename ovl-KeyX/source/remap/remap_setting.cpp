@@ -9,7 +9,7 @@
 constexpr const char* CONFIG_PATH = "/config/KeyX/config.ini";
 
 SettingRemap::SettingRemap() {
-    m_defaultAuto = IniHelper::getBool("MAPPING", "autoenable", false, CONFIG_PATH);
+    m_defaultAuto = IniHelper::getBool("MAPPING", "defaultautoenable", false, CONFIG_PATH);
 }
 
 tsl::elm::Element* SettingRemap::createUI() {
@@ -52,7 +52,7 @@ tsl::elm::Element* SettingRemap::createUI() {
     listItemDefaultAuto->setClickListener([listItemDefaultAuto, this](u64 keys) {
         if (keys & HidNpadButton_A) {
             m_defaultAuto = !m_defaultAuto;
-            IniHelper::setBool("MAPPING", "autoenable", m_defaultAuto, CONFIG_PATH);
+            IniHelper::setBool("MAPPING", "defaultautoenable", m_defaultAuto, CONFIG_PATH);
             g_ipcManager.sendReloadBasicCommand();
             listItemDefaultAuto->setValue(m_defaultAuto ? "开" : "关");
             return true;

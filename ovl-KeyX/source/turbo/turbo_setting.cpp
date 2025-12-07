@@ -9,7 +9,7 @@
 constexpr const char* CONFIG_PATH = "/config/KeyX/config.ini";
 
 SettingTurbo::SettingTurbo() {
-    m_defaultAuto = IniHelper::getBool("AUTOFIRE", "autoenable", false, CONFIG_PATH);
+    m_defaultAuto = IniHelper::getBool("AUTOFIRE", "defaultautoenable", false, CONFIG_PATH);
 }
 
 tsl::elm::Element* SettingTurbo::createUI() {
@@ -52,7 +52,7 @@ tsl::elm::Element* SettingTurbo::createUI() {
     listItemDefaultAuto->setClickListener([listItemDefaultAuto, this](u64 keys) {
         if (keys & HidNpadButton_A) {
             m_defaultAuto = !m_defaultAuto;
-            IniHelper::setBool("AUTOFIRE", "autoenable", m_defaultAuto, CONFIG_PATH);
+            IniHelper::setBool("AUTOFIRE", "defaultautoenable", m_defaultAuto, CONFIG_PATH);
             g_ipcManager.sendReloadBasicCommand();
             listItemDefaultAuto->setValue(m_defaultAuto ? "开" : "关");
             return true;
