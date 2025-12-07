@@ -1,8 +1,8 @@
-name: Update HB App Store downloads
+name: 更新HB App Store下载量
 
 on:
   schedule:
-    - cron: "0 */6 * * *"  # every 6 hours
+    - cron: "0 */6 * * *"  # 每6小时更新一次
   workflow_dispatch:
 
 permissions:
