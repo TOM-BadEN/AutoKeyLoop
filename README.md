@@ -64,7 +64,7 @@ https://github.com/user-attachments/assets/d7f530b9-baed-455c-9887-5b7a96a9dadf
 [![platform](https://img.shields.io/badge/bilibili-玩家-FB7299?logo=bilibili&logoColor=FFFFFF)](https://www.bilibili.com/video/BV1u12cBvEmD/?spm_id_from=333.1387.homepage.video_card.click&vd_source=ee56f275632e70ae7ca2577aa1a56b81)
 [![Latest Version](https://img.shields.io/github/v/release/TOM-BadEN/KeyX?label=latest&color=blue)](https://github.com/TOM-BadEN/KeyX/releases/latest)
 [![GitHub Downloads](https://img.shields.io/github/downloads/TOM-BadEN/KeyX/total?label=GitHub&color=6f42c1&logo=github&logoColor=FFFFFF)](https://somsubhra.github.io/github-release-stats/?username=TOM-BadEN&repository=KeyX&page=1&per_page=300)
-[![HB App Store](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/TOM-BadEN/KeyX/main/.github/hbappstore.json&label=hb%20app%20store&color=6f42c1)](https://hb-app.store/switch/KeyX)
+[![HB App Store](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/TOM-BadEN/KeyX/main/.github/hbappstore.json&label=hb%20app%20store&color=6f42c1&logo=homeassistantcommunitystore&logoColor=FFFFFF)](https://hb-app.store/switch/KeyX)
 
 Nintendo Switch 按键助手，支持连发、按键重新分配、按键宏三大功能。且拥有全局或游戏独立配置，根据记忆自动启动功能。
 整个插件由特斯拉插件与系统模块两部分组成。
