@@ -211,7 +211,7 @@ void App::LoadBasicConfig(u64 tid) {
     // 功能的详细参数，是m_ConfigPath
     m_CurrentGlobConfig = ini_getbool("AUTOFIRE", "globconfig", 1, m_GameConfigPath);
     m_ConfigPath = m_CurrentGlobConfig ? CONFIG_PATH : m_GameConfigPath;
-    m_SwitchConfigPath = FileExists(m_GameConfigPath) ? m_GameConfigPath : CONFIG_PATH;  
+    m_SwitchConfigPath = (FileExists(m_GameConfigPath) && !m_CurrentGlobConfig) ? m_GameConfigPath : CONFIG_PATH; 
     m_CurrentAutoEnable = ini_getbool("AUTOFIRE", "autoenable", 0, m_SwitchConfigPath);
     m_CurrentAutoRemapEnable = ini_getbool("MAPPING", "autoenable", 0, m_SwitchConfigPath);
     m_CurrentAutoMacroEnable = ini_getbool("MACRO", "autoenable", 0, m_GameConfigPath);  // 宏只读取独立配置

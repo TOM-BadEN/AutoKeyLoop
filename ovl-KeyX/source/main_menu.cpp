@@ -51,7 +51,7 @@ void MainMenu::RefreshData() {
     snprintf(m_textAreaInfo.gameId, sizeof(m_textAreaInfo.gameId), "%016lX", currentTitleId);
     m_textAreaInfo.GameConfigPath = "/config/KeyX/GameConfig/" + std::string(m_textAreaInfo.gameId) + ".ini";
     m_textAreaInfo.isGlobalConfig = IniHelper::getBool("AUTOFIRE", "globconfig", true, m_textAreaInfo.GameConfigPath);
-    std::string SwitchConfigPath = (m_textAreaInfo.isInGame && ult::isFile(m_textAreaInfo.GameConfigPath)) ? m_textAreaInfo.GameConfigPath : CONFIG_PATH;
+    std::string SwitchConfigPath = (m_textAreaInfo.isInGame && ult::isFile(m_textAreaInfo.GameConfigPath) && !m_textAreaInfo.isGlobalConfig) ? m_textAreaInfo.GameConfigPath : CONFIG_PATH;
     m_textAreaInfo.isAutoFireEnabled = IniHelper::getBool("AUTOFIRE", "autoenable", false, SwitchConfigPath);
     m_textAreaInfo.isAutoRemapEnabled = IniHelper::getBool("MAPPING", "autoenable", false, SwitchConfigPath);
     if (m_textAreaInfo.isInGame) m_textAreaInfo.isAutoMacroEnabled = IniHelper::getBool("MACRO", "autoenable", false, m_textAreaInfo.GameConfigPath);   // 宏只读独立游戏配置
