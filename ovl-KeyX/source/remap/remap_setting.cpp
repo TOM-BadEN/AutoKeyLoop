@@ -45,7 +45,7 @@ tsl::elm::Element* SettingRemap::createUI() {
     auto ItemBasicSetting = new tsl::elm::CategoryHeader(" 基础功能设置");
     list->addItem(ItemBasicSetting);
     list->addItem(new tsl::elm::CustomDrawer([](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
-        renderer->drawString("  开启后自动启用映射功能", false, x + 5, y + 20-7, 16, (tsl::highlightColor2));
+        renderer->drawString("  自动启用映射功能（仅全局配置）", false, x + 5, y + 20-7, 16, (tsl::highlightColor2));
     }), 30);
 
     auto listItemDefaultAuto = new tsl::elm::ListItem("默认映射", m_defaultAuto ? "开" : "关");

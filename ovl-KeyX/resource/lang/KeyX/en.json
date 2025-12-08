@@ -43,7 +43,7 @@
     "系统模块": "SysModule",
     "配置映射功能": "Mapping Cfg",
     " 调整需要映射的按键": "  Adjust Remap Key",
-    "  开启后自动启用映射功能": "  Auto enable mapping",
+    "  自动启用映射功能（仅全局配置）": "  Auto enable mapping (Global only)",
     "默认映射": "Auto-Mapping",
     " 注意事项": "  Notes",
     "  映射功能不占用任何内存": "  Mapping no memory",
