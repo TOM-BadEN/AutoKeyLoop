@@ -28,6 +28,8 @@ private:
     // 当前游戏是否在焦点中
     bool m_GameInFocus = false;
 
+    bool m_FirstLaunch = false;
+
     // 连发功能相关配置
     u64 m_CurrentTid = 0;                    // 当前游戏 TID
     bool m_CurrentAutoEnable = false;        // 是否自动启动

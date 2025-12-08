@@ -44,36 +44,16 @@ void MainMenu::RefreshData() {
     snprintf(m_KeyXinfo.gameId, sizeof(m_KeyXinfo.gameId), "%016lX", currentTitleId);
     m_KeyXinfo.GameConfigPath = "/config/KeyX/GameConfig/" + std::string(m_KeyXinfo.gameId) + ".ini";  // 独立配置文件路径
     m_KeyXinfo.isGlobalConfig = IniHelper::getBool("AUTOFIRE", "globconfig", true, m_KeyXinfo.GameConfigPath);  // 是否使用全局配置
-    const std::string switchCfgPath = m_KeyXinfo.isGlobalConfig ? CONFIG_PATH : m_KeyXinfo.GameConfigPath;  // 开关状态配置文件路径
-
-    /**
-     *  1. 如果不在游戏中则三个开关全部为false
-     *  2. 如果在游戏中，则先检查是否使用的是全局配置
-     *  3. 如果使用全局配置则检查是否是首次进入游戏（由系统模块写入标志）
-     *  4. 如果是首次进入游戏，重置掉首次进入游戏的标志，读取是否自动开启的配置项作为开关状态
-     *  6. 如果使用独立配置，直接读独立配置中的开关状态
-     *  7. 宏的开关状态只读取独立配置
-     */
-
-    if (!m_KeyXinfo.isInGame) { 
+    std::string SwitchConfigPath = m_KeyXinfo.isGlobalConfig ? CONFIG_PATH : m_KeyXinfo.GameConfigPath;
+    if (m_KeyXinfo.isInGame) {
+        m_KeyXinfo.isAutoFireEnabled = IniHelper::getBool("AUTOFIRE", "autoenable", false, SwitchConfigPath);
+        m_KeyXinfo.isAutoRemapEnabled = IniHelper::getBool("MAPPING", "autoenable", false, SwitchConfigPath);
+        m_KeyXinfo.isAutoMacroEnabled = IniHelper::getBool("MACRO", "autoenable", false, m_KeyXinfo.GameConfigPath);   // 宏只读独立游戏配置
+    } else {    
         m_KeyXinfo.isAutoFireEnabled = false;
         m_KeyXinfo.isAutoRemapEnabled = false;
         m_KeyXinfo.isAutoMacroEnabled = false;
-    } else { 
-        bool firstLaunch = IniHelper::getBool("Launch", "firstlaunch", false, CONFIG_PATH);
-        if (firstLaunch) IniHelper::setBool("Launch", "firstlaunch", false, CONFIG_PATH);
-        if (firstLaunch && m_KeyXinfo.isGlobalConfig){ 
-            bool defaultAutoEnable = IniHelper::getBool("AUTOFIRE", "defaultautoenable", false, CONFIG_PATH);
-            bool defaultRemapEnable = IniHelper::getBool("MAPPING", "defaultautoenable", false, CONFIG_PATH);
-            IniHelper::setBool("AUTOFIRE", "autoenable", defaultAutoEnable, CONFIG_PATH);
-            IniHelper::setBool("MAPPING", "autoenable", defaultRemapEnable, CONFIG_PATH);
-        }
-        m_KeyXinfo.isAutoFireEnabled = IniHelper::getBool("AUTOFIRE", "autoenable", false, switchCfgPath);
-        m_KeyXinfo.isAutoRemapEnabled = IniHelper::getBool("MAPPING", "autoenable", false, switchCfgPath);
-        m_KeyXinfo.isAutoMacroEnabled = IniHelper::getBool("MACRO", "autoenable", false, m_KeyXinfo.GameConfigPath);
-    } 
-
-
+    }
     // 更新功能开关
     if (m_AutoFireEnableItem != nullptr) m_AutoFireEnableItem->setValue(m_KeyXinfo.isAutoFireEnabled ? "已开启" : "已关闭");
     if (m_AutoRemapEnableItem != nullptr) m_AutoRemapEnableItem->setValue(m_KeyXinfo.isAutoRemapEnabled ? "已开启" : "已关闭");
@@ -112,8 +92,8 @@ void MainMenu::AutoKeyToggle() {
     m_KeyXinfo.isAutoFireEnabled = !m_KeyXinfo.isAutoFireEnabled;
     m_AutoFireEnableItem->setValue(m_KeyXinfo.isAutoFireEnabled ? "已开启" : "已关闭");
     IniHelper::setBool("AUTOFIRE", "globconfig", m_KeyXinfo.isGlobalConfig, m_KeyXinfo.GameConfigPath);
-    IniHelper::setBool("AUTOFIRE", "autoenable", m_KeyXinfo.isAutoFireEnabled, CONFIG_PATH);
     IniHelper::setBool("AUTOFIRE", "autoenable", m_KeyXinfo.isAutoFireEnabled, m_KeyXinfo.GameConfigPath);
+    IniHelper::setBool("AUTOFIRE", "autoenable", m_KeyXinfo.isAutoFireEnabled, CONFIG_PATH);
 }
 
 // 映射功能开关
@@ -126,8 +106,8 @@ void MainMenu::AutoRemapToggle() {
     m_KeyXinfo.isAutoRemapEnabled = !m_KeyXinfo.isAutoRemapEnabled;
     m_AutoRemapEnableItem->setValue(m_KeyXinfo.isAutoRemapEnabled ? "已开启" : "已关闭");
     IniHelper::setBool("AUTOFIRE", "globconfig", m_KeyXinfo.isGlobalConfig, m_KeyXinfo.GameConfigPath);
-    IniHelper::setBool("MAPPING", "autoenable", m_KeyXinfo.isAutoRemapEnabled, CONFIG_PATH);
     IniHelper::setBool("MAPPING", "autoenable", m_KeyXinfo.isAutoRemapEnabled, m_KeyXinfo.GameConfigPath);
+    IniHelper::setBool("MAPPING", "autoenable", m_KeyXinfo.isAutoRemapEnabled, CONFIG_PATH);
 }
 
 // 宏功能开关
@@ -145,12 +125,13 @@ void MainMenu::AutoMacroToggle() {
 // 配置切换（全局/独立）
 void MainMenu::ConfigToggle() {
     if (!m_KeyXinfo.isInGame) return;
-    IniHelper::setBool("AUTOFIRE", "autoenable", m_KeyXinfo.isAutoFireEnabled, CONFIG_PATH);
-    IniHelper::setBool("MAPPING", "autoenable", m_KeyXinfo.isAutoRemapEnabled, CONFIG_PATH);
-    IniHelper::setBool("AUTOFIRE", "autoenable", m_KeyXinfo.isAutoFireEnabled, m_KeyXinfo.GameConfigPath);
-    IniHelper::setBool("MAPPING", "autoenable", m_KeyXinfo.isAutoRemapEnabled, m_KeyXinfo.GameConfigPath);
     m_KeyXinfo.isGlobalConfig = !m_KeyXinfo.isGlobalConfig;
     IniHelper::setBool("AUTOFIRE", "globconfig", m_KeyXinfo.isGlobalConfig, m_KeyXinfo.GameConfigPath);
+    IniHelper::setBool("AUTOFIRE", "autoenable", m_KeyXinfo.isAutoFireEnabled, m_KeyXinfo.GameConfigPath);
+    IniHelper::setBool("AUTOFIRE", "autoenable", m_KeyXinfo.isAutoFireEnabled, CONFIG_PATH);
+    IniHelper::setBool("MAPPING", "autoenable", m_KeyXinfo.isAutoRemapEnabled, m_KeyXinfo.GameConfigPath);
+    IniHelper::setBool("MAPPING", "autoenable", m_KeyXinfo.isAutoRemapEnabled, CONFIG_PATH);
+    IniHelper::setBool("MACRO", "autoenable", m_KeyXinfo.isAutoMacroEnabled, m_KeyXinfo.GameConfigPath);
     RefreshData();   // 刷新界面显示
     Result rc = g_ipcManager.sendReloadBasicCommand();
     if (R_FAILED(rc)) return;

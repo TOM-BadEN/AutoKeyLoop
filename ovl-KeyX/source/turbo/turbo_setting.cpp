@@ -53,7 +53,6 @@ tsl::elm::Element* SettingTurbo::createUI() {
         if (keys & HidNpadButton_A) {
             m_defaultAuto = !m_defaultAuto;
             IniHelper::setBool("AUTOFIRE", "defaultautoenable", m_defaultAuto, CONFIG_PATH);
-            g_ipcManager.sendReloadBasicCommand();
             listItemDefaultAuto->setValue(m_defaultAuto ? "开" : "关");
             return true;
         }
