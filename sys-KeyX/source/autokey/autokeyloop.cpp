@@ -123,7 +123,6 @@ void AutoKeyLoop::MainLoop() {
                 hiddbgDumpHdlsStates(m_HdlsSessionId, &m_StateList);
                 break;
             case FeatureEvent::Turbo_EXECUTING:
-                ApplyReverseMapping(result.OtherButtons);
                 ApplyHdlsState(result);
                 break;
             case FeatureEvent::Macro_EXECUTING:
@@ -369,6 +368,7 @@ void AutoKeyLoop::InjectHandheld(ProcessResult& result) {
             state.analog_stick_r = result.analog_stick_r;
             hiddbgSetHdlsState(m_StateList.entries[i].handle, &state);
         } else if (device_type == HidDeviceType_DebugPad) {
+            ApplyReverseMapping(result.OtherButtons);
             state.buttons = result.OtherButtons;
             state.analog_stick_l = result.analog_stick_l;
             state.analog_stick_r = result.analog_stick_r;
