@@ -6,8 +6,19 @@
 #include "refresh.hpp"
 
 namespace {
-    // 储存当前选中的连发按键的位掩码
-    u64 s_TurboButtons = 0;  
+    u64 s_TurboButtons = 0;
+    
+    struct SpeedConfig {
+        const char* name;
+        int press;
+        int release;
+        tsl::Color color;
+    };
+    constexpr SpeedConfig SPEED_CONFIGS[] = {
+        {"极速", 50, 50, {0xF, 0x5, 0x5, 0xF}},       // 红色
+        {"高速", 100, 100, {0x00, 0xDD, 0xFF, 0xFF}}, // 蓝色
+        {"普通", 200, 50, {0x00, 0xFF, 0xDD, 0xFF}},  // 标准颜色(00FFDD)
+    };
 }
 
 SettingTurboConfig::SettingTurboConfig(bool isGlobal, u64 currentTitleId)  
@@ -24,8 +35,11 @@ SettingTurboConfig::SettingTurboConfig(bool isGlobal, u64 currentTitleId)
         snprintf(m_ConfigPath, sizeof(m_ConfigPath), "/config/KeyX/config.ini");
     }
 
-    // 读取速度配置（0=普通，1=高速）
-    m_TurboSpeed = (IniHelper::getInt("AUTOFIRE", "presstime", 100, m_ConfigPath) == 100);
+    // 读取速度配置（0=极速, 1=高速, 2=普通）
+    int press = IniHelper::getInt("AUTOFIRE", "presstime", 50, m_ConfigPath);
+    if (press == 50) m_TurboSpeed = 0;
+    else if (press == 100) m_TurboSpeed = 1;
+    else m_TurboSpeed = 2;
     // 读取防止误触配置（0=关闭，1=开启）
     m_DelayStart = IniHelper::getInt("AUTOFIRE", "delaystart", 1, m_ConfigPath);
     // 读取连发按键配置（默认值：0 = 未设置连发）
@@ -53,14 +67,18 @@ tsl::elm::Element* SettingTurboConfig::createUI() {
     list->addItem(listItemTurboKey);
 
 
-    auto listItemTurboSpeed = new tsl::elm::ListItem("连发速度", m_TurboSpeed ? "高速" : "普通");
+    auto& cfg = SPEED_CONFIGS[m_TurboSpeed];
+    auto listItemTurboSpeed = new tsl::elm::ListItem("连发速度", cfg.name);
+    listItemTurboSpeed->setValueColor(cfg.color);
     listItemTurboSpeed->setClickListener([listItemTurboSpeed, this](u64 keys) {
         if (keys & HidNpadButton_A) {
-            m_TurboSpeed = !m_TurboSpeed;
-            IniHelper::setInt("AUTOFIRE", "presstime", m_TurboSpeed ? 100 : 200, m_ConfigPath);
-            IniHelper::setInt("AUTOFIRE", "fireinterval", m_TurboSpeed ? 100 : 50, m_ConfigPath);
+            m_TurboSpeed = (m_TurboSpeed + 1) % 3;
+            auto& newCfg = SPEED_CONFIGS[m_TurboSpeed];
+            IniHelper::setInt("AUTOFIRE", "presstime", newCfg.press, m_ConfigPath);
+            IniHelper::setInt("AUTOFIRE", "fireinterval", newCfg.release, m_ConfigPath);
             g_ipcManager.sendReloadAutoFireCommand();
-            listItemTurboSpeed->setValue(m_TurboSpeed ? "高速" : "普通");
+            listItemTurboSpeed->setValue(newCfg.name);
+            listItemTurboSpeed->setValueColor(newCfg.color);
             return true;
         }
         return false;

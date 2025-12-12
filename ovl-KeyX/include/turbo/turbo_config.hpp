@@ -11,7 +11,7 @@ private:
     bool m_isGlobal;  // true=全局配置, false=独立配置
     char m_gameName[64];  // 当前游戏名称
     char m_ConfigPath[256];  // 配置文件路径
-    bool m_TurboSpeed;  // 是否高速连发
+    int m_TurboSpeed;   // 连发速度档位（0=极速, 1=高速, 2=普通）
     bool m_DelayStart;  // 是否延迟启动
 };
 
