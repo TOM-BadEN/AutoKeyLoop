@@ -522,6 +522,33 @@ bool MacroEditGui::handleNormalInput(u64 keysDown, u64 keysHeld) {
         }
         return true;
     }
+    
+    // 翻页功能（非选择模式下）
+    if (!m_selectMode && maxIndex >= 0) {
+        s32 pageSize = m_listHeight / ITEM_HEIGHT;
+        if (pageSize < 1) pageSize = 1;
+        
+        if (keysDown & HidNpadButton_L) {
+            m_selectedIndex -= pageSize;
+            if (m_selectedIndex < 0) m_selectedIndex = 0;
+            s32 itemTop = m_selectedIndex * ITEM_HEIGHT;
+            while (itemTop < m_scrollOffset) {
+                m_scrollOffset -= ITEM_HEIGHT;
+            }
+            if (m_scrollOffset < 0) m_scrollOffset = 0;
+            return true;
+        }
+        if (keysDown & HidNpadButton_R) {
+            m_selectedIndex += pageSize;
+            if (m_selectedIndex > maxIndex) m_selectedIndex = maxIndex;
+            s32 itemBottom = (m_selectedIndex + 1) * ITEM_HEIGHT;
+            while (itemBottom > m_scrollOffset + m_listHeight) {
+                m_scrollOffset += ITEM_HEIGHT;
+            }
+            return true;
+        }
+    }
+    
     return false;
 }
 
