@@ -84,6 +84,12 @@ const char* MacroData::getFilePath() {
 
 // 保存编辑后的宏数据
 bool MacroData::saveForEdit() {
+    // 确保最后有释放帧（防止卡键）
+    if (!s_frames.empty()) {
+        auto& f = s_frames.back();
+        if (f.keysHeld | f.leftX | f.leftY | f.rightX | f.rightY) s_frames.insert(s_frames.end(), 2, {});
+    }
+
     FILE* fp = fopen(s_filePath, "wb");
     if (!fp) return false;
     s_header.frameCount = s_frames.size();
@@ -366,11 +372,17 @@ bool MacroData::undo() {
 }
 
 // 清理内存
-void MacroData::cleanup() {
+void MacroData::allCleanup() {
     s_frames.clear();
     s_frames.shrink_to_fit();
     s_actions.clear();
     s_actions.shrink_to_fit();
+    s_undoStack.clear();
+    s_undoStack.shrink_to_fit();
+}
+
+// 清理撤销快照内存
+void MacroData::undoCleanup() {
     s_undoStack.clear();
     s_undoStack.shrink_to_fit();
 }

@@ -5,6 +5,7 @@ class MacroEditGui : public tsl::Gui
 {
 public:
     MacroEditGui(const char* gameName, bool isRecord);
+    ~MacroEditGui();
     virtual tsl::elm::Element* createUI() override;
     virtual bool handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) override;
 

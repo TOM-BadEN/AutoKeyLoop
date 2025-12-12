@@ -58,6 +58,10 @@ MacroEditGui::MacroEditGui(const char* gameName, bool isRecord)
     MacroData::parseActions();
 }
 
+MacroEditGui::~MacroEditGui() {
+    MacroData::undoCleanup();
+}
+
 tsl::elm::Element* MacroEditGui::createUI() {
     const auto& info = MacroData::getBasicInfo();
     std::string subtitle = std::string(info.fileName) + ult::i18n(" 撤销修改");

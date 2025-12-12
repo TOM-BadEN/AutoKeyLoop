@@ -68,7 +68,8 @@ public:
     static bool canUndo();
     
     // 内存管理
-    static void cleanup();
+    static void allCleanup();
+    static void undoCleanup();
 
 private:
     static char s_filePath[128];

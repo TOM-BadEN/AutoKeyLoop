@@ -42,6 +42,10 @@ App::~App() {
 
 // 初始化IPC服务
 bool App::InitializeIPC() {
+
+    // 加载白名单
+    GameMonitor::LoadWhitelist();
+
     // 创建IPC服务
     ipc_server = std::make_unique<IPCServer>();
 
