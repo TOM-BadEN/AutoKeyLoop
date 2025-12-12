@@ -5,6 +5,7 @@
 #include <minIni.h>
 #include <cstdlib>
 #include "libnotification.h"
+#include "language.hpp"
 
 #define CONFIG_DIR "/config/KeyX"
 #define CONFIG_PATH "/config/KeyX/config.ini"
@@ -287,13 +288,13 @@ void App::CreateNotification(bool Enable) {
     if (!m_CurrentAutoEnable && !m_CurrentAutoRemapEnable && !m_CurrentAutoMacroEnable) return;
     std::string message = "";
     if (m_CurrentAutoEnable && m_CurrentAutoRemapEnable && m_CurrentAutoMacroEnable) message = g_NOTIF_All;
-    else else {
+    else {
         bool first = true;
         if (m_CurrentAutoEnable) { message += g_NOTIF_Tubro; first = false; }
-        if (m_CurrentAutoRemapEnable) { if (!first) message += g_NOTIF_AND; message += g_NOTIF_Mapping; first = false; }
-        if (m_CurrentAutoMacroEnable) { if (!first) message += g_NOTIF_AND; message += g_NOTIF_Macro; }
+        if (m_CurrentAutoRemapEnable) { if (!first) message += g_NOTIF_And; message += g_NOTIF_Mapping; first = false; }
+        if (m_CurrentAutoMacroEnable) { if (!first) message += g_NOTIF_And; message += g_NOTIF_Macro; }
     }
     message += Enable ? g_NOTIF_On : g_NOTIF_Off;
-    createNotification(message, 2, INFO, RIGHT);
+    createNotification(message.c_str(), 2, INFO, RIGHT);
 }
 

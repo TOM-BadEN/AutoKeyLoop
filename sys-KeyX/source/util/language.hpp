@@ -1,5 +1,6 @@
 #pragma once
 #include <switch.h>
+#include <string>
 
 // 定义全局变量
 inline std::string g_NOTIF_Tubro = "连发";
@@ -30,7 +31,7 @@ inline void getSetNotifLanguage() {
             break;
         case SetLanguage_ZHTW:
         case SetLanguage_ZHHANT:
-            g_NOTIF_AND = "與";
+            g_NOTIF_And = "與";
             g_NOTIF_Off = "已停用";
             g_NOTIF_On = "已啟用";
             g_NOTIF_Tubro = "連發";
@@ -39,7 +40,7 @@ inline void getSetNotifLanguage() {
             g_NOTIF_All = "全部功能";
             break;
         case SetLanguage_JA:
-            g_NOTIF_AND = "と";
+            g_NOTIF_And = "と";
             g_NOTIF_Off = "無効";
             g_NOTIF_On = "有効";
             g_NOTIF_Tubro = "連射";
@@ -48,7 +49,7 @@ inline void getSetNotifLanguage() {
             g_NOTIF_All = "全機能";
             break;
         case SetLanguage_KO:
-            g_NOTIF_AND = " 및 ";
+            g_NOTIF_And = " 및 ";
             g_NOTIF_Off = " 해제";
             g_NOTIF_On = " 적용";
             g_NOTIF_Tubro = "연사";
@@ -58,7 +59,7 @@ inline void getSetNotifLanguage() {
             break;
         case SetLanguage_FR:
         case SetLanguage_FRCA:
-            g_NOTIF_AND = " et ";
+            g_NOTIF_And = " et ";
             g_NOTIF_Off = " Off";
             g_NOTIF_On = " On";
             g_NOTIF_Tubro = "Tubro";
@@ -67,7 +68,7 @@ inline void getSetNotifLanguage() {
             g_NOTIF_All = "Tout";
             break;
         case SetLanguage_DE:
-            g_NOTIF_AND = " und ";
+            g_NOTIF_And = " und ";
             g_NOTIF_Off = " Aus";
             g_NOTIF_On = " An";
             g_NOTIF_Tubro = "Tubro";
@@ -76,7 +77,7 @@ inline void getSetNotifLanguage() {
             g_NOTIF_All = "Alle";
             break;
         case SetLanguage_IT:
-            g_NOTIF_AND = " e ";
+            g_NOTIF_And = " e ";
             g_NOTIF_Off = " Off";
             g_NOTIF_On = " On";
             g_NOTIF_Tubro = "Tubro";
@@ -86,7 +87,7 @@ inline void getSetNotifLanguage() {
             break;
         case SetLanguage_ES:
         case SetLanguage_ES419:
-            g_NOTIF_AND = " y ";
+            g_NOTIF_And = " y ";
             g_NOTIF_Off = " Off";
             g_NOTIF_On = " On";
             g_NOTIF_Tubro = "Tubro";
@@ -96,7 +97,7 @@ inline void getSetNotifLanguage() {
             break;
         case SetLanguage_PT:
         case SetLanguage_PTBR:
-            g_NOTIF_AND = " e ";
+            g_NOTIF_And = " e ";
             g_NOTIF_Off = " Off";
             g_NOTIF_On = " On";
             g_NOTIF_Tubro = "Tubro";
@@ -105,7 +106,7 @@ inline void getSetNotifLanguage() {
             g_NOTIF_All = "Tudo";
             break;
         case SetLanguage_RU:
-            g_NOTIF_AND = " и ";
+            g_NOTIF_And = " и ";
             g_NOTIF_Off = " Выкл";
             g_NOTIF_On = " Вкл";
             g_NOTIF_Tubro = "Tubro";
@@ -114,7 +115,7 @@ inline void getSetNotifLanguage() {
             g_NOTIF_All = "Все";
             break;
         case SetLanguage_NL:
-            g_NOTIF_AND = " en ";
+            g_NOTIF_And = " en ";
             g_NOTIF_Off = " Uit";
             g_NOTIF_On = " Aan";
             g_NOTIF_Tubro = "Tubro";
@@ -123,7 +124,7 @@ inline void getSetNotifLanguage() {
             g_NOTIF_All = "Alles";
             break;
         default:
-            g_NOTIF_AND = " and ";
+            g_NOTIF_And = " and ";
             g_NOTIF_Off = " Off";
             g_NOTIF_On = " On";
             g_NOTIF_Tubro = "Tubro";
