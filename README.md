@@ -108,6 +108,7 @@ Nintendo Switch 按键助手，支持连发、按键重新分配、按键宏三�
 - 按一下对应快捷键为单次播放
 - 按住对应快捷键为循环播放
 - 播放期间再次按下快捷键取消播放
+- 精巧美观的宏编辑器
 
 ## 内存占用
 
@@ -271,6 +272,7 @@ The complete plugin consists of Tesla overlay and system module.
 - Press shortcut key once for single playback
 - Hold shortcut key for loop playback
 - Press shortcut key again during playback to cancel
+- Beautiful macro editor
 
 ## Memory Usage
 
