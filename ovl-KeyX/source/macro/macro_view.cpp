@@ -8,6 +8,7 @@
 #include "refresh.hpp"
 #include <algorithm>
 #include "ipc.hpp"
+#include "macro_edit.hpp"
 
 namespace {
 
@@ -135,12 +136,11 @@ tsl::elm::Element* MacroViewGui::createUI() {
     auto list = new tsl::elm::List();
     auto textArea = new tsl::elm::CustomDrawer([this](tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h) {
         constexpr const char* kLabels[] = {
-            "游戏名称：", "游戏编号：", "脚本名称：",
+            "游戏编号：", "脚本名称：",
             "脚本大小：", "录制时间：", "录制帧率：", "录制帧数："
         };
 
         const char* values[] = {
-            m_info.gameName,
             m_info.titleId,
             m_info.macroName,
             m_info.fileSizeKb,
@@ -170,7 +170,7 @@ tsl::elm::Element* MacroViewGui::createUI() {
             startY += lineHeight;
         }
     });
-    list->addItem(textArea, 310);
+    list->addItem(textArea, 240);
 
     m_listButton = new tsl::elm::ListItem("分配按键", m_Hotkey ? HidHelper::getCombinedIcons(m_Hotkey) : ">");
     m_listButton->setClickListener([this](u64 keys) {
@@ -191,6 +191,17 @@ tsl::elm::Element* MacroViewGui::createUI() {
         return false;
     });
     list->addItem(listChangeName);
+
+    auto listEditMacro = new tsl::elm::ListItem("编辑脚本", ">");
+    listEditMacro->setClickListener([this](u64 keys) {
+        if (keys & HidNpadButton_A) {
+            tsl::changeTo<MacroEditGui>(m_macroFilePath, m_info.gameName);
+            return true;
+        }   
+        return false;
+    });  
+    list->addItem(listEditMacro);
+
 
     m_deleteItem = new tsl::elm::ListItem("删除脚本","按  删除");
     list->addItem(m_deleteItem);

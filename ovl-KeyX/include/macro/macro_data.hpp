@@ -1,0 +1,70 @@
+#pragma once
+#include <vector>
+#include <string>
+#include "macro_record.hpp"
+
+// 摇杆方向枚举
+enum class StickDir { 
+    None, Up, UpRight, Right, DownRight, 
+    Down, DownLeft, Left, UpLeft 
+};
+
+// 单个动作
+struct Action {
+    u64 buttons;        // 按键位掩码
+    StickDir stickL;    // 左摇杆方向
+    StickDir stickR;    // 右摇杆方向
+    u32 frameCount;     // 持续帧数
+    bool modified = false;  // 是否被修改过
+};
+
+class MacroData {
+public:
+    static bool load(const char* filePath);
+    static bool save(const char* filePath);
+    static const MacroHeader& getHeader();
+    static void parseActions();
+    static std::vector<Action>& getActions();
+    
+    // 编辑操作
+    static void insertAction(s32 actionIndex, bool insertBefore);
+    static void resetActions(s32 startIndex, s32 endIndex);
+    static void deleteActions(s32 startIndex, s32 endIndex);
+    static void setActionDuration(s32 actionIndex, u32 durationMs);
+    static void setActionButtons(s32 actionIndex, u64 buttons);
+    
+    // 撤销功能
+    static void saveSnapshot();
+    static bool undo();
+    static bool canUndo();
+    
+    // 内存管理
+    static void cleanup();
+
+private:
+    static MacroHeader s_header;
+    static std::vector<MacroFrame> s_frames;
+    static std::vector<Action> s_actions;
+    
+    // 撤销快照栈（最多3层）
+    struct UndoSnapshot {
+        std::vector<MacroFrame> frames;
+        std::vector<Action> actions;
+    };
+    static std::vector<UndoSnapshot> s_undoStack;
+    
+    // 辅助函数：判断摇杆方向
+    static StickDir getStickDir(s32 x, s32 y);
+    
+    // 辅助函数：判断两帧状态是否相同
+    static bool isSameState(const MacroFrame& a, const MacroFrame& b);
+    
+    // 辅助函数：判断两个动作是否相同（可合并）
+    static bool isSameAction(const Action& a, const Action& b);
+    
+    // 辅助函数：尝试合并指定位置与前后相邻的相同动作
+    static void tryMergeAt(s32 actionIndex);
+    
+    // 辅助函数：删除后尝试合并（检查deletedIndex-1与deletedIndex位置）
+    static void tryMergeAfterDelete(s32 deletedIndex);
+};
