@@ -9,7 +9,7 @@ Turbo::Turbo(const char* config_path) {
     m_ReleaseDurationNs = 100 * 1000000ULL; // 默认100ms
     m_IsActive = false;
     m_IsPressed = false;
-    m_LastSwitchTime = 0;
+    m_TurboStartTime = 0;
     m_InitialPressTime = 0;
     // 自动加载配置
     LoadConfig(config_path);
@@ -77,18 +77,16 @@ FeatureEvent Turbo::DetermineEvent(u64 autokey_buttons) {
 void Turbo::TurboStarting() {
     m_IsActive = true;
     m_IsPressed = true;
-    m_LastSwitchTime = armGetSystemTick();
+    m_TurboStartTime = armGetSystemTick();
 }
 
 // 事件处理：连发运行
 void Turbo::TurboExecuting(u64 autokey_buttons, u64 normal_buttons, ProcessResult& result) {
-    u64 current_time = armGetSystemTick();
-    u64 elapsed_ns = armTicksToNs(current_time - m_LastSwitchTime);
-    u64 threshold = m_IsPressed ? m_PressDurationNs : m_ReleaseDurationNs;
-    if (elapsed_ns >= threshold) {
-        m_IsPressed = !m_IsPressed;
-        m_LastSwitchTime = current_time;
-    }
+    // 用绝对时间计算当前应该是按下还是松开
+    u64 elapsed_ns = armTicksToNs(armGetSystemTick() - m_TurboStartTime);
+    u64 cycle_ns = m_PressDurationNs + m_ReleaseDurationNs;
+    u64 pos_in_cycle = elapsed_ns % cycle_ns;
+    m_IsPressed = (pos_in_cycle < m_PressDurationNs);
     result.OtherButtons = m_IsPressed ? (normal_buttons | autokey_buttons) : normal_buttons;
 }
 
@@ -96,16 +94,19 @@ void Turbo::TurboExecuting(u64 autokey_buttons, u64 normal_buttons, ProcessResul
 void Turbo::TurboFinishing() {
     m_IsActive = false;
     m_IsPressed = false;
-    m_LastSwitchTime = 0;
+    m_TurboStartTime = 0;
     m_InitialPressTime = 0;
 }
 
 // 检测真松开（仅在按下周期检测，避免污染）
 bool Turbo::CheckRelease(u64 autokey_buttons) {
     if (!m_IsPressed) return false;
-    u64 current_time = armGetSystemTick();
-    u64 time_since_last_switch_ns = armTicksToNs(current_time - m_LastSwitchTime);
-    if (time_since_last_switch_ns < 30000000ULL) return false;
+    // 用绝对时间计算当前周期内的位置
+    u64 elapsed_ns = armTicksToNs(armGetSystemTick() - m_TurboStartTime);
+    u64 cycle_ns = m_PressDurationNs + m_ReleaseDurationNs;
+    u64 pos_in_cycle = elapsed_ns % cycle_ns;
+    // 按下周期开始后30ms内不检测松开
+    if (pos_in_cycle < 30000000ULL) return false;
     if (autokey_buttons == 0) return true;
     return false;
 }

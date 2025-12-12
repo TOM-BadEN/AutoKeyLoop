@@ -25,7 +25,7 @@ private:
     // 运行状态
     bool m_IsActive;            // 是否运行中
     bool m_IsPressed;           // 当前是按下还是松开周期
-    u64 m_LastSwitchTime;       // 上次切换时间
+    u64 m_TurboStartTime;       // 连发开始时间
     u64 m_InitialPressTime;     // 首次按下时间（用于200ms延迟）
     bool m_DelayStart;          // 是否启用延迟启动
     
