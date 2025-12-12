@@ -132,7 +132,7 @@ void MacroEditGui::drawActionList(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s3
     
     for (size_t i = 0; i < actions.size(); i++) {
         s32 itemY = listY + i * ITEM_HEIGHT - m_scrollOffset;
-        if (itemY + ITEM_HEIGHT > listY && itemY < bottomY) {
+        if (itemY >= listY && itemY < bottomY) {
             r->drawRect(x + 4, itemY + ITEM_HEIGHT - 1, w - 8, 1, r->a(tsl::separatorColor));
             
             if ((s32)i == m_selectedIndex) {
@@ -494,19 +494,32 @@ bool MacroEditGui::handleNormalInput(u64 keysDown, u64 keysHeld) {
     }
     if (!(keysHeld & (HidNpadButton_AnyUp | HidNpadButton_AnyDown))) m_repeatCounter = 0;
     
-    if (moveUp && m_selectedIndex > 0) {
-        m_selectedIndex--;
-        s32 itemTop = m_selectedIndex * ITEM_HEIGHT;
-        if (itemTop < m_scrollOffset + ITEM_HEIGHT) {
-            m_scrollOffset -= ITEM_HEIGHT;
-            if (m_scrollOffset < 0) m_scrollOffset = 0;
+    if (moveUp && maxIndex >= 0) {
+        if (m_selectedIndex > 0) {
+            m_selectedIndex--;
+            s32 itemTop = m_selectedIndex * ITEM_HEIGHT;
+            if (itemTop < m_scrollOffset + ITEM_HEIGHT) {
+                m_scrollOffset -= ITEM_HEIGHT;
+                if (m_scrollOffset < 0) m_scrollOffset = 0;
+            }
+        } else {
+            m_selectedIndex = maxIndex;
+            s32 itemBottom = (m_selectedIndex + 1) * ITEM_HEIGHT;
+            while (itemBottom > m_scrollOffset + m_listHeight) {
+                m_scrollOffset += ITEM_HEIGHT;
+            }
         }
         return true;
     }
-    if (moveDown && m_selectedIndex < maxIndex) {
-        m_selectedIndex++;
-        s32 itemBottom = (m_selectedIndex + 1) * ITEM_HEIGHT;
-        if (itemBottom > m_scrollOffset + m_listHeight) m_scrollOffset += ITEM_HEIGHT;
+    if (moveDown && maxIndex >= 0) {
+        if (m_selectedIndex < maxIndex) {
+            m_selectedIndex++;
+            s32 itemBottom = (m_selectedIndex + 1) * ITEM_HEIGHT;
+            if (itemBottom > m_scrollOffset + m_listHeight) m_scrollOffset += ITEM_HEIGHT;
+        } else {
+            m_selectedIndex = 0;
+            m_scrollOffset = 0;
+        }
         return true;
     }
     return false;
