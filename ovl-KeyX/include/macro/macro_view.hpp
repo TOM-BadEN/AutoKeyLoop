@@ -47,32 +47,24 @@ public:
     
 private:
     bool isHotkeyValid() const;
-    
+    bool handleEditInput(u64 keysDown);
+
     char m_macroFilePath[96];
     char m_gameName[64];
     char m_gameCfgPath[96];
     u64 m_Hotkey;
     std::vector<u64> m_usedHotkeys{};  // 已使用的快捷键列表
     std::string m_displayText;
+    
+    // 编辑模式
+    bool m_editMode = false;
+    s32 m_cursorIndex = 0;
+    u64 m_selectedButtons = 0;
 
-    tsl::elm::ListItem* m_HotKeyNO1 = nullptr;
-    tsl::elm::ListItem* m_HotKeyNO2 = nullptr;
-    tsl::elm::ListItem* m_HotKeyNO3 = nullptr;
+    tsl::elm::ListItem* m_HotKeySetting = nullptr;  // 设置按键（合并原来的三个）
     tsl::elm::ListItem* m_HotKeySave = nullptr;
     tsl::elm::ListItem* m_HotKeyDelete = nullptr;
 };
 
-
-// 按键选择
-class ButtonSelectGui : public tsl::Gui {
-public:
-    ButtonSelectGui(int slotIndex);  // 1, 2, 或 3
-    virtual bool handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) override;
-    virtual tsl::elm::Element* createUI() override;
-    
-private:
-    int m_slotIndex;
-    bool m_canDelete;
-};
 
 

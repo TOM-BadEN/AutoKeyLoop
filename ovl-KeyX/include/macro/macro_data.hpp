@@ -21,7 +21,7 @@ struct Action {
 class MacroData {
 public:
     static bool load(const char* filePath);
-    static bool save(const char* filePath);
+    static bool saveForEdit(const char* filePath);
     static const MacroHeader& getHeader();
     static void parseActions();
     static std::vector<Action>& getActions();
@@ -34,7 +34,6 @@ public:
     static void setActionButtons(s32 actionIndex, u64 buttons);
     
     // 撤销功能
-    static void saveSnapshot();
     static bool undo();
     static bool canUndo();
     
@@ -67,4 +66,7 @@ private:
     
     // 辅助函数：删除后尝试合并（检查deletedIndex-1与deletedIndex位置）
     static void tryMergeAfterDelete(s32 deletedIndex);
+
+    // 辅助函数：保存快照,用于撤销
+    static void saveSnapshot();
 };

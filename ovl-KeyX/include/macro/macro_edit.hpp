@@ -4,7 +4,7 @@
 class MacroEditGui : public tsl::Gui 
 {
 public:
-    MacroEditGui(const char* macroFilePath, const char* gameName);
+    MacroEditGui(const char* macroFilePath, const char* gameName, bool isRecord);
     ~MacroEditGui();
     virtual tsl::elm::Element* createUI() override;
     virtual bool handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) override;
@@ -12,6 +12,7 @@ public:
 private:
     const char* m_macroFilePath;
     const char* m_gameName;
+    bool m_isRecord;
     
     s32 m_scrollOffset = 0;
     s32 m_selectedIndex = 0;
@@ -40,8 +41,17 @@ private:
     
     bool isMenuItemEnabled(int index) const;
     
-    static constexpr s32 TIMELINE_HEIGHT = 100;
-    static constexpr s32 ITEM_HEIGHT = 70;  // 和 tsl::style::ListItemDefaultHeight 一致
-    static constexpr u32 REPEAT_DELAY = 20;  // 首次触发后延迟帧数
-    static constexpr u32 REPEAT_RATE = 8;    // 重复触发间隔帧数
+    // 绘制方法
+    void drawButtonEditArea(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, double progress);
+    void drawDurationEditArea(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, double progress);
+    void drawMenuArea(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, double progress);
+    void drawTimelineArea(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, double progress);
+    void drawActionList(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h, double progress);
+    bool handleButtonEditInput(u64 keysDown);
+    bool handleDurationEditInput(u64 keysDown);
+    bool handleMenuInput(u64 keysDown);
+    bool handleNormalInput(u64 keysDown, u64 keysHeld);
+    void executeDeleteAction();
+    void enterDurationEditMode();
+    void enterButtonEditMode();
 };
