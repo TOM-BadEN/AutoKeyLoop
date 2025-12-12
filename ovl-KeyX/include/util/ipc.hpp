@@ -20,6 +20,9 @@
 #define CMD_DISABLE_MACRO     9   // 关闭宏
 #define CMD_RELOAD_MACRO      10  // 重载宏配置
 
+// 白名单控制
+#define CMD_RELOAD_WHITELIST  11  // 重载白名单
+
 // 系统控制
 #define CMD_EXIT              999 // 退出系统模块
 
@@ -146,6 +149,13 @@ public:
      * @note 重载按键宏配置
      */
     Result sendReloadMacroCommand();
+    
+    /**
+     * 发送重载白名单命令给系统模块
+     * @return Result 0=成功，其他=失败
+     * @note 重载白名单配置
+     */
+    Result sendReloadWhitelistCommand();
 };
 
 // 全局实例 - 程序退出时自动调用析构函数

@@ -1,5 +1,12 @@
 #include "game.hpp"
 #include "language.hpp"
+#include "ultra.hpp"
+
+namespace {
+    constexpr const char* WHITE_INI_PATH = "sdmc:/config/KeyX/white.ini";
+}
+
+std::unordered_set<u64> GameMonitor::s_whitelist;
 
 // 获取当前运行程序的Title ID
 u64 GameMonitor::getCurrentTitleId() {
@@ -13,13 +20,11 @@ u64 GameMonitor::getCurrentTitleId() {
     if (R_FAILED(pmdmntGetProgramId(&tid, pid)))
         return 0;  
     
-    // 3. 过滤非游戏ID - 检查Title ID是否为游戏格式（高32位以0x01开头）
-    u32 high_part = (u32)(tid >> 32);
-    if ((high_part & 0xFF000000) != 0x01000000) {
-        return 0;  // 不是游戏ID，返回0
-    }
-    
-    return tid; 
+    // 3. 过滤非游戏ID
+    u8 type = (u8)(tid >> 56);
+    if (type == 0x01) return tid;  // 游戏直接通过
+    if (s_whitelist.count(tid)) return tid;  // 白名单通过
+    return 0;
 }
 
 // 根据Title ID获取游戏名称
@@ -121,4 +126,34 @@ bool GameMonitor::getTitleIdGameName(u64 titleId, char* result) {
 
     nsExit();
     return false;
+}
+
+// 获取所有已安装应用的Title ID列表
+std::vector<u64> GameMonitor::getInstalledAppIds() {
+    std::vector<u64> result;
+    
+    NsApplicationRecord records[250];
+    s32 count = 0;
+    
+    Result rc = nsListApplicationRecord(records, 250, 0, &count);
+    if (R_SUCCEEDED(rc)) {
+        for (s32 i = 0; i < count; i++) {
+            u64 tid = records[i].application_id;
+            u8 type = (u8)(tid >> 56);
+            // 过滤掉游戏(0x01)，保留其他应用
+            if (type == 0x01) continue;
+            result.push_back(tid);
+        }
+    }
+    
+    return result;
+}
+
+void GameMonitor::loadWhitelist() {
+    s_whitelist.clear();
+    auto kvPairs = ult::getKeyValuePairsFromSection(WHITE_INI_PATH, "white");
+    for (const auto& kv : kvPairs) {
+        u64 tid = strtoull(kv.first.c_str(), nullptr, 16);
+        if (tid != 0) s_whitelist.insert(tid);
+    }
 }

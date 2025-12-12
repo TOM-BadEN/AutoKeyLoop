@@ -121,6 +121,11 @@ bool App::InitializeIPC() {
         UpdateButtonMappingConfig();
     });
 
+    // 重载白名单
+    ipc_server->SetReloadWhitelistCallback([this]() {
+        GameMonitor::LoadWhitelist();
+    });
+
     // 启动服务
     if (!ipc_server->Start("keyLoop")) {
         ipc_server.reset();

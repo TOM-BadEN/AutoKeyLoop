@@ -1,4 +1,5 @@
 #include "main_menu_setting.hpp"
+#include "main_whitelist.hpp"
 #include "turbo_setting.hpp"
 #include "remap_setting.hpp"
 #include "macro_setting.hpp"
@@ -28,7 +29,13 @@ SettingMenu::SettingMenu() {
 }
 
 tsl::elm::Element* SettingMenu::createUI() {
-    auto frame = new tsl::elm::OverlayFrame("功能设置", "选择设置项");
+    auto frame = new tsl::elm::HeaderOverlayFrame(97);
+    frame->setHeader(new tsl::elm::CustomDrawer([this](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
+        renderer->drawString("功能设置", false, 20, 50+2, 32, renderer->a(tsl::defaultOverlayColor));
+        renderer->drawString("选择设置项", false, 20, 50+23, 15, renderer->a(tsl::bannerVersionTextColor));
+        renderer->drawString("  白名单", false, 280, 693, 23, renderer->a(tsl::style::color::ColorText));
+    }));
+
     auto list = new tsl::elm::List();
     
     auto ItemBasicKeySetting = new tsl::elm::CategoryHeader(" 基础按键设置");
@@ -112,6 +119,11 @@ bool SettingMenu::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &t
     if (keysDown & HidNpadButton_B || keysDown & HidNpadButton_Left) {
         Refresh::RefrRequest(Refresh::MainMenu);
         tsl::goBack();
+        return true;
+    }
+
+    if (keysDown & HidNpadButton_AnyRight) {
+        tsl::changeTo<SettingWhitelist>();
         return true;
     }
 

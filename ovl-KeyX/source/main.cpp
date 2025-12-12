@@ -3,6 +3,7 @@
 #include "main_menu.hpp"
 #include "language.hpp"
 #include "refresh.hpp"
+#include "game.hpp"
 
 // KeyX 特斯拉覆盖层主类
 class KeyXOverlay : public tsl::Overlay {
@@ -18,6 +19,7 @@ public:
         pmdmntInitialize();                                           // 进程管理服务
         pmshellInitialize();                                          // 进程Shell服务（用于启动/停止系统模块）
         setInitialize();                                              // 初始化set服务（获取系统语言）
+        nsInitialize();                                               // 初始化ns服务
         LanguageManager::initialize();                                // 初始化语言系统
         setExit();                                                    // 退出set服务
 
@@ -30,11 +32,13 @@ public:
             serviceClose(pdmqrySrv);
             memcpy(pdmqrySrv, &pdmqryClone, sizeof(Service));
         }
+        GameMonitor::loadWhitelist();                                 // 加载白名单
     }
     
     // 退出系统服务
     virtual void exitServices() override 
     {
+        nsExit();
         pdmqryExit();
         pmshellExit();        // 退出进程Shell服务
         pmdmntExit();         // 退出进程管理服务

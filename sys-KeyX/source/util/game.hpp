@@ -1,5 +1,6 @@
 #pragma once
 #include <switch.h>
+#include <unordered_set>
 
 // 游戏事件类型
 enum class GameEvent : uint8_t {
@@ -21,11 +22,17 @@ public:
     // 检查游戏状态（返回事件+TID）
     static GameStateResult GetState();
     
+    // 加载白名单到内存
+    static void LoadWhitelist();
+    
 private:
     // 获取当前游戏 Title ID（仅游戏，非游戏返回0）
     static u64 GetCurrentGameTitleId();
     
     // 上次检测到的游戏 TID
     static u64 m_LastTid;
+    
+    // 白名单缓存
+    static std::unordered_set<u64> s_whitelist;
 };
 

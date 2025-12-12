@@ -91,6 +91,10 @@ Result IPCManager::sendReloadMacroCommand() {
     return SendCommand(CMD_RELOAD_MACRO, false);
 }
 
+Result IPCManager::sendReloadWhitelistCommand() {
+    return SendCommand(CMD_RELOAD_WHITELIST, false);
+}
+
 Result IPCManager::sendExitCommand() {
     return SendCommand(CMD_EXIT, false);
 }

@@ -15,6 +15,7 @@
 #define CMD_RELOAD_BASIC      5   // 重载基础配置
 #define CMD_RELOAD_AUTOFIRE   6   // 重载连发配置
 #define CMD_RELOAD_MAPPING    7   // 重载映射配置
+#define CMD_RELOAD_WHITELIST  11  // 重载白名单
 
 // 宏控制
 #define CMD_ENABLE_MACRO      8   // 开启宏
@@ -38,6 +39,7 @@ struct CommandResult {
     bool should_enable_macro;       // 是否需要开启宏（在响应发送后）
     bool should_disable_macro;      // 是否需要关闭宏（在响应发送后）
     bool should_reload_macro;       // 是否需要重载宏配置（在响应发送后）
+    bool should_reload_whitelist;   // 是否需要重载白名单（在响应发送后）
 };
 
 // IPC服务器类
@@ -71,6 +73,7 @@ private:
     std::function<void()> m_EnableMacroCallback;      // 开启宏回调
     std::function<void()> m_DisableMacroCallback;     // 关闭宏回调
     std::function<void()> m_ReloadMacroCallback;      // 重载宏配置回调
+    std::function<void()> m_ReloadWhitelistCallback;  // 重载白名单回调
     
     // 内部方法
     void StartServer();
@@ -114,5 +117,6 @@ public:
     void SetEnableMacroCallback(std::function<void()> callback);
     void SetDisableMacroCallback(std::function<void()> callback);
     void SetReloadMacroCallback(std::function<void()> callback);
+    void SetReloadWhitelistCallback(std::function<void()> callback);
     bool ShouldExit() const { return m_ShouldExit; }
 };
