@@ -2,12 +2,13 @@
 #include <switch.h>
 
 // 定义全局变量
-const char* g_NOTIF_AUTOFIRE_ON = "连发或宏已开启";
-const char* g_NOTIF_AUTOFIRE_OFF = "连发或宏已关闭";
-const char* g_NOTIF_MAPPING_ON = "映射功能已开启";
-const char* g_NOTIF_MAPPING_OFF = "映射功能已关闭";
-const char* g_NOTIF_ALL_ON = "全部功能已开启";
-const char* g_NOTIF_ALL_OFF = "全部功能已关闭";
+inline std::string g_NOTIF_Tubro = "连发";
+inline std::string g_NOTIF_Macro = "宏";
+inline std::string g_NOTIF_Mapping = "映射";
+inline std::string g_NOTIF_All = "全部功能";
+inline std::string g_NOTIF_On = "已开启";
+inline std::string g_NOTIF_Off = "已关闭";
+inline std::string g_NOTIF_And = "与";
 
 
 // 检测系统语言是否为中文
@@ -29,95 +30,106 @@ inline void getSetNotifLanguage() {
             break;
         case SetLanguage_ZHTW:
         case SetLanguage_ZHHANT:
-            g_NOTIF_AUTOFIRE_ON = "連發或巨集已啟用";
-            g_NOTIF_AUTOFIRE_OFF = "連發或巨集已停用";
-            g_NOTIF_MAPPING_ON = "映射功能已啟用";
-            g_NOTIF_MAPPING_OFF = "映射功能已停用";
-            g_NOTIF_ALL_ON = "全部功能已啟用";
-            g_NOTIF_ALL_OFF = "全部功能已停用";
+            g_NOTIF_AND = "與";
+            g_NOTIF_Off = "已停用";
+            g_NOTIF_On = "已啟用";
+            g_NOTIF_Tubro = "連發";
+            g_NOTIF_Macro = "巨集";
+            g_NOTIF_Mapping = "映射";
+            g_NOTIF_All = "全部功能";
             break;
         case SetLanguage_JA:
-            g_NOTIF_AUTOFIRE_ON = "連射/マクロ有効";
-            g_NOTIF_AUTOFIRE_OFF = "連射/マクロ無効";
-            g_NOTIF_MAPPING_ON = "配置機能有効";
-            g_NOTIF_MAPPING_OFF = "配置機能無効";
-            g_NOTIF_ALL_ON = "全機能有効";
-            g_NOTIF_ALL_OFF = "全機能無効";
+            g_NOTIF_AND = "と";
+            g_NOTIF_Off = "無効";
+            g_NOTIF_On = "有効";
+            g_NOTIF_Tubro = "連射";
+            g_NOTIF_Macro = "マクロ";
+            g_NOTIF_Mapping = "割当";
+            g_NOTIF_All = "全機能";
             break;
         case SetLanguage_KO:
-            g_NOTIF_AUTOFIRE_ON = "연사/매크로 활성화";
-            g_NOTIF_AUTOFIRE_OFF = "연사/매크로 해제됨";
-            g_NOTIF_MAPPING_ON = "매핑 기능 활성화";
-            g_NOTIF_MAPPING_OFF = "매핑 기능 해제됨";
-            g_NOTIF_ALL_ON = "전체 기능 활성화";
-            g_NOTIF_ALL_OFF = "전체 기능 해제됨";
+            g_NOTIF_AND = " 및 ";
+            g_NOTIF_Off = " 해제";
+            g_NOTIF_On = " 적용";
+            g_NOTIF_Tubro = "연사";
+            g_NOTIF_Macro = "매크로";
+            g_NOTIF_Mapping = "할당";
+            g_NOTIF_All = "전체";
             break;
         case SetLanguage_FR:
         case SetLanguage_FRCA:
-            g_NOTIF_AUTOFIRE_ON = "Turbo/Macro ON";
-            g_NOTIF_AUTOFIRE_OFF = "Turbo/Macro OFF";
-            g_NOTIF_MAPPING_ON = "Mapping ON";
-            g_NOTIF_MAPPING_OFF = "Mapping OFF";
-            g_NOTIF_ALL_ON = "All ON";
-            g_NOTIF_ALL_OFF = "All OFF";
+            g_NOTIF_AND = " et ";
+            g_NOTIF_Off = " Off";
+            g_NOTIF_On = " On";
+            g_NOTIF_Tubro = "Tubro";
+            g_NOTIF_Macro = "Macro";
+            g_NOTIF_Mapping = "Map";
+            g_NOTIF_All = "Tout";
             break;
         case SetLanguage_DE:
-            g_NOTIF_AUTOFIRE_ON = "Turbo/Macro ON";
-            g_NOTIF_AUTOFIRE_OFF = "Turbo/Macro OFF";
-            g_NOTIF_MAPPING_ON = "Mapping ON";
-            g_NOTIF_MAPPING_OFF = "Mapping OFF";
-            g_NOTIF_ALL_ON = "All ON";
-            g_NOTIF_ALL_OFF = "All OFF";
+            g_NOTIF_AND = " und ";
+            g_NOTIF_Off = " Aus";
+            g_NOTIF_On = " An";
+            g_NOTIF_Tubro = "Tubro";
+            g_NOTIF_Macro = "Macro";
+            g_NOTIF_Mapping = "Belegung";
+            g_NOTIF_All = "Alle";
             break;
         case SetLanguage_IT:
-            g_NOTIF_AUTOFIRE_ON = "Turbo/Macro ON";
-            g_NOTIF_AUTOFIRE_OFF = "Turbo/Macro OFF";
-            g_NOTIF_MAPPING_ON = "Mapping ON";
-            g_NOTIF_MAPPING_OFF = "Mapping OFF";
-            g_NOTIF_ALL_ON = "All ON";
-            g_NOTIF_ALL_OFF = "All OFF";
+            g_NOTIF_AND = " e ";
+            g_NOTIF_Off = " Off";
+            g_NOTIF_On = " On";
+            g_NOTIF_Tubro = "Tubro";
+            g_NOTIF_Macro = "Macro";
+            g_NOTIF_Mapping = "Asseg";
+            g_NOTIF_All = "Tutto";
             break;
         case SetLanguage_ES:
         case SetLanguage_ES419:
-            g_NOTIF_AUTOFIRE_ON = "Turbo/Macro ON";
-            g_NOTIF_AUTOFIRE_OFF = "Turbo/Macro OFF";
-            g_NOTIF_MAPPING_ON = "Mapping ON";
-            g_NOTIF_MAPPING_OFF = "Mapping OFF";
-            g_NOTIF_ALL_ON = "All ON";
-            g_NOTIF_ALL_OFF = "All OFF";
+            g_NOTIF_AND = " y ";
+            g_NOTIF_Off = " Off";
+            g_NOTIF_On = " On";
+            g_NOTIF_Tubro = "Tubro";
+            g_NOTIF_Macro = "Macro";
+            g_NOTIF_Mapping = "Asig";
+            g_NOTIF_All = "Todo";
             break;
         case SetLanguage_PT:
         case SetLanguage_PTBR:
-            g_NOTIF_AUTOFIRE_ON = "Turbo/Macro ON";
-            g_NOTIF_AUTOFIRE_OFF = "Turbo/Macro OFF";
-            g_NOTIF_MAPPING_ON = "Mapping ON";
-            g_NOTIF_MAPPING_OFF = "Mapping OFF";
-            g_NOTIF_ALL_ON = "All ON";
-            g_NOTIF_ALL_OFF = "All OFF";
+            g_NOTIF_AND = " e ";
+            g_NOTIF_Off = " Off";
+            g_NOTIF_On = " On";
+            g_NOTIF_Tubro = "Tubro";
+            g_NOTIF_Macro = "Macro";
+            g_NOTIF_Mapping = "Atrib";
+            g_NOTIF_All = "Tudo";
             break;
         case SetLanguage_RU:
-            g_NOTIF_AUTOFIRE_ON = "Турбо/Макрос Включен";
-            g_NOTIF_AUTOFIRE_OFF = "Турбо/Макрос Выключен";
-            g_NOTIF_MAPPING_ON = "Маппинг Включен";
-            g_NOTIF_MAPPING_OFF = "Маппинг Выключен";
-            g_NOTIF_ALL_ON = "Всё Включено";
-            g_NOTIF_ALL_OFF = "Всё Выключено";
+            g_NOTIF_AND = " и ";
+            g_NOTIF_Off = " Выкл";
+            g_NOTIF_On = " Вкл";
+            g_NOTIF_Tubro = "Tubro";
+            g_NOTIF_Macro = "Макро";
+            g_NOTIF_Mapping = "Назн";
+            g_NOTIF_All = "Все";
             break;
         case SetLanguage_NL:
-            g_NOTIF_AUTOFIRE_ON = "Turbo/Macro ON";
-            g_NOTIF_AUTOFIRE_OFF = "Turbo/Macro OFF";
-            g_NOTIF_MAPPING_ON = "Mapping ON";
-            g_NOTIF_MAPPING_OFF = "Mapping OFF";
-            g_NOTIF_ALL_ON = "All ON";
-            g_NOTIF_ALL_OFF = "All OFF";
+            g_NOTIF_AND = " en ";
+            g_NOTIF_Off = " Uit";
+            g_NOTIF_On = " Aan";
+            g_NOTIF_Tubro = "Tubro";
+            g_NOTIF_Macro = "Macro";
+            g_NOTIF_Mapping = "Toew";
+            g_NOTIF_All = "Alles";
             break;
         default:
-            g_NOTIF_AUTOFIRE_ON = "Turbo/Macro ON";
-            g_NOTIF_AUTOFIRE_OFF = "Turbo/Macro OFF";
-            g_NOTIF_MAPPING_ON = "Mapping ON";
-            g_NOTIF_MAPPING_OFF = "Mapping OFF";
-            g_NOTIF_ALL_ON = "All ON";
-            g_NOTIF_ALL_OFF = "All OFF";
+            g_NOTIF_AND = " and ";
+            g_NOTIF_Off = " Off";
+            g_NOTIF_On = " On";
+            g_NOTIF_Tubro = "Tubro";
+            g_NOTIF_Macro = "Macro";
+            g_NOTIF_Mapping = "Map";
+            g_NOTIF_All = "All";
             break;
     }
 }

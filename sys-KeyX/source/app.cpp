@@ -9,14 +9,6 @@
 #define CONFIG_DIR "/config/KeyX"
 #define CONFIG_PATH "/config/KeyX/config.ini"
 
-extern const char* g_NOTIF_AUTOFIRE_ON;
-extern const char* g_NOTIF_AUTOFIRE_OFF;
-extern const char* g_NOTIF_MAPPING_ON;
-extern const char* g_NOTIF_MAPPING_OFF;
-extern const char* g_NOTIF_ALL_ON;
-extern const char* g_NOTIF_ALL_OFF;
-
-
 // 检查文件是否存在
 bool App::FileExists(const char* path) {
     struct stat st;
@@ -179,7 +171,7 @@ void App::OnGameLaunched(u64 tid) {
 
 // 处理游戏运行事件
 void App::OnGameRunning(u64 tid) {
-    // 获取游戏焦点状态
+    // 获取游戏焦点状态(只有在焦点变化的时候才会获取到在焦点或者不在，不然获取的是无变化)
     FocusState focus = FocusMonitor::GetState(tid);
     switch (focus) {
         case FocusState::InFocus:
@@ -293,14 +285,15 @@ void App::ShowNotification(const char* message) {
 void App::CreateNotification(bool Enable) {
     if (!m_notifEnabled) return;
     if (!m_CurrentAutoEnable && !m_CurrentAutoRemapEnable && !m_CurrentAutoMacroEnable) return;
-    const char* message = nullptr;
-    if (m_CurrentAutoEnable && m_CurrentAutoRemapEnable && m_CurrentAutoMacroEnable) {
-        message = Enable ? g_NOTIF_ALL_ON : g_NOTIF_ALL_OFF;
-    } else if (m_CurrentAutoEnable || m_CurrentAutoMacroEnable) {
-        message = Enable ? g_NOTIF_AUTOFIRE_ON : g_NOTIF_AUTOFIRE_OFF;
-    } else if (m_CurrentAutoRemapEnable) {
-        message = Enable ? g_NOTIF_MAPPING_ON : g_NOTIF_MAPPING_OFF;
-    } 
-    if (message) createNotification(message, 2, INFO, RIGHT);
+    std::string message = "";
+    if (m_CurrentAutoEnable && m_CurrentAutoRemapEnable && m_CurrentAutoMacroEnable) message = g_NOTIF_All;
+    else else {
+        bool first = true;
+        if (m_CurrentAutoEnable) { message += g_NOTIF_Tubro; first = false; }
+        if (m_CurrentAutoRemapEnable) { if (!first) message += g_NOTIF_AND; message += g_NOTIF_Mapping; first = false; }
+        if (m_CurrentAutoMacroEnable) { if (!first) message += g_NOTIF_AND; message += g_NOTIF_Macro; }
+    }
+    message += Enable ? g_NOTIF_On : g_NOTIF_Off;
+    createNotification(message, 2, INFO, RIGHT);
 }
 

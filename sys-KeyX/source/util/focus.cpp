@@ -19,7 +19,7 @@ void FocusMonitor::ResetForNewGame() {
     }
 }
 
-// 获取焦点状态（自动更新）
+// 获取游戏焦点状态(只有在焦点变化的时候才会获取到在焦点或者不在，不然获取的是无变化)
 FocusState FocusMonitor::GetState(u64 tid) {
 
     // pdmqry返回的是基础 titleid
