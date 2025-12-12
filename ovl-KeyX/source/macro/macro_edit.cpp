@@ -203,7 +203,8 @@ void MacroEditGui::drawTimelineArea(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, 
         bool inRange = ((s32)i >= selStart && (s32)i <= selEnd);
         s32 drawY = inRange ? barY - 3 : barY;
         s32 drawH = inRange ? barH + 6 : barH;
-        tsl::Color blockColor = (actions[i].buttons != 0) ? tsl::Color(0x2, 0xA, 0x2, 0xF)
+        tsl::Color blockColor = actions[i].modified ? tsl::Color(0xF, 0xA, 0xC, 0xF)
+                              : (actions[i].buttons != 0) ? tsl::Color(0x2, 0xA, 0x2, 0xF)
                               : (actions[i].stickL != StickDir::None || actions[i].stickR != StickDir::None) ? tsl::Color(0xA, 0x2, 0x2, 0xF)
                               : tsl::Color(0x8, 0x8, 0x8, 0xF);
         r->drawRect(blockX, drawY, blockW, drawH, r->a(blockColor));
