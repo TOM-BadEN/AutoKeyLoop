@@ -216,7 +216,7 @@ tsl::elm::Element* MacroHotKeySettingGui::createUI() {
     list->addItem(m_HotKeySetting);
 
     bool isSaveValid = isHotkeyValid();
-    const char* saveText = isSaveValid ? "按  保存" : "按键不合法";
+    const char* saveText = isSaveValid ? "按  保存" : "按键不合法";
     m_HotKeySave = new tsl::elm::ListItem("保存按键", saveText);
     m_HotKeySave->setValueColor(isSaveValid ? tsl::style::color::ColorHighlight : tsl::Color(0xF, 0x5, 0x5, 0xF));
     list->addItem(m_HotKeySave);
@@ -236,7 +236,7 @@ void MacroHotKeySettingGui::update() {
         }
         if (m_HotKeySave) {    
             bool isSaveValid = isHotkeyValid();
-            const char* saveText = isSaveValid ? "按  保存" : "按键不合法";
+            const char* saveText = isSaveValid ? "按  保存" : "按键不合法";
             m_HotKeySave->setValue(saveText);
             m_HotKeySave->setValueColor(isSaveValid ? tsl::style::color::ColorHighlight : tsl::Color(0xF, 0x5, 0x5, 0xF));
         }

@@ -143,7 +143,7 @@
     "允许按键助手在非游戏应用生效": "Allow KeyX in Homebrew",
     "编辑脚本": "Edit Macro",
     "可选1~3个按键作为组合键": "Select 1~3 keys as a combination key",
-    " 选中/取消  退出编辑": " Select/Cancel,  Exit edit mode",
+    " 选中/取消  退出编辑": " Select/Cancel  Exit edit mode",
     "无动作": "No action",
     " 撤销修改": " Undo",
     "在前面插入新动作": "Insert before",
@@ -159,6 +159,7 @@
     " 选中/取消选中  保存  返回": " Select/Cancel  Save  Back",
     "  修改": "  Edit",
     "  保存": "  Save",
-    " 设置后立即生效": " Take effect immediately after setting"
+    " 设置后立即生效": " Take effect immediately after setting",
+    "设置按键": "Set HotKey"
 }
 
