@@ -120,7 +120,7 @@ tsl::elm::Element* MacroViewGui::createUI() {
     list->addItem(listEditMacro);
 
 
-    m_deleteItem = new tsl::elm::ListItem("删除脚本","按  删除");
+    m_deleteItem = new tsl::elm::ListItem("删除脚本","按  删除");
     list->addItem(m_deleteItem);
 
     frame->setContent(list);
@@ -220,7 +220,7 @@ tsl::elm::Element* MacroHotKeySettingGui::createUI() {
     m_HotKeySave = new tsl::elm::ListItem("保存按键", saveText);
     m_HotKeySave->setValueColor(isSaveValid ? tsl::style::color::ColorHighlight : tsl::Color(0xF, 0x5, 0x5, 0xF));
     list->addItem(m_HotKeySave);
-    m_HotKeyDelete = new tsl::elm::ListItem("删除按键", "按  删除");
+    m_HotKeyDelete = new tsl::elm::ListItem("删除按键", "按  删除");
     list->addItem(m_HotKeyDelete);
     
     frame->setContent(list);

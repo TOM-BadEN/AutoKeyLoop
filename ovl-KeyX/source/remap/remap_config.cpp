@@ -254,7 +254,7 @@ tsl::elm::Element* SettingRemapDisplay::createUI() {
     list->addItem(buttonDisplay, buttonDisplayHeight);
     
     // 添加重置映射列表项
-    auto resetItem = new tsl::elm::ListItem("重置映射", "按 \uE0F1 重置");
+    auto resetItem = new tsl::elm::ListItem("重置映射", "按  重置");
     list->addItem(resetItem);
     
     frame->setContent(list);

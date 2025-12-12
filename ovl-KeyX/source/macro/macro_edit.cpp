@@ -67,7 +67,7 @@ tsl::elm::Element* MacroEditGui::createUI() {
         // 标题（菜单模式下显示菜单项名称）
         if (m_menuMode) {
             const char* menuTitles[] = {"在前面插入新动作", "在后面插入新动作", "重置动作", "删除动作", "修改持续时间", "修改触发按钮"};
-            const char* menuTips[] = {"按  插入新动作", "按  插入新动作", "按  重置动作为无动作", "删除整个动作", "/ 切换位 / 调整  保存  取消", " 选中/取消选中  保存  返回"};
+            const char* menuTips[] = {"按  插入新动作", "按  插入新动作", "按  重置动作为无动作", "按  删除整个动作", "/ 切换位 / 调整  保存  取消", " 选中/取消选中  保存  返回"};
             r->drawString(menuTitles[m_menuIndex], false, 20, 50, 32, r->a(tsl::defaultOverlayColor));
             r->drawString(menuTips[m_menuIndex], false, 20, 73, 15, r->a(tsl::style::color::ColorDescription));
         } else {
@@ -256,7 +256,7 @@ void MacroEditGui::drawDurationEditArea(tsl::gfx::Renderer* r, s32 x, s32 y, s32
     
     if (isOverLimit) {
         char maxBuf[32];
-        snprintf(maxBuf, sizeof(maxBuf), "最大: %dms", maxEditMs);
+        snprintf(maxBuf, sizeof(maxBuf), "Max: %dms", maxEditMs);
         auto [maxW, maxH] = r->drawString(maxBuf, false, 0, 0, 14, tsl::Color(0,0,0,0));
         r->drawString(maxBuf, false, x + w - 15 - maxW, y + 90, 14, r->a(errorColor));
     }

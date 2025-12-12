@@ -19,6 +19,8 @@ tsl::elm::Element* SettingWhitelist::createUI() {
     auto frame = new tsl::elm::OverlayFrame("设置白名单", "允许按键助手在非游戏应用生效");
     auto list = new tsl::elm::List();
 
+    list->addItem(new tsl::elm::CategoryHeader(" 设置后立即生效"));
+
     for (auto& entry : m_apps) {
         char tidStr[17];
         snprintf(tidStr, sizeof(tidStr), "%016lX", entry.tid);
