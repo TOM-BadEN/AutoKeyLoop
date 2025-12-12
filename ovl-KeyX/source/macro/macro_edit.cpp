@@ -481,7 +481,7 @@ bool MacroEditGui::handleNormalInput(u64 keysDown, u64 keysHeld) {
         }
     }
     
-    bool moveUp = false, moveDown = false;
+    bool moveUp = false, moveDown = false, pageUp = false, pageDown = false;
     if (keysDown & HidNpadButton_AnyUp) { moveUp = true; m_repeatCounter = 0; }
     else if (keysHeld & HidNpadButton_AnyUp) {
         m_repeatCounter++;
@@ -492,7 +492,17 @@ bool MacroEditGui::handleNormalInput(u64 keysDown, u64 keysHeld) {
         m_repeatCounter++;
         if (m_repeatCounter > REPEAT_DELAY && (m_repeatCounter - REPEAT_DELAY) % REPEAT_RATE == 0) moveDown = true;
     }
-    if (!(keysHeld & (HidNpadButton_AnyUp | HidNpadButton_AnyDown))) m_repeatCounter = 0;
+    if (keysDown & HidNpadButton_L) { pageUp = true; m_repeatCounter = 0; }
+    else if (keysHeld & HidNpadButton_L) {
+        m_repeatCounter++;
+        if (m_repeatCounter > REPEAT_DELAY && (m_repeatCounter - REPEAT_DELAY) % REPEAT_RATE == 0) pageUp = true;
+    }
+    if (keysDown & HidNpadButton_R) { pageDown = true; m_repeatCounter = 0; }
+    else if (keysHeld & HidNpadButton_R) {
+        m_repeatCounter++;
+        if (m_repeatCounter > REPEAT_DELAY && (m_repeatCounter - REPEAT_DELAY) % REPEAT_RATE == 0) pageDown = true;
+    }
+    if (!(keysHeld & (HidNpadButton_AnyUp | HidNpadButton_AnyDown | HidNpadButton_L | HidNpadButton_R))) m_repeatCounter = 0;
     
     if (moveUp && maxIndex >= 0) {
         if (m_selectedIndex > 0) {
@@ -528,7 +538,7 @@ bool MacroEditGui::handleNormalInput(u64 keysDown, u64 keysHeld) {
         s32 pageSize = m_listHeight / ITEM_HEIGHT;
         if (pageSize < 1) pageSize = 1;
         
-        if (keysDown & HidNpadButton_L) {
+        if (pageUp) {
             m_selectedIndex -= pageSize;
             if (m_selectedIndex < 0) m_selectedIndex = 0;
             s32 itemTop = m_selectedIndex * ITEM_HEIGHT;
@@ -538,7 +548,7 @@ bool MacroEditGui::handleNormalInput(u64 keysDown, u64 keysHeld) {
             if (m_scrollOffset < 0) m_scrollOffset = 0;
             return true;
         }
-        if (keysDown & HidNpadButton_R) {
+        if (pageDown) {
             m_selectedIndex += pageSize;
             if (m_selectedIndex > maxIndex) m_selectedIndex = maxIndex;
             s32 itemBottom = (m_selectedIndex + 1) * ITEM_HEIGHT;
