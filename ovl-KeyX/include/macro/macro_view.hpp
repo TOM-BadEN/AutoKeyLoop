@@ -11,26 +11,13 @@ public:
     virtual bool handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) override;
     
 private:
-
-    struct MacroInfo {
-        char gameName[64];
-        char titleId[17];
-        char macroName[64];
-        char fileSizeKb[16];
-        char durationSec[8];
-        char fps[16];
-        char totalFrames[8];
-    };
-
-    MacroInfo m_info{};
+    char m_gameName[64];
     char m_macroFilePath[96];
     bool m_isRecord;
     u64 m_Hotkey = 0;
-    char m_gameCfgPath[96];
     tsl::elm::ListItem* m_deleteItem = nullptr;
     tsl::elm::ListItem* m_listButton = nullptr;
 
-    void ParsingMacros();
     void getHotkey();
 
 };
@@ -40,7 +27,7 @@ private:
 class MacroHotKeySettingGui : public tsl::Gui {
 
 public:
-    MacroHotKeySettingGui(const char* macroFilePath, const char* gameName, const char* gameCfgPath, u64 Hotkey);
+    MacroHotKeySettingGui(const char* macroFilePath, const char* gameName, u64 Hotkey);
     virtual void update() override;
     virtual tsl::elm::Element* createUI() override;
     virtual bool handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) override;
@@ -51,7 +38,7 @@ private:
 
     char m_macroFilePath[96];
     char m_gameName[64];
-    char m_gameCfgPath[96];
+    u64 m_titleId;
     u64 m_Hotkey;
     std::vector<u64> m_usedHotkeys{};  // 已使用的快捷键列表
     std::string m_displayText;

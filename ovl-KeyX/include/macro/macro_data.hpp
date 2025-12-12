@@ -1,7 +1,25 @@
 #pragma once
 #include <vector>
 #include <string>
-#include "macro_record.hpp"
+#include <switch.h>
+
+// 宏文件头
+struct MacroHeader {
+    char magic[4];      // "KEYX"
+    u16 version;        // 版本号
+    u16 frameRate;      // 帧率
+    u64 titleId;        // 游戏TID
+    u32 frameCount;     // 总帧数
+} __attribute__((packed));
+
+// 宏单帧数据
+struct MacroFrame {
+    u64 keysHeld;       // 按键状态
+    s32 leftX;          // 左摇杆X
+    s32 leftY;          // 左摇杆Y
+    s32 rightX;         // 右摇杆X
+    s32 rightY;         // 右摇杆Y
+} __attribute__((packed));
 
 // 摇杆方向枚举
 enum class StickDir { 
@@ -18,11 +36,23 @@ struct Action {
     bool modified = false;  // 是否被修改过
 };
 
+// 宏基础信息
+struct MacroBasicInfo {
+    u64 titleId;           // 游戏TID
+    char fileName[64];     // 文件名（不含路径和扩展名）
+    u32 fileSize;          // 文件大小（字节）
+    u32 durationMs;        // 总时长（毫秒）
+    u32 frameRate;         // 帧率
+    u32 frameCount;        // 总帧数
+};
+
 class MacroData {
 public:
     static bool load(const char* filePath);
-    static bool saveForEdit(const char* filePath);
+    static bool saveForEdit();
+    static const char* getFilePath();
     static const MacroHeader& getHeader();
+    static const MacroBasicInfo& getBasicInfo();
     static void parseActions();
     static std::vector<Action>& getActions();
     
@@ -41,7 +71,9 @@ public:
     static void cleanup();
 
 private:
+    static char s_filePath[128];
     static MacroHeader s_header;
+    static MacroBasicInfo s_basicInfo;
     static std::vector<MacroFrame> s_frames;
     static std::vector<Action> s_actions;
     

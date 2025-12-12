@@ -3,6 +3,7 @@
 #include <tesla.hpp>
 #include <vector>
 #include <string>
+#include "macro_util.hpp"
 
 // 脚本清单所有游戏列表类
 class MacroListGui : public tsl::Gui {
@@ -30,13 +31,7 @@ public:
     virtual void update() override;
 
 private:
-
-    struct Macro {
-        std::string macroPath;
-        u64 Hotkey;
-    };
-
-    std::vector<Macro> m_macro{};
+    std::vector<MacroUtil::MacroEntry> m_macro{};
     u64 m_titleId;
     char m_gameName[64];
 };

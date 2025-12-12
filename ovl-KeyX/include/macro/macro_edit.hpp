@@ -4,13 +4,11 @@
 class MacroEditGui : public tsl::Gui 
 {
 public:
-    MacroEditGui(const char* macroFilePath, const char* gameName, bool isRecord);
-    ~MacroEditGui();
+    MacroEditGui(const char* gameName, bool isRecord);
     virtual tsl::elm::Element* createUI() override;
     virtual bool handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) override;
 
 private:
-    const char* m_macroFilePath;
     const char* m_gameName;
     bool m_isRecord;
     

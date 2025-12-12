@@ -1,10 +1,10 @@
 #include "macro_rename.hpp"
 #include "macro_list.hpp"
 #include "macro_view.hpp"
+#include "macro_util.hpp"
 #include <ultra.hpp>
 #include <cstdio>
 #include "refresh.hpp"
-#include "ini_helper.hpp"
 #include "ipc.hpp"
 
 namespace {
@@ -245,22 +245,6 @@ void MacroRenameGui::MacroRename(){
 
 // 当修改名称后，更新配置文件中的脚本路径
 bool MacroRenameGui::updateConfigPath(const char* newPath) {
-    // 从路径中提取 titleId: sdmc:/config/KeyX/macros/{titleId}/filename.macro
-    const char* macrosDir = strstr(m_macroFilePath, "/macros/");
-    char titleId[17];
-    memcpy(titleId, macrosDir + 8, 16);
-    titleId[16] = '\0';
-    // 构造配置文件路径
-    char gameCfgPath[96];
-    sprintf(gameCfgPath, "sdmc:/config/KeyX/GameConfig/%s.ini", titleId);
-    int macroCount = IniHelper::getInt("MACRO", "macroCount", 0, gameCfgPath);
-    for (int i = 1; i <= macroCount; i++) {
-        std::string key = "macro_path_" + std::to_string(i);
-        std::string path = IniHelper::getString("MACRO", key, "", gameCfgPath);
-        if (path == m_macroFilePath) {
-            IniHelper::setString("MACRO", key, newPath, gameCfgPath);
-            return true;  // 找到并更新成功
-        }
-    }
-    return false;  // 未找到匹配项
+    u64 titleId = MacroUtil::getTitleIdFromPath(m_macroFilePath);
+    return MacroUtil::updateMacroPath(titleId, m_macroFilePath, newPath);
 }

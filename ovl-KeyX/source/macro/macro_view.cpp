@@ -2,8 +2,9 @@
 #include "macro_rename.hpp"
 #include "macro_list.hpp"
 #include "macro_record.hpp" 
+#include "macro_data.hpp"
+#include "macro_util.hpp"
 #include <ultra.hpp>
-#include "ini_helper.hpp" 
 #include "hiddata.hpp"
 #include "refresh.hpp"
 #include <algorithm>
@@ -11,49 +12,6 @@
 #include "macro_edit.hpp"
 
 namespace {
-
-    // 删除指定脚本的快捷键配置
-    bool removeHotkeyIfExists(const char* macroFilePath, const char* gameCfgPath) {
-        // 获取配置文件中的宏数量
-        int macroCount = IniHelper::getInt("MACRO", "macroCount", 0, gameCfgPath);
-        if (macroCount <= 0) return false;
-        // 查找匹配项
-        int foundIndex = -1;
-        for (int i = 1; i <= macroCount; i++) {
-            std::string key = "macro_path_" + std::to_string(i);
-            std::string path = IniHelper::getString("MACRO", key, "", gameCfgPath);
-            if (path == macroFilePath) {
-                foundIndex = i;
-                break;
-            }
-        }
-        if (foundIndex == -1) return false;  // 未找到
-        // 将后续项前移（压缩索引）
-        for (int i = foundIndex; i < macroCount; i++) {
-            // 当前项
-            std::string pathKey = "macro_path_" + std::to_string(i);
-            std::string comboKey = "macro_combo_" + std::to_string(i);
-            // 下一项
-            std::string nextPathKey = "macro_path_" + std::to_string(i + 1);
-            std::string nextComboKey = "macro_combo_" + std::to_string(i + 1);
-            // 读取下一项
-            std::string nextPath = IniHelper::getString("MACRO", nextPathKey, "", gameCfgPath);
-            int nextCombo = IniHelper::getInt("MACRO", nextComboKey, 0, gameCfgPath);
-            // 覆盖当前项
-            IniHelper::setString("MACRO", pathKey, nextPath, gameCfgPath);
-            IniHelper::setInt("MACRO", comboKey, nextCombo, gameCfgPath);
-        }
-        // 删除最后一项的键
-        std::string lastPathKey = "macro_path_" + std::to_string(macroCount);
-        std::string lastComboKey = "macro_combo_" + std::to_string(macroCount);
-        IniHelper::removeKey("MACRO", lastPathKey, gameCfgPath);
-        IniHelper::removeKey("MACRO", lastComboKey, gameCfgPath);
-        // 更新计数
-        IniHelper::setInt("MACRO", "macroCount", macroCount - 1, gameCfgPath);
-        return true;
-    }
-
-
     constexpr const u64 buttons[] = {
         BTN_ZL,
         BTN_ZR,
@@ -79,67 +37,34 @@ MacroViewGui::MacroViewGui(const char* macroFilePath, const char* gameName, bool
  : m_isRecord(isRecord)
 {
     strcpy(m_macroFilePath, macroFilePath);
-    strcpy(m_info.gameName, gameName);
-    std::string fileName = ult::getFileName(macroFilePath);
-    auto dot = fileName.rfind('.');
-    if (dot != std::string::npos) fileName = fileName.substr(0, dot); 
-    strcpy(m_info.macroName, fileName.c_str());
-    struct stat st{};
-    if (stat(macroFilePath, &st) == 0) {
-        u32 kb = static_cast<u32>((st.st_size + 1023) / 1024);
-        snprintf(m_info.fileSizeKb, sizeof(m_info.fileSizeKb), "%u KB", static_cast<u16>(kb));
-    }
-    ParsingMacros();
+    strcpy(m_gameName, gameName);
+    MacroData::load(macroFilePath);
     getHotkey();
-
-}
-
-// 解析宏文件，获取文件头数据
-void MacroViewGui::ParsingMacros(){
-    FILE* fp = fopen(m_macroFilePath, "rb");
-    if (!fp) return;
-    MacroHeader header{};
-    if (fread(&header, sizeof(header), 1, fp) == 1) {
-        snprintf(m_info.titleId, sizeof(m_info.titleId), "%016lX", header.titleId);
-        snprintf(m_info.totalFrames, sizeof(m_info.totalFrames), "%u", header.frameCount);
-        snprintf(m_info.fps, sizeof(m_info.fps), "%u FPS", header.frameRate);
-        snprintf(m_info.durationSec, sizeof(m_info.durationSec), "%u s", header.frameRate ? static_cast<u8>(header.frameCount / header.frameRate) : 0);
-    }
-    fclose(fp);
 }
 
 void MacroViewGui::getHotkey() {
-    m_Hotkey = 0;
-    sprintf(m_gameCfgPath, "sdmc:/config/KeyX/GameConfig/%s.ini", m_info.titleId);
-    int macroCount = IniHelper::getInt("MACRO", "macroCount", 0, m_gameCfgPath);
-    for (int idx = 1; idx <= macroCount; ++idx) {
-        std::string path  = "macro_path_"  + std::to_string(idx);
-        std::string macroPath = IniHelper::getString("MACRO", path, "", m_gameCfgPath);
-        if (macroPath == m_macroFilePath) {
-            std::string combo = "macro_combo_" + std::to_string(idx);
-            m_Hotkey = static_cast<u64>(IniHelper::getInt("MACRO", combo, 0, m_gameCfgPath));
-        }
-    }
+    u64 titleId = MacroData::getBasicInfo().titleId;
+    m_Hotkey = MacroUtil::getHotkey(titleId, m_macroFilePath);
 }
 
 
 tsl::elm::Element* MacroViewGui::createUI() {
-    auto frame = new tsl::elm::OverlayFrame(m_info.gameName, "管理录制的脚本");
+    auto frame = new tsl::elm::OverlayFrame(m_gameName, "管理录制的脚本");
     auto list = new tsl::elm::List();
     auto textArea = new tsl::elm::CustomDrawer([this](tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h) {
+        const auto& info = MacroData::getBasicInfo();
+        char titleId[17], fileSize[16], duration[16], fps[16], frames[16];
+        snprintf(titleId, sizeof(titleId), "%016lX", info.titleId);
+        snprintf(fileSize, sizeof(fileSize), "%u KB", (info.fileSize + 1023) / 1024);
+        snprintf(duration, sizeof(duration), "%u s", info.durationMs / 1000);
+        snprintf(fps, sizeof(fps), "%u FPS", info.frameRate);
+        snprintf(frames, sizeof(frames), "%u", info.frameCount);
+        
         constexpr const char* kLabels[] = {
             "游戏编号：", "脚本名称：",
             "脚本大小：", "录制时间：", "录制帧率：", "录制帧数："
         };
-
-        const char* values[] = {
-            m_info.titleId,
-            m_info.macroName,
-            m_info.fileSizeKb,
-            m_info.durationSec,
-            m_info.fps,
-            m_info.totalFrames
-        };
+        const char* values[] = { titleId, info.fileName, fileSize, duration, fps, frames };
         
         char line[64];
         constexpr const u32 fontSize = 20;
@@ -167,7 +92,7 @@ tsl::elm::Element* MacroViewGui::createUI() {
     m_listButton = new tsl::elm::ListItem("分配按键", m_Hotkey ? HidHelper::getCombinedIcons(m_Hotkey) : ">");
     m_listButton->setClickListener([this](u64 keys) {
         if (keys & HidNpadButton_A) {
-            tsl::changeTo<MacroHotKeySettingGui>(m_macroFilePath, m_info.gameName, m_gameCfgPath, m_Hotkey);
+            tsl::changeTo<MacroHotKeySettingGui>(m_macroFilePath, m_gameName, m_Hotkey);
             return true;
         }
         return false;
@@ -177,7 +102,7 @@ tsl::elm::Element* MacroViewGui::createUI() {
     auto listChangeName = new tsl::elm::ListItem("修改名称", ">");
     listChangeName->setClickListener([this](u64 keys) {
         if (keys & HidNpadButton_A) {
-            tsl::changeTo<MacroRenameGui>(m_macroFilePath, m_info.gameName);
+            tsl::changeTo<MacroRenameGui>(m_macroFilePath, m_gameName);
             return true;
         }   
         return false;
@@ -187,7 +112,7 @@ tsl::elm::Element* MacroViewGui::createUI() {
     auto listEditMacro = new tsl::elm::ListItem("编辑脚本", ">");
     listEditMacro->setClickListener([this](u64 keys) {
         if (keys & HidNpadButton_A) {
-            tsl::changeTo<MacroEditGui>(m_macroFilePath, m_info.gameName, m_isRecord);
+            tsl::changeTo<MacroEditGui>(m_gameName, m_isRecord);
             return true;
         }   
         return false;
@@ -213,7 +138,8 @@ bool MacroViewGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &
     if ((keysDown & HidNpadButton_Minus) && m_deleteItem) {
         if (getFocusedElement() == m_deleteItem) {
             ult::deleteFileOrDirectory(m_macroFilePath);
-            if (removeHotkeyIfExists(m_macroFilePath, m_gameCfgPath)) g_ipcManager.sendReloadMacroCommand();
+            u64 titleId = MacroData::getBasicInfo().titleId;
+            if (MacroUtil::removeHotkey(titleId, m_macroFilePath)) g_ipcManager.sendReloadMacroCommand();
             Refresh::RefrRequest(Refresh::MacroGameList);
             tsl::goBack();
             return true;
@@ -226,24 +152,17 @@ bool MacroViewGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &
 
 
 // 快捷键设置
-MacroHotKeySettingGui::MacroHotKeySettingGui(const char* macroFilePath, const char* gameName, const char* gameCfgPath, u64 Hotkey) 
+MacroHotKeySettingGui::MacroHotKeySettingGui(const char* macroFilePath, const char* gameName, u64 Hotkey) 
  : m_Hotkey(Hotkey), m_selectedButtons(Hotkey)
 {
     strcpy(m_macroFilePath, macroFilePath);
     strcpy(m_gameName, gameName);
-    strcpy(m_gameCfgPath, gameCfgPath);
-
-    // 读取所有已使用的快捷键（排除当前脚本）
-    m_usedHotkeys.clear();
-    int macroCount = IniHelper::getInt("MACRO", "macroCount", 0, m_gameCfgPath);
-    for (int i = 1; i <= macroCount; i++) {
-        std::string pathKey = "macro_path_" + std::to_string(i);
-        std::string comboKey = "macro_combo_" + std::to_string(i);
-        std::string path = IniHelper::getString("MACRO", pathKey, "", m_gameCfgPath);
-        if (path == macroFilePath) continue;
-        u64 combo = static_cast<u64>(IniHelper::getInt("MACRO", comboKey, 0, m_gameCfgPath));
-        if (combo != 0) m_usedHotkeys.push_back(combo);
-    }
+    m_titleId = MacroUtil::getTitleIdFromPath(macroFilePath);
+    // 读取所有已使用的快捷键
+    m_usedHotkeys = MacroUtil::getUsedHotkeys(m_titleId);
+    // 移除当前脚本的快捷键（如果存在）
+    auto it = std::find(m_usedHotkeys.begin(), m_usedHotkeys.end(), Hotkey);
+    if (it != m_usedHotkeys.end()) m_usedHotkeys.erase(it);
 }
 
 tsl::elm::Element* MacroHotKeySettingGui::createUI() {
@@ -388,11 +307,7 @@ bool MacroHotKeySettingGui::handleInput(u64 keysDown, u64 keysHeld, const HidTou
     if ((keysDown & HidNpadButton_Plus) && m_HotKeySave) {
         if (getFocusedElement() == m_HotKeySave) {
             if (!isHotkeyValid()) return true;
-            removeHotkeyIfExists(m_macroFilePath, m_gameCfgPath);
-            int macroCount = IniHelper::getInt("MACRO", "macroCount", 0, m_gameCfgPath) + 1;
-            IniHelper::setInt("MACRO", "macroCount", macroCount, m_gameCfgPath);
-            IniHelper::setString("MACRO", "macro_path_" + std::to_string(macroCount), m_macroFilePath, m_gameCfgPath);
-            IniHelper::setInt("MACRO", "macro_combo_" + std::to_string(macroCount), m_selectedButtons, m_gameCfgPath);
+            MacroUtil::setHotkey(m_titleId, m_macroFilePath, m_selectedButtons);
             g_ipcManager.sendReloadMacroCommand();
             Refresh::RefrSetMultiple(Refresh::MacroGameList | Refresh::MacroView);
             tsl::goBack();
@@ -403,7 +318,7 @@ bool MacroHotKeySettingGui::handleInput(u64 keysDown, u64 keysHeld, const HidTou
     // 删除按键触发
     else if ((keysDown & HidNpadButton_Minus) && m_HotKeyDelete) {
         if (getFocusedElement() == m_HotKeyDelete) {
-            if (removeHotkeyIfExists(m_macroFilePath, m_gameCfgPath)) {
+            if (MacroUtil::removeHotkey(m_titleId, m_macroFilePath)) {
                 g_ipcManager.sendReloadMacroCommand();
                 Refresh::RefrSetMultiple(Refresh::MacroGameList | Refresh::MacroView);
             }

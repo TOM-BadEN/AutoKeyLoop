@@ -4,25 +4,19 @@
 #include "game.hpp"
 #include <algorithm>
 #include <strings.h>
-#include "ini_helper.hpp"
 #include "hiddata.hpp"
 #include "refresh.hpp"
-
-namespace {
-    const char* MACROS_DIR = "/config/KeyX/macros";
-}
+#include "macro_util.hpp"
 
 // 脚本清单所有游戏列表类
 MacroListGui::MacroListGui() 
  : m_macroDirs()
 {
     // 获取有脚本的所有游戏目录(目录名是titleId)
-    auto dirs = ult::getSubdirectories(MACROS_DIR);
+    auto dirs = MacroUtil::getGameDirs();
     m_macroDirs.reserve(dirs.size());
     for (const auto& dir : dirs) {
-        MacroDirEntry entry{};
-        entry.dirName = dir;
-        m_macroDirs.push_back(entry);
+        m_macroDirs.push_back({dir, nullptr});
     }
 
 }
@@ -93,48 +87,9 @@ MacroListGuiGame::MacroListGuiGame(u64 titleId)
 {
     // 如果这个界面是首次创建，则消耗刷新标志，避免引发崩溃
     Refresh::RefrConsume(Refresh::MacroGameList);
-
-    // 获取游戏名
     GameMonitor::getTitleIdGameName(m_titleId, m_gameName);
-    // 获取所有宏文件
-    char gameDirPath[64]{};
-    sprintf(gameDirPath, "sdmc:/config/KeyX/macros/%016lX/*.macro", m_titleId);
-    std::vector<std::string> allMacroFiles = ult::getFilesListByWildcards(gameDirPath);
-    // 按名称排序
-    std::sort(allMacroFiles.begin(), allMacroFiles.end(),[](const std::string& a, const std::string& b) { return strcasecmp(a.c_str(), b.c_str()) < 0; });
-    // 获取已经设置了快捷键的宏文件
-    char gameCfgPath[64];
-    sprintf(gameCfgPath, "sdmc:/config/KeyX/GameConfig/%016lX.ini", m_titleId);
-    Macro entry;
-    int macroCount = IniHelper::getInt("MACRO", "macroCount", 0, gameCfgPath);
-    for (int idx = 1; idx <= macroCount; ++idx) {
-        std::string path  = "macro_path_"  + std::to_string(idx);
-        std::string combo = "macro_combo_" + std::to_string(idx);
-        std::string macroPath = IniHelper::getString("MACRO", path, "", gameCfgPath);
-        if (macroPath.empty()) continue;
-        u64 Hotkey = static_cast<u64>(IniHelper::getInt("MACRO", combo, 0, gameCfgPath));
-        if (Hotkey == 0) continue;
-        entry.macroPath = macroPath;
-        entry.Hotkey = Hotkey;
-        m_macro.push_back(entry);
-    }
-    // 按名称排序
-    std::sort(m_macro.begin(), m_macro.end(),[](const Macro& lhs, const Macro& rhs) {
-        std::string nameL = ult::getFileName(lhs.macroPath);
-        std::string nameR = ult::getFileName(rhs.macroPath);
-        return strcasecmp(nameL.c_str(), nameR.c_str()) < 0;
-    });
-    // 去重和拼接成完整的宏文件列表
-    std::unordered_set<std::string> boundPaths;
-    boundPaths.reserve(m_macro.size());
-    for (const auto& entry : m_macro) boundPaths.insert(entry.macroPath);
-    for (const auto& filePath : allMacroFiles) {
-        if (boundPaths.count(filePath)) continue;
-        Macro extra{};
-        extra.macroPath = filePath;
-        extra.Hotkey = 0;                             
-        m_macro.push_back(std::move(extra));
-    }
+    // 获取所有宏（已排序：有快捷键的在前）
+    m_macro = MacroUtil::getMacroList(m_titleId);
 }
 
 tsl::elm::Element* MacroListGuiGame::createUI() {
@@ -164,13 +119,13 @@ tsl::elm::Element* MacroListGuiGame::createUI() {
 
     list->addItem(new tsl::elm::CategoryHeader(" 选择要查看的脚本"));
     for (const auto& entry : m_macro) {
-        std::string fileName = ult::getFileName(entry.macroPath);
+        std::string fileName = ult::getFileName(entry.path);
         auto dot = fileName.rfind('.');
         if (dot != std::string::npos) fileName = fileName.substr(0, dot); 
-        auto item = new tsl::elm::ListItem(fileName, HidHelper::getCombinedIcons(entry.Hotkey));
+        auto item = new tsl::elm::ListItem(fileName, HidHelper::getCombinedIcons(entry.hotkey));
         item->setClickListener([this, entry](u64 keys) {
             if (keys & HidNpadButton_A) {
-                tsl::changeTo<MacroViewGui>(entry.macroPath.c_str(), m_gameName);
+                tsl::changeTo<MacroViewGui>(entry.path.c_str(), m_gameName);
                 return true;
             }   
             return false;

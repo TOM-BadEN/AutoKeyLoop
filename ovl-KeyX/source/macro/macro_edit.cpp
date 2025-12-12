@@ -50,25 +50,16 @@ namespace {
     enum MenuItem { InsertBefore, InsertAfter, Reset, Delete, EditDuration, EditButton };
 }
 
-MacroEditGui::MacroEditGui(const char* macroFilePath, const char* gameName, bool isRecord) 
- : m_macroFilePath(macroFilePath)
- , m_gameName(gameName)
+MacroEditGui::MacroEditGui(const char* gameName, bool isRecord) 
+ : m_gameName(gameName)
  , m_isRecord(isRecord)
 {
-    MacroData::load(macroFilePath);
     MacroData::parseActions();
 }
 
-MacroEditGui::~MacroEditGui() {
-    MacroData::cleanup();
-}
-
 tsl::elm::Element* MacroEditGui::createUI() {
-    // 提取文件名（去掉扩展名）
-    std::string fileName = ult::getFileName(m_macroFilePath);
-    auto dot = fileName.rfind('.');
-    if (dot != std::string::npos) fileName = fileName.substr(0, dot);
-    std::string subtitle = fileName + " 撤销修改";
+    const auto& info = MacroData::getBasicInfo();
+    std::string subtitle = std::string(info.fileName) + " 撤销修改";
     auto frame = new tsl::elm::HeaderOverlayFrame(97);
     
     // 自定义头部绘制器（包含标题和底部按钮）
@@ -467,10 +458,10 @@ bool MacroEditGui::handleNormalInput(u64 keysDown, u64 keysHeld) {
     }
     if (keysDown & HidNpadButton_Plus) {
         if (!m_selectMode) {
-            MacroData::saveForEdit(m_macroFilePath);
+            MacroData::saveForEdit();
             Refresh::RefrRequest(Refresh::MacroGameList); 
             g_ipcManager.sendReloadMacroCommand();
-            tsl::swapTo<MacroViewGui>(SwapDepth(2), m_macroFilePath, m_gameName, m_isRecord);
+            tsl::swapTo<MacroViewGui>(SwapDepth(2), MacroData::getFilePath(), m_gameName, m_isRecord);
             return true;
         }
     }

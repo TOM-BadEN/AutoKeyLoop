@@ -1,8 +1,12 @@
 #include "macro_data.hpp"
 #include <cstdio>
+#include <sys/stat.h>
+#include <cstring>
 
 // 静态成员定义
+char MacroData::s_filePath[128];
 MacroHeader MacroData::s_header;
+MacroBasicInfo MacroData::s_basicInfo;
 std::vector<MacroFrame> MacroData::s_frames;
 std::vector<Action> MacroData::s_actions;
 
@@ -40,6 +44,8 @@ bool MacroData::isSameState(const MacroFrame& a, const MacroFrame& b) {
 
 // 加载获取宏基础数据
 bool MacroData::load(const char* filePath) {
+    strncpy(s_filePath, filePath, sizeof(s_filePath) - 1);
+    s_filePath[sizeof(s_filePath) - 1] = '\0';
     s_frames.clear();
     FILE* fp = fopen(filePath, "rb");
     if (!fp) return false;
@@ -49,12 +55,36 @@ bool MacroData::load(const char* filePath) {
     s_frames.resize(s_header.frameCount);
     fread(s_frames.data(), sizeof(MacroFrame), s_header.frameCount, fp);
     fclose(fp);
+    
+    // 填充基础信息
+    s_basicInfo.titleId = s_header.titleId;
+    s_basicInfo.frameRate = s_header.frameRate;
+    s_basicInfo.frameCount = s_header.frameCount;
+    s_basicInfo.durationMs = s_header.frameRate ? (s_header.frameCount * 1000 / s_header.frameRate) : 0;
+    // 文件大小
+    struct stat st{};
+    if (stat(filePath, &st) == 0) s_basicInfo.fileSize = st.st_size;
+    else s_basicInfo.fileSize = 0;
+    // 提取文件名
+    const char* lastSlash = strrchr(filePath, '/');
+    const char* name = lastSlash ? lastSlash + 1 : filePath;
+    const char* dot = strrchr(name, '.');
+    size_t len = dot ? (size_t)(dot - name) : strlen(name);
+    if (len >= sizeof(s_basicInfo.fileName)) len = sizeof(s_basicInfo.fileName) - 1;
+    strncpy(s_basicInfo.fileName, name, len);
+    s_basicInfo.fileName[len] = '\0';
+    
     return true;
 }
 
+// 获取文件路径
+const char* MacroData::getFilePath() {
+    return s_filePath;
+}
+
 // 保存编辑后的宏数据
-bool MacroData::saveForEdit(const char* filePath) {
-    FILE* fp = fopen(filePath, "wb");
+bool MacroData::saveForEdit() {
+    FILE* fp = fopen(s_filePath, "wb");
     if (!fp) return false;
     s_header.frameCount = s_frames.size();
     fwrite(&s_header, sizeof(MacroHeader), 1, fp);
@@ -67,6 +97,11 @@ bool MacroData::saveForEdit(const char* filePath) {
 // 获取文件头数据
 const MacroHeader& MacroData::getHeader() {
     return s_header;
+}
+
+// 获取基础信息
+const MacroBasicInfo& MacroData::getBasicInfo() {
+    return s_basicInfo;
 }
 
 // 解析所有帧数据的动作
@@ -269,7 +304,6 @@ void MacroData::setActionDuration(s32 actionIndex, u32 durationMs) {
         s_frames.insert(s_frames.begin() + frameStart + oldFrameCount, addCount, templateFrame);
     } else {
         // 减少帧：从末尾删除
-        u32 removeCount = oldFrameCount - newFrameCount;
         s_frames.erase(s_frames.begin() + frameStart + newFrameCount,
                        s_frames.begin() + frameStart + oldFrameCount);
     }
