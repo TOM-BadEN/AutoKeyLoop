@@ -32,7 +32,8 @@ private:
     u64 m_lastFocusCheckMs = 0;             // 上次焦点检测的时间（毫秒）
     
     // 宏录制数据
-    std::vector<MacroFrame> m_frames;  // 录制的帧数据
+    // std::vector<MacroFrame> m_frames;  // V1，与1.4.1版本弃用
+    std::vector<MacroFrameV2> m_frames;  // V2
     
     void exitRecording();  // 退出录制并返回主界面
     void saveToFile();     // 保存录制数据到文件

@@ -12,8 +12,19 @@ struct MacroHeader {
     u32 frameCount;     // 总帧数
 } __attribute__((packed));
 
-// 宏单帧数据
+// 宏单帧数据 (V1)
 struct MacroFrame {
+    u64 keysHeld;       // 按键状态
+    s32 leftX;          // 左摇杆X
+    s32 leftY;          // 左摇杆Y
+    s32 rightX;         // 右摇杆X
+    s32 rightY;         // 右摇杆Y
+} __attribute__((packed));
+
+// 宏单帧数据 (V2: 带时间戳方案，更精确更稳定的录制与播放)
+// 新增与1.4.2版本
+struct MacroFrameV2 {
+    u32 timestampMs;    // 相对时间戳（毫秒）
     u64 keysHeld;       // 按键状态
     s32 leftX;          // 左摇杆X
     s32 leftY;          // 左摇杆Y

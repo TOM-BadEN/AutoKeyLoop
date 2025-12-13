@@ -75,8 +75,10 @@ void RecordingGui::saveToFile() {
     // 构造文件头
     MacroHeader header;
     memcpy(header.magic, "KEYX", 4);
-    header.version = 1;
-    header.frameRate = 60;
+    header.version = 2;
+    u32 totalMs = m_frames.back().timestampMs;
+    if (totalMs == 0) totalMs = 1;
+    header.frameRate = m_frames.size() * 1000 / totalMs;
     header.titleId = GameMonitor::getCurrentTitleId();
     header.frameCount = m_frames.size();
     // 生成文件路径
@@ -99,7 +101,7 @@ void RecordingGui::saveToFile() {
     FILE* fp = fopen(filename, "wb");
     if (fp) {
         fwrite(&header, sizeof(header), 1, fp);
-        fwrite(m_frames.data(), sizeof(MacroFrame), m_frames.size(), fp);
+        fwrite(m_frames.data(), sizeof(MacroFrameV2), m_frames.size(), fp);
         fclose(fp);
     }
 
@@ -159,8 +161,11 @@ bool RecordingGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &
     }
     
     // 录制当前帧数据
-    MacroFrame frame;
-    frame.keysHeld = keysHeld & ~STICK_PSEUDO_MASK;    // 过滤摇杆虚拟按键（bit 16-23）
+    u64 elapsedNs = armTicksToNs(armGetSystemTick() - m_startTime);
+    u32 elapsedMs = elapsedNs / 1000000;
+    MacroFrameV2 frame;
+    frame.timestampMs = elapsedMs;  // 新增：记录时间戳
+    frame.keysHeld = keysHeld & ~STICK_PSEUDO_MASK;
     frame.leftX = joyStickPosLeft.x;
     frame.leftY = joyStickPosLeft.y;
     frame.rightX = joyStickPosRight.x;
