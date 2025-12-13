@@ -199,7 +199,8 @@ void MacroEditGui::drawTimelineArea(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, 
     for (size_t i = 0; i < actions.size(); i++) {
         float dur = (float)actions[i].frameCount / header.frameRate;
         s32 blockX = x + 10 + (s32)(currentTime * pixelPerSec);
-        s32 blockW = std::max(1, (s32)(dur * pixelPerSec));
+        s32 nextBlockX = x + 10 + (s32)((currentTime + dur) * pixelPerSec);
+        s32 blockW = std::max(1, nextBlockX - blockX);
         bool inRange = ((s32)i >= selStart && (s32)i <= selEnd);
         s32 drawY = inRange ? barY - 3 : barY;
         s32 drawH = inRange ? barH + 6 : barH;
