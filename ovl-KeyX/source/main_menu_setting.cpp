@@ -8,6 +8,7 @@
 #include "sysmodule.hpp"
 #include "refresh.hpp"
 #include "about.hpp"
+#include "updater_ui.hpp"
 
 // 配置文件路径常量
 constexpr const char* CONFIG_PATH = "/config/KeyX/config.ini";
@@ -130,7 +131,7 @@ bool SettingMenu::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &t
 
     
     if (keysDown & HidNpadButton_Plus) {
-        
+        tsl::changeTo<UpdaterUI>();
         return true;
     }
     

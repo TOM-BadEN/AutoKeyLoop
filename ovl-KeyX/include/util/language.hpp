@@ -27,5 +27,10 @@ public:
      * @return 语言文件名（如 "zh-cn.json", "en.json", "ja.json"）
      */
     static std::string getSystemLanguageCode();
+    
+    /**
+     * 判断是否为简体中文
+     */
+    static bool isSimplifiedChinese();
 };
 

@@ -38,6 +38,7 @@ public:
     // 退出系统服务
     virtual void exitServices() override 
     {
+        
         nsExit();
         pdmqryExit();
         pmshellExit();        // 退出进程Shell服务

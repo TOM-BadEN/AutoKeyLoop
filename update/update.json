@@ -1,15 +1,13 @@
 {
-    "version": "1.4.2",
+    "version": "v1.4.2",
     "release_date": "2025.12.15",
-    "download_url": {
-        "CN": "https://xxx.cn/KeyX.zip",
-        "EN": "https://github.com/xxx/releases/download/v1.0.0/KeyX.zip"
-    },
     "changelog": {
         "CN": [
-            "修复了若干问题",
-            "优化了性能",
-            "新增了检查更新功能"
+            "新增了检查更新功能",
+            "重写了宏录制、播放、编辑算法,兼容旧文件",
+            "录制采样由60Hz升级为120Hz",
+            "宏文件体积大幅缩小",
+            "播放精度提高"
         ],
         "EN": [
             "Fixed several issues",

@@ -22,7 +22,7 @@ include $(DEVKITPRO)/libnx/switch_rules
 # 按键助手 (12 bytes)
 
 APP_TITLE	:=	KeyX        
-APP_VERSION :=	1.4.2
+APP_VERSION :=	1.4.1
 
 TARGET		:=	ovl-KeyX
 BUILD		:=	build
@@ -33,6 +33,7 @@ SOURCES		:=	source \
 				source/macro \
 				source/util \
 				source/common \
+				source/update \
 				libs/libultrahand/libultra/source \
 				libs/libultrahand/common
 DATA		:=	data
@@ -43,6 +44,7 @@ INCLUDES	:=	include \
 				include/macro \
 				include/util \
 				include/common \
+				include/update \
 				libs/libultrahand/libultra/include \
 				libs/libultrahand/libtesla/include \
 				libs/libultrahand/common
