@@ -151,11 +151,58 @@ void UpdaterUI::drawHasUpdate(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h)
     r->drawString("更新内容 :", false, textX, currentY, 23, r->a(tsl::defaultTextColor));
     currentY += 35;
     
-    // changelog 列表
+    // changelog 列表（自动换行）
+    s32 maxWidth = w - 19 - 15;
+    s32 fontSize = 20;
+    s32 lineHeight = 32;
+    
     for (const auto& item : m_updateInfo.changelog) {
-        std::string line = " • " + item;
-        r->drawString(line, false, textX, currentY, 20, r->a(tsl::style::color::ColorDescription));
-        currentY += 32;
+        std::string text = item;
+        std::string prefix = " • ";
+        bool isFirstLine = true;
+        
+        while (!text.empty()) {
+            std::string tryLine = prefix + text;
+            auto [tw, th] = r->getTextDimensions(tryLine, false, fontSize);
+            s32 drawX = isFirstLine ? textX : textX + 2;
+            
+            if (tw <= maxWidth) {
+                r->drawString(tryLine, false, drawX, currentY, fontSize, r->a(tsl::style::color::ColorDescription));
+                currentY += lineHeight;
+                break;
+            }
+            
+            // 获取 UTF-8 字符边界
+            std::vector<size_t> charBounds = {0};
+            for (size_t i = 0; i < text.size(); ) {
+                unsigned char c = text[i];
+                if ((c & 0x80) == 0) i += 1;
+                else if ((c & 0xE0) == 0xC0) i += 2;
+                else if ((c & 0xF0) == 0xE0) i += 3;
+                else i += 4;
+                charBounds.push_back(i);
+            }
+            
+            // 二分查找截断点（按字符数）
+            size_t lo = 1, hi = charBounds.size() - 1, cutIdx = 1;
+            while (lo <= hi) {
+                size_t mid = (lo + hi) / 2;
+                auto [mw, mh] = r->getTextDimensions(prefix + text.substr(0, charBounds[mid]), false, fontSize);
+                if (mw <= maxWidth) {
+                    cutIdx = mid;
+                    lo = mid + 1;
+                } else {
+                    hi = mid - 1;
+                }
+            }
+            
+            size_t cut = charBounds[cutIdx];
+            r->drawString(prefix + text.substr(0, cut), false, drawX, currentY, fontSize, r->a(tsl::style::color::ColorDescription));
+            currentY += lineHeight;
+            text = text.substr(cut);
+            prefix = "   ";
+            isFirstLine = false;
+        }
     }
     
     // 绘制底部按钮
