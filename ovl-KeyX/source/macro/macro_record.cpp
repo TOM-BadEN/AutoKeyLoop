@@ -5,6 +5,7 @@
 #include "game.hpp"
 #include <ultra.hpp>
 #include <time.h>
+#include "macro_sampler.hpp"
 
 extern std::string g_recordMessage;
 
@@ -65,58 +66,16 @@ void RecordingFrame::layout(u16 parentX, u16 parentY, u16 parentWidth, u16 paren
 RecordingGui::RecordingGui()
  : m_startTime(armGetSystemTick())
 {
-    // 移动到屏幕中间
+    // 移动到屏幕右上角
     u16 centerX = (tsl::cfg::ScreenWidth - tsl::cfg::LayerWidth);
     tsl::gfx::Renderer::get().setLayerPos(centerX, 0);
     tsl::hlp::requestForeground(false);
+    MacroSampler::Start();
 }
 
 tsl::elm::Element* RecordingGui::createUI() {
     m_frame = new RecordingFrame();
     return m_frame;
-}
-
-// 保存录制数据到文件
-void RecordingGui::saveToFile() {
-    if (m_frames.empty()) return;
-    // 构造文件头
-    MacroHeader header;
-    memcpy(header.magic, "KEYX", 4);
-    header.version = 2;
-    header.frameRate = m_lastFrameMs ? (m_totalSamples * 1000 / m_lastFrameMs) : 60;
-    header.titleId = GameMonitor::getCurrentTitleId();
-    header.frameCount = m_frames.size();
-    // 生成文件路径
-    char dirPath[64];
-    sprintf(dirPath, "sdmc:/config/KeyX/macros/%016lX", header.titleId);
-    ult::createDirectory(dirPath);
-    char filename[96];
-    time_t now = time(nullptr);
-    struct tm tmNow;
-    localtime_r(&now, &tmNow);
-    // 尝试基础文件名 
-    // 如果文件已存在，添加后缀 -1, -2, -3...
-    sprintf(filename, "%s/m_%02d%02d%02d.macro", dirPath, tmNow.tm_hour, tmNow.tm_min, tmNow.tm_sec);
-    int suffix = 1;
-    while (ult::isFile(filename)) {
-        sprintf(filename, "%s/m_%02d%02d%02d-%d.macro", dirPath, tmNow.tm_hour, tmNow.tm_min, tmNow.tm_sec, suffix++);
-        suffix++;
-    }
-    // 写入文件
-    FILE* fp = fopen(filename, "wb");
-    if (fp) {
-        fwrite(&header, sizeof(header), 1, fp);
-        fwrite(m_frames.data(), sizeof(MacroFrameV2), m_frames.size(), fp);
-        fclose(fp);
-    }
-
-    char gameName[64];
-    GameMonitor::getTitleIdGameName(header.titleId, gameName);
-    tsl::disableComboHide.store(false, std::memory_order_release);  // 恢复特斯拉区域触摸和快捷键hide的功能
-    tsl::gfx::Renderer::get().setLayerPos(0, 0);                    // 恢复特斯拉区默认位置
-    tsl::hlp::requestForeground(true);                              // 恢复特斯拉的输入焦点
-    g_recordMessage = "";                                           // 清空录制消息
-    tsl::swapTo<MacroRenameGui>(SwapDepth(1), filename, gameName, true); // 录制成功，跳转到保存与命名界面
 }
 
 // 退出录制并返回主界面
@@ -137,6 +96,7 @@ void RecordingGui::update() {
         FocusState focusState = FocusMonitor::GetState(GameMonitor::getCurrentTitleId());
         if (focusState == FocusState::OutOfFocus) {
             g_recordMessage = "录制已中断";
+            MacroSampler::Cancel();
             exitRecording();
             return;
         }
@@ -151,6 +111,7 @@ void RecordingGui::update() {
     // 超时检测
     if (elapsed_ms > 30000) {
         g_recordMessage = "录制超时";
+        MacroSampler::Cancel();
         exitRecording();
     }
 }
@@ -159,28 +120,20 @@ bool RecordingGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &
     // 录制期间使用特斯拉快捷键结束录制
     const u64 combo = tsl::cfg::launchCombo;
     if (((keysHeld & combo) == combo) && (keysDown & combo)) {
-        // 移除最后一个快捷键帧
-        while (!m_frames.empty() && (m_frames.back().keysHeld & combo)) m_frames.pop_back();
-        saveToFile();  // 界面跳转写在这个函数末尾了
+        MacroSampler::Stop();
+        u64 titleId = GameMonitor::getCurrentTitleId();
+        MacroSampler::Save(titleId, combo);
+        char filename[96];
+        strcpy(filename, MacroSampler::GetFilePath());
+        char gameName[64];
+        GameMonitor::getTitleIdGameName(titleId, gameName);
+        tsl::disableComboHide.store(false, std::memory_order_release);  // 恢复特斯拉区域触摸和快捷键hide的功能
+        tsl::gfx::Renderer::get().setLayerPos(0, 0);                    // 恢复特斯拉区默认位置
+        tsl::hlp::requestForeground(true);                              // 恢复特斯拉的输入焦点
+        g_recordMessage = "";                                           // 清空录制消息
+        tsl::swapTo<MacroRenameGui>(SwapDepth(1), filename, gameName, true); // 录制成功，跳转到保存与命名界面
         return true;
     }
-    
-    // 录制当前帧数据
-    u64 elapsedNs = armTicksToNs(armGetSystemTick() - m_startTime);
-    u32 elapsedMs = elapsedNs / 1000000;
-    u32 frameDuration = elapsedMs - m_lastFrameMs;  // 计算持续时间
-    MacroFrameV2 frame;
-    frame.durationMs = frameDuration;
-    frame.keysHeld = keysHeld & ~STICK_PSEUDO_MASK;
-    frame.leftX = joyStickPosLeft.x;
-    frame.leftY = joyStickPosLeft.y;
-    frame.rightX = joyStickPosRight.x;
-    frame.rightY = joyStickPosRight.y;
-    // 如果与上一帧相同，累加持续时间
-    m_totalSamples++;
-    if (!m_frames.empty() && isSameFrame(m_frames.back(), frame)) m_frames.back().durationMs += frameDuration;
-    else m_frames.push_back(frame);
-    m_lastFrameMs = elapsedMs;  // 更新上一帧时间
 
     // 录制期间不接受其他输入
     return true;

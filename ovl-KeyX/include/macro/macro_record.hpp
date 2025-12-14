@@ -38,5 +38,4 @@ private:
     u32 m_lastFrameMs = 0;               // 上一帧的时间（用于计算持续时间）
     
     void exitRecording();  // 退出录制并返回主界面
-    void saveToFile();     // 保存录制数据到文件
 };

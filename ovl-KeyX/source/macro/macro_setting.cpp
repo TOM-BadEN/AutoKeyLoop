@@ -6,6 +6,7 @@
 #include "sysmodule.hpp"
 #include "focus.hpp"
 #include "macro_list.hpp"
+#include "macro_sampler.hpp"
 
 // 录制消息全局变量
 std::string g_recordMessage = "";
@@ -92,6 +93,7 @@ void CountdownGui::update() {
             tsl::gfx::Renderer::get().setLayerPos(0, 0);
             tsl::disableComboHide.store(false, std::memory_order_release);  // 恢复特斯拉区域触摸和快捷键hide的功能
             g_recordMessage = "请在游戏中录制";
+            MacroSampler::Cancel();
             tsl::goBack();
             return;
         }
@@ -113,6 +115,7 @@ bool CountdownGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &
     const u64 combo = tsl::cfg::launchCombo;
     if ((((keysHeld & combo) == combo) && (keysDown & combo)) || (keysDown & HidNpadButton_B)) {
         g_recordMessage = "已取消录制";
+        MacroSampler::Cancel();
         tsl::gfx::Renderer::get().setLayerPos(0, 0);
         tsl::goBack();
         return true;
@@ -200,6 +203,8 @@ bool SettingMacro::HandleRecordClick() {
         return true;
     }
     // 跳转到倒计时界面
+    // 启动录制线程做好录制准备
+    MacroSampler::Prepare();
     tsl::changeTo<interlayerGui>();
     return true;
 }
