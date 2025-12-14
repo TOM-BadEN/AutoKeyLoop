@@ -7,7 +7,9 @@ enum class UpdateState {
     GettingJson,    // 正在获取更新信息
     NetworkError,   // 网络错误
     NoUpdate,       // 已是最新版本
-    HasUpdate       // 有新版本可用
+    HasUpdate,       // 有新版本可用
+    Downloading,    // 下载中
+    Unzipping,      // 解压中
 };
 
 class UpdaterUI : public tsl::Gui 
@@ -17,6 +19,7 @@ public:
     ~UpdaterUI();
     virtual tsl::elm::Element* createUI() override;
     virtual void update() override;
+    virtual bool handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) override;
 
 private:
     UpdateState m_state = UpdateState::GettingJson;                          // 当前状态
@@ -24,6 +27,9 @@ private:
     UpdateInfo m_updateInfo;                                                 // 更新信息
     int m_frameIndex = 0;                                                    // 动画帧索引
     int m_frameCounter = 0;                                                  // 帧计数器
+
+    bool m_successDownload = false;                                          // 是否下载成功
+    bool m_successUnzip = false;                                             // 是否解压成功
 
     void drawGettingJson(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h); // 绘制加载中
     void drawNetworkError(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h);// 绘制网络错误

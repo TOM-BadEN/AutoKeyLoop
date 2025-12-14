@@ -41,7 +41,11 @@ tsl::elm::Element* UpdaterUI::createUI() {
             case UpdateState::GettingJson:  drawGettingJson(r, x, y, w, h); break;
             case UpdateState::NetworkError: drawNetworkError(r, x, y, w, h); break;
             case UpdateState::NoUpdate:     drawNoUpdate(r, x, y, w, h); break;
-            case UpdateState::HasUpdate:    drawHasUpdate(r, x, y, w, h); break;
+            case UpdateState::HasUpdate:
+            case UpdateState::Downloading:
+            case UpdateState::Unzipping:
+                drawHasUpdate(r, x, y, w, h); 
+                break;
         }
     });
     list->addItem(textArea, 520);
@@ -68,8 +72,24 @@ void UpdaterUI::update() {
         }
         
     }
+
+    else if (m_state == UpdateState::Downloading) {
+        if (m_taskDone) {
+            stopThread();
+        }        
+    }
 }
 
+bool UpdaterUI::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) {
+    if (m_state == UpdateState::HasUpdate) {
+        if (keysDown & HidNpadButton_Plus) {
+            m_state = UpdateState::Downloading;
+            startThread();
+            return true;
+        }
+    }
+    return false;
+}
 
 void UpdaterUI::drawGettingJson(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h) {
     s32 iconFont = 150;
@@ -211,6 +231,15 @@ void UpdaterUI::drawHasUpdate(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h)
         }
     }
     
+    // 执行任务的时候绘制对应的进度条
+    if (m_state == UpdateState::Downloading || m_state == UpdateState::Unzipping) {
+        int percent = (m_state == UpdateState::Downloading) ? ult::downloadPercentage.load() : ult::unzipPercentage.load();
+        s32 progressWidth = (w + 4) * percent / 100;
+        r->drawRoundedRect(x, listY, progressWidth, ITEM_HEIGHT, 5, tsl::Color(0xF, 0xE, 0x0, 0x3));  // 半透明黄色
+    } else {
+        r->drawRoundedRect(x, listY, w + 4, ITEM_HEIGHT, 5, tsl::Color(0x0, 0x0, 0x0, 0x0));
+    }
+
     // 绘制底部按钮
     double progress = calcBlinkProgress();
     tsl::Color hlColor = calcBlinkColor(tsl::highlightColor1, tsl::highlightColor2, progress);
@@ -222,19 +251,20 @@ void UpdaterUI::drawHasUpdate(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h)
     s32 keyFont = 23;
     s32 valFont = 20;
     auto keyDim = r->getTextDimensions("更新插件", false, keyFont);
-    auto valDim = r->getTextDimensions("按+更新", false, valFont);
+    auto valDim = r->getTextDimensions("按  更新", false, valFont);
     
     s32 keyY = listY + (ITEM_HEIGHT + keyDim.second) / 2;
     s32 valY = listY + (ITEM_HEIGHT + valDim.second) / 2;
     
     r->drawString("更新插件", false, x + 19, keyY, keyFont, r->a(tsl::defaultTextColor));
-    r->drawString("按+更新", false, x + w - 15 - valDim.first, valY, valFont, r->a(tsl::onTextColor));
+    r->drawString("按  更新", false, x + w - 15 - valDim.first, valY, valFont, r->a(tsl::onTextColor));
 }
 
 // 线程函数
 void UpdaterUI::ThreadFunc(void* arg) {
     UpdaterUI* self = static_cast<UpdaterUI*>(arg);
     if (self->m_state == UpdateState::GettingJson) self->m_updateInfo = self->m_updateData.getUpdateInfo();
+    else if (self->m_state == UpdateState::Downloading) self->m_successDownload = self->m_updateData.downloadZip();
     self->m_taskDone = true;
 }
 

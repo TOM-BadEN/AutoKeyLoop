@@ -17,6 +17,7 @@ public:
     
     UpdateInfo getUpdateInfo();                                                 // 获取远程更新信息
     bool hasNewVersion(const std::string& remote, const std::string& local);    // 判断是否有新版本
+    bool downloadZip();                                                         // 下载更新压缩包
 
 private:
 

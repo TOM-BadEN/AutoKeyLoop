@@ -75,3 +75,7 @@ bool UpdaterData::hasNewVersion(const std::string& remote, const std::string& lo
     if (r2 != l2) return r2 > l2;
     return r3 > l3;
 }
+
+bool UpdaterData::downloadZip() {
+    return ult::downloadFile(m_isSimplifiedChinese ? CN_DOWNLOAD_URL : EN_DOWNLOAD_URL, UPDATE_KEYX_PATH, false);
+}
