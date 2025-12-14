@@ -5,5 +5,5 @@ UpdaterUI::UpdaterUI() {
 }
 
 tsl::elm::Element* UpdaterUI::createUI() {
-    
+
 }

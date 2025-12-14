@@ -3,7 +3,10 @@
 # 用于编译 ovl、sys 和 sys-Notification 模块，并将编译产物复制到 out 目录
 #---------------------------------------------------------------------------------
 
-.PHONY: all clean ovl sys notif prepare-out show-result check update
+.PHONY: all clean ovl sys notif prepare-out show-result check update zip
+
+# 从 ovl-KeyX/Makefile 读取版本号
+VERSION := $(shell grep -oP 'APP_VERSION\s*:=\s*\K[^\s]+' ovl-KeyX/Makefile)
 
 # 模块目录
 OVL_DIR := ovl-KeyX
@@ -58,42 +61,47 @@ all:
 show-result:
 	@echo "========================================"
 	@if [ -f $(BUILD_STATUS) ]; then \
-		echo "编译结果："; \
-		while IFS= read -r line; do \
-			if echo "$$line" | grep -q "编译失败"; then \
-				printf "$(COLOR_RED)%s$(COLOR_RESET)\n" "$$line"; \
-			elif echo "$$line" | grep -q "编译完成"; then \
-				printf "$(COLOR_GREEN)%s$(COLOR_RESET)\n" "$$line"; \
-			else \
-				echo "$$line"; \
-			fi; \
-		done < $(BUILD_STATUS); \
 		if grep -q "编译失败" $(BUILD_STATUS); then \
+			echo "编译结果："; \
+			while IFS= read -r line; do \
+				if echo "$$line" | grep -q "编译失败"; then \
+					printf "$(COLOR_RED)%s$(COLOR_RESET)\n" "$$line"; \
+				elif echo "$$line" | grep -q "编译完成"; then \
+					printf "$(COLOR_GREEN)%s$(COLOR_RESET)\n" "$$line"; \
+				fi; \
+			done < $(BUILD_STATUS); \
 			rm -f $(BUILD_STATUS); \
 			exit 1; \
 		else \
-		mkdir -p $(OUT_EN_OVERLAYS) $(OUT_EN_ATMOSPHERE) $(OUT_EN_LANG); \
-		mkdir -p $(OUT_CN_OVERLAYS) $(OUT_CN_ATMOSPHERE) $(OUT_CN_LANG); \
-		cp -f $(OVL_OUTPUT) $(OUT_EN_OVERLAYS)/; \
-		[ -d $(OVL_RESOURCE_LANG) ] && cp -f $(OVL_RESOURCE_LANG)/* $(OUT_EN_LANG)/ || true; \
-		cp -rf $(SYS_OUTPUT_DIR)/* $(OUT_EN_ATMOSPHERE)/; \
-		[ -d $(SYS_NOTIF_OUTPUT_DIR) ] && cp -rf $(SYS_NOTIF_OUTPUT_DIR)/* $(OUT_EN_ATMOSPHERE_BASE)/ || true; \
-		cp -f $(OVL_OUTPUT) $(OUT_CN_OVERLAYS)/; \
-		python $(OVL_DIR)/ChineseTitle.py $(OUT_CN_OVERLAYS)/ovl-KeyX.ovl > /dev/null 2>&1 && \
-		printf "$(COLOR_GREEN)  模块 ovl-KeyX，改名成功$(COLOR_RESET)\n" || printf "$(COLOR_RED)  模块 ovl-KeyX，改名失败$(COLOR_RESET)\n"; \
-		[ -d $(OVL_RESOURCE_LANG) ] && cp -f $(OVL_RESOURCE_LANG)/* $(OUT_CN_LANG)/ || true; \
-		cp -rf $(SYS_OUTPUT_DIR)/* $(OUT_CN_ATMOSPHERE)/; \
-		[ -d $(SYS_NOTIF_OUTPUT_DIR) ] && cp -rf $(SYS_NOTIF_OUTPUT_DIR)/* $(OUT_CN_ATMOSPHERE_BASE)/ || true; \
-		echo "========================================"; \
-		echo "输出目录："; \
-		printf "$(COLOR_GREEN)     $(OUT_DIR)/$(COLOR_RESET)\n"; \
-		echo "========================================"; \
-		rm -f $(BUILD_STATUS); \
-	fi; \
-fi
+			mkdir -p $(OUT_EN_OVERLAYS) $(OUT_EN_ATMOSPHERE) $(OUT_EN_LANG); \
+			mkdir -p $(OUT_CN_OVERLAYS) $(OUT_CN_ATMOSPHERE) $(OUT_CN_LANG); \
+			cp -f $(OVL_OUTPUT) $(OUT_EN_OVERLAYS)/; \
+			[ -d $(OVL_RESOURCE_LANG) ] && cp -f $(OVL_RESOURCE_LANG)/* $(OUT_EN_LANG)/ || true; \
+			cp -rf $(SYS_OUTPUT_DIR)/* $(OUT_EN_ATMOSPHERE)/; \
+			[ -d $(SYS_NOTIF_OUTPUT_DIR) ] && cp -rf $(SYS_NOTIF_OUTPUT_DIR)/* $(OUT_EN_ATMOSPHERE_BASE)/ || true; \
+			cp -f $(OVL_OUTPUT) $(OUT_CN_OVERLAYS)/; \
+			[ -d $(OVL_RESOURCE_LANG) ] && cp -f $(OVL_RESOURCE_LANG)/* $(OUT_CN_LANG)/ || true; \
+			cp -rf $(SYS_OUTPUT_DIR)/* $(OUT_CN_ATMOSPHERE)/; \
+			[ -d $(SYS_NOTIF_OUTPUT_DIR) ] && cp -rf $(SYS_NOTIF_OUTPUT_DIR)/* $(OUT_CN_ATMOSPHERE_BASE)/ || true; \
+			(cd $(OUT_CN) && zip -rq ../KeyX-$(VERSION)-CN.zip .); \
+			(cd $(OUT_EN) && zip -rq ../KeyX-$(VERSION)-EN.zip .); \
+			cp $(OUT_DIR)/KeyX-$(VERSION)-CN.zip "$(OUT_DIR)/按键助手-$(VERSION)-XX.zip"; \
+			echo "编译结果："; \
+			printf "$(COLOR_GREEN)  模块 ovl-KeyX，编译完成，已打包ZIP$(COLOR_RESET)\n"; \
+			printf "$(COLOR_GREEN)  模块 sys-KeyX，编译完成，已打包ZIP$(COLOR_RESET)\n"; \
+			printf "$(COLOR_GREEN)  模块 sys-Notification，编译完成$(COLOR_RESET)\n"; \
+			python $(OVL_DIR)/ChineseTitle.py $(OUT_CN_OVERLAYS)/ovl-KeyX.ovl > /dev/null 2>&1 && \
+			printf "$(COLOR_GREEN)  模块 ovl-KeyX，改名成功$(COLOR_RESET)\n" || printf "$(COLOR_RED)  模块 ovl-KeyX，改名失败$(COLOR_RESET)\n"; \
+			echo "========================================"; \
+			echo "输出目录："; \
+			printf "$(COLOR_GREEN)     $(OUT_DIR)/$(COLOR_RESET)\n"; \
+			echo "========================================"; \
+			rm -f $(BUILD_STATUS); \
+		fi; \
+	fi
 
 #---------------------------------------------------------------------------------
-# 编译 overlay 模块
+# 编译 overlay 模块111
 #---------------------------------------------------------------------------------
 ovl:
 	@echo "========================================"
@@ -212,5 +220,18 @@ update:
 	else \
 		printf "$(COLOR_RED)✗ 更新失败，无法连接 GitHub$(COLOR_RESET)\n"; \
 	fi
+	@echo "========================================"
+
+#---------------------------------------------------------------------------------
+# 打包 CN 和 EN 版本为 ZIP
+#---------------------------------------------------------------------------------
+zip: all
+	@echo "========================================"
+	@echo "打包 ZIP 文件 (v$(VERSION))..."
+	@echo "========================================"
+	@cd $(OUT_CN) && zip -rq ../KeyX-$(VERSION)-CN.zip .
+	@printf "$(COLOR_GREEN)  已生成: $(OUT_DIR)/KeyX-$(VERSION)-CN.zip$(COLOR_RESET)\n"
+	@cd $(OUT_EN) && zip -rq ../KeyX-$(VERSION)-EN.zip .
+	@printf "$(COLOR_GREEN)  已生成: $(OUT_DIR)/KeyX-$(VERSION)-EN.zip$(COLOR_RESET)\n"
 	@echo "========================================"
 
