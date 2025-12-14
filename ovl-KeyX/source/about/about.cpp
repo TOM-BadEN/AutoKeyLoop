@@ -88,13 +88,3 @@ tsl::elm::Element* AboutPlugin::createUI()
     // 返回创建的界面元素
     return frame;
 }
-
-// 处理输入事件
-bool AboutPlugin::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, 
-    HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) {
-    if (keysDown & HidNpadButton_Right) {
-        tsl::goBack();
-        return true;
-    }
-    return false;
-}

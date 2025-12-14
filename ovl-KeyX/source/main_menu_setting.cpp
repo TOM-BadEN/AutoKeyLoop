@@ -7,6 +7,7 @@
 #include "ipc.hpp"
 #include "sysmodule.hpp"
 #include "refresh.hpp"
+#include "about.hpp"
 
 // 配置文件路径常量
 constexpr const char* CONFIG_PATH = "/config/KeyX/config.ini";
@@ -32,7 +33,7 @@ tsl::elm::Element* SettingMenu::createUI() {
     auto frame = new tsl::elm::HeaderOverlayFrame(97);
     frame->setHeader(new tsl::elm::CustomDrawer([this](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
         renderer->drawString("功能设置", false, 20, 50+2, 32, renderer->a(tsl::defaultOverlayColor));
-        renderer->drawString("选择设置项", false, 20, 50+23, 15, renderer->a(tsl::bannerVersionTextColor));
+        renderer->drawString("选择设置项  检查更新  关于插件", false, 20, 50+23, 15, renderer->a(tsl::bannerVersionTextColor));
         renderer->drawString("  白名单", false, 280, 693, 23, renderer->a(tsl::style::color::ColorText));
     }));
 
@@ -124,6 +125,17 @@ bool SettingMenu::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &t
 
     if (keysDown & HidNpadButton_AnyRight) {
         tsl::changeTo<SettingWhitelist>();
+        return true;
+    }
+
+    
+    if (keysDown & HidNpadButton_Plus) {
+        
+        return true;
+    }
+    
+    if (keysDown & HidNpadButton_Minus) {
+        tsl::changeTo<AboutPlugin>();
         return true;
     }
 
