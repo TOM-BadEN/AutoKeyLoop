@@ -24,7 +24,7 @@ struct MacroFrame {
 // 宏单帧数据 (V2: 带时间戳方案，更精确更稳定的录制与播放)
 // 新增与1.4.2版本
 struct MacroFrameV2 {
-    u32 timestampMs;    // 相对时间戳（毫秒）
+    u32 durationMs;     // 持续时间（毫秒）
     u64 keysHeld;       // 按键状态
     s32 leftX;          // 左摇杆X
     s32 leftY;          // 左摇杆Y
@@ -43,7 +43,8 @@ struct Action {
     u64 buttons;        // 按键位掩码
     StickDir stickL;    // 左摇杆方向
     StickDir stickR;    // 右摇杆方向
-    u32 frameCount;     // 持续帧数
+    u32 duration;       // 持续时间（毫秒）
+    u32 frameCount;     // 帧数量
     bool modified = false;  // 是否被修改过
 };
 
@@ -55,6 +56,7 @@ struct MacroBasicInfo {
     u32 durationMs;        // 总时长（毫秒）
     u32 frameRate;         // 帧率
     u32 frameCount;        // 总帧数
+    u16 version;           // 版本号
 };
 
 class MacroData {
@@ -87,11 +89,13 @@ private:
     static MacroHeader s_header;
     static MacroBasicInfo s_basicInfo;
     static std::vector<MacroFrame> s_frames;
+    static std::vector<MacroFrameV2> s_framesV2;
     static std::vector<Action> s_actions;
     
     // 撤销快照栈（最多3层）
     struct UndoSnapshot {
         std::vector<MacroFrame> frames;
+        std::vector<MacroFrameV2> framesV2;
         std::vector<Action> actions;
     };
     static std::vector<UndoSnapshot> s_undoStack;
@@ -101,6 +105,7 @@ private:
     
     // 辅助函数：判断两帧状态是否相同
     static bool isSameState(const MacroFrame& a, const MacroFrame& b);
+    static bool isSameState(const MacroFrameV2& a, const MacroFrameV2& b);
     
     // 辅助函数：判断两个动作是否相同（可合并）
     static bool isSameAction(const Action& a, const Action& b);
@@ -113,4 +118,12 @@ private:
 
     // 辅助函数：保存快照,用于撤销
     static void saveSnapshot();
+    
+    // 辅助函数：解析动作（版本分离）
+    static void parseActionsV1();
+    static void parseActionsV2();
+    
+    // 辅助函数：保存帧数据（版本分离）
+    static void saveForEditV1(FILE* fp);
+    static void saveForEditV2(FILE* fp);
 };

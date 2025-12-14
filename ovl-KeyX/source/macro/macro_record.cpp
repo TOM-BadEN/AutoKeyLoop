@@ -10,6 +10,13 @@ extern std::string g_recordMessage;
 
 namespace {
     constexpr u64 STICK_PSEUDO_MASK = 0xFF0000ULL;  // 伪按键，必须过滤
+    
+    // 比较两帧是否相同（不比较时间戳）
+    bool isSameFrame(const MacroFrameV2& a, const MacroFrameV2& b) {
+        return a.keysHeld == b.keysHeld &&
+               a.leftX == b.leftX && a.leftY == b.leftY &&
+               a.rightX == b.rightX && a.rightY == b.rightY;
+    }
 }
 
 // 录制用的 Frame
@@ -76,9 +83,7 @@ void RecordingGui::saveToFile() {
     MacroHeader header;
     memcpy(header.magic, "KEYX", 4);
     header.version = 2;
-    u32 totalMs = m_frames.back().timestampMs;
-    if (totalMs == 0) totalMs = 1;
-    header.frameRate = m_frames.size() * 1000 / totalMs;
+    header.frameRate = m_lastFrameMs ? (m_totalSamples * 1000 / m_lastFrameMs) : 60;
     header.titleId = GameMonitor::getCurrentTitleId();
     header.frameCount = m_frames.size();
     // 生成文件路径
@@ -163,14 +168,19 @@ bool RecordingGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &
     // 录制当前帧数据
     u64 elapsedNs = armTicksToNs(armGetSystemTick() - m_startTime);
     u32 elapsedMs = elapsedNs / 1000000;
+    u32 frameDuration = elapsedMs - m_lastFrameMs;  // 计算持续时间
     MacroFrameV2 frame;
-    frame.timestampMs = elapsedMs;  // 新增：记录时间戳
+    frame.durationMs = frameDuration;
     frame.keysHeld = keysHeld & ~STICK_PSEUDO_MASK;
     frame.leftX = joyStickPosLeft.x;
     frame.leftY = joyStickPosLeft.y;
     frame.rightX = joyStickPosRight.x;
     frame.rightY = joyStickPosRight.y;
-    m_frames.push_back(frame);
+    // 如果与上一帧相同，累加持续时间
+    m_totalSamples++;
+    if (!m_frames.empty() && isSameFrame(m_frames.back(), frame)) m_frames.back().durationMs += frameDuration;
+    else m_frames.push_back(frame);
+    m_lastFrameMs = elapsedMs;  // 更新上一帧时间
 
     // 录制期间不接受其他输入
     return true;

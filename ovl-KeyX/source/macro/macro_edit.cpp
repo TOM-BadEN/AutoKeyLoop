@@ -120,7 +120,6 @@ bool MacroEditGui::isMenuItemEnabled(int index) const {
 
 void MacroEditGui::drawActionList(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h, double progress) {
     auto& actions = MacroData::getActions();
-    auto& header = MacroData::getHeader();
     
     // 顶部分隔线
     r->drawRect(x, y + 100 - 1, w, 1, r->a(tsl::separatorColor));
@@ -143,8 +142,7 @@ void MacroEditGui::drawActionList(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s3
             }
             
             std::string text = getActionText(actions[i]);
-            u32 durationMs = actions[i].frameCount * 1000 / header.frameRate;
-            std::string duration = std::to_string(durationMs) + "ms";
+            std::string duration = std::to_string(actions[i].duration) + "ms";
             std::string fullText = std::to_string(i + 1) + ". " + text;
             
             bool inSelectRange = false;
@@ -167,8 +165,7 @@ void MacroEditGui::drawActionList(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s3
 
 void MacroEditGui::drawTimelineArea(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, double progress) {
     auto& actions = MacroData::getActions();
-    auto& header = MacroData::getHeader();
-    float totalDuration = (float)header.frameCount / header.frameRate;
+    float totalDuration = (float)MacroData::getBasicInfo().durationMs / 1000.0f;
     float pixelPerSec = (float)(w - 20) / totalDuration;
     s32 barH = 25, barY = y + 50, tickY = y + 27;
     
@@ -197,7 +194,7 @@ void MacroEditGui::drawTimelineArea(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, 
     float currentTime = 0;
     s32 rangeStartX = -1, rangeEndX = -1;
     for (size_t i = 0; i < actions.size(); i++) {
-        float dur = (float)actions[i].frameCount / header.frameRate;
+        float dur = (float)actions[i].duration / 1000.0f;
         s32 blockX = x + 10 + (s32)(currentTime * pixelPerSec);
         s32 nextBlockX = x + 10 + (s32)((currentTime + dur) * pixelPerSec);
         s32 blockW = std::max(1, nextBlockX - blockX);
@@ -242,9 +239,8 @@ void MacroEditGui::drawMenuArea(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, doub
 void MacroEditGui::drawDurationEditArea(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, double progress) {
     tsl::Color highlightColor = calcBlinkColor(tsl::highlightColor1, tsl::highlightColor2, progress);
     auto& actions = MacroData::getActions();
-    auto& header = MacroData::getHeader();
-    s32 currentActionMs = actions[m_menuSelStart].frameCount * 1000 / header.frameRate;
-    s32 totalMs = header.frameCount * 1000 / header.frameRate;
+    s32 currentActionMs = actions[m_menuSelStart].duration;
+    s32 totalMs = MacroData::getBasicInfo().durationMs;
     s32 maxEditMs = 30000 - (totalMs - currentActionMs);
     bool isOverLimit = m_editingDuration > maxEditMs;
     s32 digits[5] = { m_editingDuration/10000%10, m_editingDuration/1000%10, m_editingDuration/100%10, m_editingDuration/10%10, m_editingDuration%10 };
@@ -352,9 +348,8 @@ bool MacroEditGui::handleDurationEditInput(u64 keysDown) {
         return true;
     }
     if (keysDown & HidNpadButton_A) {
-        auto& header = MacroData::getHeader();
-        s32 currentActionMs = actions[m_menuSelStart].frameCount * 1000 / header.frameRate;
-        s32 totalMs = header.frameCount * 1000 / header.frameRate;
+        s32 currentActionMs = actions[m_menuSelStart].duration;
+        s32 totalMs = MacroData::getBasicInfo().durationMs;
         s32 maxEditMs = 30000 - (totalMs - currentActionMs);
         if (m_editingDuration > maxEditMs) return true;
         MacroData::setActionDuration(m_menuSelStart, m_editingDuration);
@@ -382,8 +377,7 @@ void MacroEditGui::executeDeleteAction() {
 
 void MacroEditGui::enterDurationEditMode() {
     auto& actions = MacroData::getActions();
-    auto& header = MacroData::getHeader();
-    m_editingDuration = actions[m_menuSelStart].frameCount * 1000 / header.frameRate;
+    m_editingDuration = actions[m_menuSelStart].duration;
     m_editDigitIndex = 4;
     m_durationEditMode = true;
 }

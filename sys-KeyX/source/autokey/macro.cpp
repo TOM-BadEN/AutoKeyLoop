@@ -70,12 +70,15 @@ FeatureEvent Macro::HandlePlayingState(u64 buttons) {
     }
     // 记录快捷键处于按下状态还是松开状态
     m_HotkeyPressed = isCurrentMacroPressed;
-    if (m_Frames.empty()) return FeatureEvent::FINISHING;
-    // 检查播放进度，如果是循环模式则重新开始
-    if (CalculateTargetFrame() >= m_Frames.size()) {
+    size_t frameCount = (m_Version == 1) ? m_Frames.size() : m_FramesV2.size();
+    if (frameCount == 0) return FeatureEvent::FINISHING;
+    // 计算当前帧并检查播放进度
+    m_CurrentFrameIndex = CalculateTargetFrame();
+    if (m_CurrentFrameIndex >= frameCount) {
         if (!m_RepeatMode) return FeatureEvent::FINISHING;
         m_PlaybackStartTick = armGetSystemTick();
         m_CurrentFrameIndex = 0;
+        m_AccumulatedMs = 0;
     }
     return FeatureEvent::Macro_EXECUTING;
 }
@@ -127,12 +130,27 @@ int Macro::CheckHotkeyTriggered(u64 buttons) {
 }
 
 // 计算当前应该播放第几帧
-u32 Macro::CalculateTargetFrame() const {
-    if (m_FrameRate == 0) return 0;
-    u64 currentTick = armGetSystemTick();
-    u64 elapsedTicks = currentTick - m_PlaybackStartTick;
-    u64 ticksPerFrame = armGetSystemTickFreq() / m_FrameRate;
-    return elapsedTicks / ticksPerFrame;
+u32 Macro::CalculateTargetFrame() {
+    switch (m_Version) {
+        case 1: {
+            // V1: 按帧率计算
+            if (m_FrameRate == 0) return 0;
+            u64 elapsedTicks = armGetSystemTick() - m_PlaybackStartTick;
+            u64 ticksPerFrame = armGetSystemTickFreq() / m_FrameRate;
+            return elapsedTicks / ticksPerFrame;
+        }
+        default: {
+            // V2: 按持续时间累加计算，只在帧切换时累加
+            u64 elapsedMs = armTicksToNs(armGetSystemTick() - m_PlaybackStartTick) / 1000000;
+            while (m_CurrentFrameIndex < m_FramesV2.size()) {
+                u64 frameEndMs = m_AccumulatedMs + m_FramesV2[m_CurrentFrameIndex].durationMs;
+                if (elapsedMs < frameEndMs) break;
+                m_AccumulatedMs = frameEndMs;
+                m_CurrentFrameIndex++;
+            }
+            return m_CurrentFrameIndex;
+        }
+    }
 }
 
 // 事件处理：启动宏
@@ -140,6 +158,7 @@ void Macro::MacroStarting() {
     m_IsPlaying = true;
     LoadMacroFile(m_Macros[m_CurrentMacroIndex].MacroFilePath);
     m_CurrentFrameIndex = 0;
+    m_AccumulatedMs = 0;
     m_PlaybackStartTick = armGetSystemTick();
     m_HotkeyPressed = false;  // 重置状态，因为松开才触发
 }
@@ -147,7 +166,9 @@ void Macro::MacroStarting() {
 // 加载宏文件
 void Macro::LoadMacroFile(const char* filePath) {
     m_Frames.clear();
+    m_FramesV2.clear();
     m_FrameRate = 0;
+    m_Version = 1;
     FILE* file = fopen(filePath, "rb");
     if (!file) return;
     // 读取文件头
@@ -162,14 +183,19 @@ void Macro::LoadMacroFile(const char* filePath) {
         fclose(file);
         return;
     }
-    // 读取帧率和帧数
+    // 读取版本、帧率和帧数
+    m_Version = header.version;
     m_FrameRate = header.frameRate;
     if (header.frameCount > 0) {
-        m_Frames.resize(header.frameCount);
-        if (fread(m_Frames.data(), sizeof(MacroFrame), header.frameCount, file) != header.frameCount) {
-            // 读取失败，清空数据
-            m_Frames.clear();
-            m_FrameRate = 0;
+        switch (m_Version) {
+        case 1:
+            m_Frames.resize(header.frameCount);
+            if (fread(m_Frames.data(), sizeof(MacroFrame), header.frameCount, file) != header.frameCount) m_Frames.clear();
+            break;
+        default:
+            m_FramesV2.resize(header.frameCount);
+            if (fread(m_FramesV2.data(), sizeof(MacroFrameV2), header.frameCount, file) != header.frameCount) m_FramesV2.clear();
+            break;
         }
     }
     fclose(file);
@@ -177,27 +203,45 @@ void Macro::LoadMacroFile(const char* filePath) {
 
 // 事件处理：执行宏
 void Macro::MacroExecuting(ProcessResult& result) {
-    // 计算当前应该播放第几帧
-    u32 targetFrameIndex = CalculateTargetFrame();
-    if (targetFrameIndex >= m_Frames.size()) return;
-    m_CurrentFrameIndex = targetFrameIndex;
-    const MacroFrame& frame = m_Frames[m_CurrentFrameIndex];
+    // 根据版本获取帧数据并应用
+    u64 keysHeld = 0;
+    s32 leftX = 0, leftY = 0, rightX = 0, rightY = 0;
+    
+    switch (m_Version) {
+        case 1: {
+            if (m_CurrentFrameIndex >= m_Frames.size()) return;
+            const MacroFrame& frame = m_Frames[m_CurrentFrameIndex];
+            keysHeld = frame.keysHeld;
+            leftX = frame.leftX; leftY = frame.leftY;
+            rightX = frame.rightX; rightY = frame.rightY;
+            break;
+        }
+        default: {
+            if (m_CurrentFrameIndex >= m_FramesV2.size()) return;
+            const MacroFrameV2& frame = m_FramesV2[m_CurrentFrameIndex];
+            keysHeld = frame.keysHeld;
+            leftX = frame.leftX; leftY = frame.leftY;
+            rightX = frame.rightX; rightY = frame.rightY;
+            break;
+        }
+    }
     
     // 应用按键和摇杆数据
-    result.OtherButtons = frame.keysHeld;  // 覆盖
-    // 摇杆：宏数据不为0时覆盖物理输入，为0时保持物理输入
-    if (frame.leftX != 0) result.analog_stick_l.x = frame.leftX;
-    if (frame.leftY != 0) result.analog_stick_l.y = frame.leftY;
-    if (frame.rightX != 0) result.analog_stick_r.x = frame.rightX;
-    if (frame.rightY != 0) result.analog_stick_r.y = frame.rightY;
+    result.OtherButtons = keysHeld;
+    if (leftX != 0) result.analog_stick_l.x = leftX;
+    if (leftY != 0) result.analog_stick_l.y = leftY;
+    if (rightX != 0) result.analog_stick_r.x = rightX;
+    if (rightY != 0) result.analog_stick_r.y = rightY;
 }
 
 void Macro::MacroFinishing() {
     m_IsPlaying = false;
     m_CurrentFrameIndex = 0;
+    m_AccumulatedMs = 0;
     m_PlaybackStartTick = 0;
     m_FrameRate = 0;
     m_Frames.clear();
+    m_FramesV2.clear();
     m_HotkeyPressTime = 0;
     m_RepeatMode = false;
     m_LastFinishTime = armGetSystemTick();
