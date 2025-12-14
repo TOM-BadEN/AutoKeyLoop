@@ -76,6 +76,8 @@ void UpdaterUI::update() {
     else if (m_state == UpdateState::Downloading) {
         if (m_taskDone) {
             stopThread();
+            if (m_successDownload) m_state = UpdateState::HasUpdate;
+            else m_state = UpdateState::NetworkError;
         }        
     }
 }
@@ -231,13 +233,17 @@ void UpdaterUI::drawHasUpdate(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h)
         }
     }
     
-    // 执行任务的时候绘制对应的进度条
+    // 执行任务的时候绘制对应的进度条（在选中框内部）
+    s32 border = 5;
+    s32 innerX = x + border;
+    s32 innerY = listY;
+    s32 innerW = w + 4 - border * 2;
+    s32 innerH = ITEM_HEIGHT;
+    
     if (m_state == UpdateState::Downloading || m_state == UpdateState::Unzipping) {
         int percent = (m_state == UpdateState::Downloading) ? ult::downloadPercentage.load() : ult::unzipPercentage.load();
-        s32 progressWidth = (w + 4) * percent / 100;
-        r->drawRoundedRect(x, listY, progressWidth, ITEM_HEIGHT, 5, tsl::Color(0xF, 0xE, 0x0, 0x3));  // 半透明黄色
-    } else {
-        r->drawRoundedRect(x, listY, w + 4, ITEM_HEIGHT, 5, tsl::Color(0x0, 0x0, 0x0, 0x0));
+        s32 progressWidth = innerW * percent / 100;
+        r->drawRect(innerX, innerY, progressWidth, innerH, tsl::Color(0xF, 0xF, 0x5, 0x3));
     }
 
     // 绘制底部按钮
