@@ -155,13 +155,19 @@ void UpdaterUI::drawHasUpdate(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h)
     s32 maxWidth = w - 19 - 15;
     s32 fontSize = 20;
     s32 lineHeight = 32;
+    s32 listY = y + h - 10 - ITEM_HEIGHT;
+    s32 maxY = listY - 20;
+    bool stopDrawing = false;
     
     for (const auto& item : m_updateInfo.changelog) {
+        if (stopDrawing) break;
         std::string text = item;
         std::string prefix = " • ";
         bool isFirstLine = true;
         
         while (!text.empty()) {
+            if (currentY > maxY) { stopDrawing = true; break; }
+            
             std::string tryLine = prefix + text;
             auto [tw, th] = r->getTextDimensions(tryLine, false, fontSize);
             s32 drawX = isFirstLine ? textX : textX + 2;
@@ -206,7 +212,6 @@ void UpdaterUI::drawHasUpdate(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h)
     }
     
     // 绘制底部按钮
-    s32 listY = y + h - 10 - ITEM_HEIGHT;
     double progress = calcBlinkProgress();
     tsl::Color hlColor = calcBlinkColor(tsl::highlightColor1, tsl::highlightColor2, progress);
     

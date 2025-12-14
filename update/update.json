@@ -7,12 +7,7 @@
             "重写了宏录制、播放、编辑算法,兼容旧文件",
             "录制采样由60Hz升级为120Hz",
             "宏文件体积大幅缩小",
-            "播放精度提高",
-            "Fixed several issues Fixed several issues Fixed several issues",
-            "Improved performance", 
-            "Added update check feature", 
-            "Added update check feature", 
-            "Added update check feature"
+            "播放精度提高"
         ],
         "EN": [
             "Fixed several issues",
