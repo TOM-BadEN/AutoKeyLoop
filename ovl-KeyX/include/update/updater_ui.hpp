@@ -10,6 +10,8 @@ enum class UpdateState {
     HasUpdate,       // 有新版本可用
     Downloading,    // 下载中
     Unzipping,      // 解压中
+    CancelUpdate,   // 取消更新
+    UpdateError     // 更新错误
 };
 
 class UpdaterUI : public tsl::Gui 

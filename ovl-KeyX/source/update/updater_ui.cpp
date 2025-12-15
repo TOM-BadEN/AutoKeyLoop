@@ -30,6 +30,7 @@ UpdaterUI::UpdaterUI() {
 
 UpdaterUI::~UpdaterUI() {
     ult::abortDownload = true;    // 通知 curl 取消下载
+    ult::abortUnzip = true;       // 通知 unzip 取消解压
     stopThread();     // 确保线程被正确清理
 }
 
@@ -44,6 +45,8 @@ tsl::elm::Element* UpdaterUI::createUI() {
             case UpdateState::HasUpdate:
             case UpdateState::Downloading:
             case UpdateState::Unzipping:
+            case UpdateState::CancelUpdate:
+            case UpdateState::UpdateError:
                 drawHasUpdate(r, x, y, w, h); 
                 break;
         }
@@ -73,20 +76,39 @@ void UpdaterUI::update() {
         
     }
 
-    else if (m_state == UpdateState::Downloading) {
-        if (m_taskDone) {
+    else if (m_state == UpdateState::Downloading && m_taskDone) {
+        if (m_successDownload) {
             stopThread();
-            if (m_successDownload) m_state = UpdateState::HasUpdate;
-            else m_state = UpdateState::NetworkError;
-        }        
+            m_state = UpdateState::Unzipping;
+            startThread();
+        } else {
+            stopThread();
+            m_state = UpdateState::UpdateError;
+        }    
+    }
+    
+    else if (m_state == UpdateState::Unzipping && m_taskDone) {
+        stopThread();
+        if (m_successUnzip) m_state = UpdateState::NoUpdate;
+        else m_state = UpdateState::UpdateError;
     }
 }
 
 bool UpdaterUI::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) {
-    if (m_state == UpdateState::HasUpdate) {
+    if (m_state == UpdateState::HasUpdate || m_state == UpdateState::CancelUpdate || m_state == UpdateState::UpdateError) {
         if (keysDown & HidNpadButton_Plus) {
             m_state = UpdateState::Downloading;
             startThread();
+            return true;
+        }
+    }
+
+    if (m_state == UpdateState::Downloading || m_state == UpdateState::Unzipping) {
+        if (keysDown & HidNpadButton_B) {
+            ult::abortDownload = true;
+            ult::abortUnzip = true;
+            stopThread();
+            m_state = UpdateState::CancelUpdate;
             return true;
         }
     }
@@ -243,7 +265,7 @@ void UpdaterUI::drawHasUpdate(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h)
     if (m_state == UpdateState::Downloading || m_state == UpdateState::Unzipping) {
         int percent = (m_state == UpdateState::Downloading) ? ult::downloadPercentage.load() : ult::unzipPercentage.load();
         s32 progressWidth = innerW * percent / 100;
-        r->drawRect(innerX, innerY, progressWidth, innerH, tsl::Color(0xF, 0xF, 0x5, 0x3));
+        r->drawRect(innerX, innerY, progressWidth, innerH, tsl::Color(0x0, 0xB, 0xF, 0x7));
     }
 
     // 绘制底部按钮
@@ -253,17 +275,49 @@ void UpdaterUI::drawHasUpdate(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h)
     // 绘制选中框
     r->drawBorderedRoundedRect(x, listY, w + 4, ITEM_HEIGHT, 5, 5, r->a(hlColor));
     
-    // 绘制文字
+    // 绘制文字（根据状态显示不同内容）
     s32 keyFont = 23;
     s32 valFont = 20;
-    auto keyDim = r->getTextDimensions("更新插件", false, keyFont);
-    auto valDim = r->getTextDimensions("按  更新", false, valFont);
+    
+    std::string keyText, valText;
+    tsl::Color keyColor = tsl::defaultTextColor;
+    tsl::Color valColor = tsl::onTextColor;
+    
+    switch (m_state) {
+        case UpdateState::Downloading:
+            keyText = "正在下载";
+            valText = std::to_string(ult::downloadPercentage.load()) + "%";
+            valColor = tsl::Color(0xF, 0xF, 0x0, 0xF);  // 黄色
+            break;
+        case UpdateState::Unzipping:
+            keyText = "正在解压";
+            valText = std::to_string(ult::unzipPercentage.load()) + "%";
+            valColor = tsl::Color(0xF, 0xF, 0x0, 0xF);  // 黄色
+            break;
+        case UpdateState::CancelUpdate:
+            keyText = "已取消更新";
+            valText = "按  更新";
+            keyColor = tsl::Color(0xF, 0x5, 0x5, 0xF);  // 红色
+            break;
+        case UpdateState::UpdateError:
+            keyText = "更新失败";
+            valText = "按  更新";
+            keyColor = tsl::Color(0xF, 0x5, 0x5, 0xF);  // 红色
+            break;
+        default:
+            keyText = "更新插件";
+            valText = "按  更新";
+            break;
+    }
+    
+    auto keyDim = r->getTextDimensions(keyText, false, keyFont);
+    auto valDim = r->getTextDimensions(valText, false, valFont);
     
     s32 keyY = listY + (ITEM_HEIGHT + keyDim.second) / 2;
     s32 valY = listY + (ITEM_HEIGHT + valDim.second) / 2;
     
-    r->drawString("更新插件", false, x + 19, keyY, keyFont, r->a(tsl::defaultTextColor));
-    r->drawString("按  更新", false, x + w - 15 - valDim.first, valY, valFont, r->a(tsl::onTextColor));
+    r->drawString(keyText, false, x + 19, keyY, keyFont, r->a(keyColor));
+    r->drawString(valText, false, x + w - 15 - valDim.first, valY, valFont, r->a(valColor));
 }
 
 // 线程函数
@@ -271,6 +325,7 @@ void UpdaterUI::ThreadFunc(void* arg) {
     UpdaterUI* self = static_cast<UpdaterUI*>(arg);
     if (self->m_state == UpdateState::GettingJson) self->m_updateInfo = self->m_updateData.getUpdateInfo();
     else if (self->m_state == UpdateState::Downloading) self->m_successDownload = self->m_updateData.downloadZip();
+    else if (self->m_state == UpdateState::Unzipping) self->m_successUnzip = self->m_updateData.unzipZip();
     self->m_taskDone = true;
 }
 

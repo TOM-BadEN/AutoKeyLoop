@@ -11,6 +11,8 @@ namespace {
     constexpr const char* EN_DOWNLOAD_URL = "https://raw.githubusercontent.com/TOM-BadEN/KeyX/main/update/KeyX-EN.zip";
     constexpr const char* UPDATE_JSON_PATH = "sdmc:/config/KeyX/update/update.json";
     constexpr const char* UPDATE_KEYX_PATH = "sdmc:/config/KeyX/update/KeyX.zip";
+    constexpr const char* UPDATE_UNZIP_PATH = "sdmc:/";
+    // constexpr const char* CN_DOWNLOAD_URL = "https://download.nswiki.cn/hahappify/nro/JKSV.zip";
 }
 
 
@@ -18,13 +20,9 @@ namespace {
 
 UpdaterData::UpdaterData() {
     m_isSimplifiedChinese = LanguageManager::isSimplifiedChinese();
-    socketInitializeDefault();
-    nifmInitialize(NifmServiceType_User);
 }
 
 UpdaterData::~UpdaterData() {
-    socketExit();
-    nifmExit();
 }
 
 UpdateInfo UpdaterData::getUpdateInfo() {
@@ -43,7 +41,6 @@ UpdateInfo UpdaterData::getUpdateInfo() {
     }
 
     info.version = ult::getStringFromJson(json, "version");
-    info.releaseDate = ult::getStringFromJson(json, "release_date");
 
 
     cJSON* root = reinterpret_cast<cJSON*>(json);
@@ -58,6 +55,7 @@ UpdateInfo UpdaterData::getUpdateInfo() {
 
     cJSON_Delete(root);
     info.success = true;
+    ult::deleteFileOrDirectory(UPDATE_JSON_PATH);
     return info;
 }
 
@@ -77,5 +75,13 @@ bool UpdaterData::hasNewVersion(const std::string& remote, const std::string& lo
 }
 
 bool UpdaterData::downloadZip() {
-    return ult::downloadFile(m_isSimplifiedChinese ? CN_DOWNLOAD_URL : EN_DOWNLOAD_URL, UPDATE_KEYX_PATH, false);
+    bool success = ult::downloadFile(m_isSimplifiedChinese ? CN_DOWNLOAD_URL : EN_DOWNLOAD_URL, UPDATE_KEYX_PATH, false);
+    if (!success) ult::deleteFileOrDirectory(UPDATE_KEYX_PATH);
+    return success;
+}
+
+bool UpdaterData::unzipZip() {
+    bool success = ult::unzipFile(UPDATE_KEYX_PATH, UPDATE_UNZIP_PATH);
+    ult::deleteFileOrDirectory(UPDATE_KEYX_PATH);
+    return success;
 }

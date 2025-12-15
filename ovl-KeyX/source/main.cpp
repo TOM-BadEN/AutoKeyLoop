@@ -33,12 +33,15 @@ public:
             memcpy(pdmqrySrv, &pdmqryClone, sizeof(Service));
         }
         GameMonitor::loadWhitelist();                                 // 加载白名单
+        socketInitializeDefault();
+        nifmInitialize(NifmServiceType_User);
     }
     
     // 退出系统服务
     virtual void exitServices() override 
     {
-        
+        nifmExit();
+        socketExit();
         nsExit();
         pdmqryExit();
         pmshellExit();        // 退出进程Shell服务
