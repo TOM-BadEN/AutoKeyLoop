@@ -161,6 +161,20 @@
     "  修改": "  Edit",
     "  保存": "  Save",
     " 设置后立即生效": " Take effect immediately after setting",
-    "设置按键": "Set HotKey"
+    "设置按键": "Set HotKey",
+    "检查更新": "Check Update",
+    "检查更新中": "Checking Update",
+    "已是最新版本": "Already Up to Date",
+    "重启按键助手生效": "Restart KeyX to Apply",
+    "发现新版本 ": "New Version ",
+    "更新内容 :": "Update Content :",
+    "正在下载": "Downloading",
+    "正在解压": "Unzipping",
+    "已取消更新": "Cancelled",
+    "更新失败": "Failed",
+    "按  更新": "Press  Update",
+    "选择设置项  检查更新  关于插件": "Settings  Check Update  About",
+    "请检查网络连接": "Check Network",
+    "JSON 解析失败": "JSON Parse Error"
 }
 
