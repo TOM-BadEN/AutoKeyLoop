@@ -5,6 +5,27 @@
 #include "refresh.hpp"
 #include "game.hpp"
 
+
+namespace {
+
+    // Socket 初始化配置（优化内存占用，避免 4MB ovlloader 崩溃）
+    constexpr SocketInitConfig socketInitConfig = {
+            // TCP 缓冲区
+            .tcp_tx_buf_size     = 16 * 1024,     // 发送缓冲区 16KB
+            .tcp_rx_buf_size     = 16 * 1024 * 2, // 接收缓冲区 32KB
+            .tcp_tx_buf_max_size = 64 * 1024,     // 最大发送缓冲区 64KB
+            .tcp_rx_buf_max_size = 64 * 1024 * 2, // 最大接收缓冲区 128KB
+            
+            // UDP 缓冲区
+            .udp_tx_buf_size     = 512,           // 发送缓冲区 512B
+            .udp_rx_buf_size     = 512,           // 接收缓冲区 512B
+        
+            // 内存效率优先
+            .sb_efficiency       = 1,             // 1 = 优先内存效率
+            .bsd_service_type    = BsdServiceType_Auto  // 自动选择服务类型
+        };
+
+}
 // KeyX 特斯拉覆盖层主类
 class KeyXOverlay : public tsl::Overlay {
 
@@ -33,7 +54,7 @@ public:
             memcpy(pdmqrySrv, &pdmqryClone, sizeof(Service));
         }
         GameMonitor::loadWhitelist();                                 // 加载白名单
-        socketInitializeDefault();
+        socketInitialize(&socketInitConfig);
         nifmInitialize(NifmServiceType_User);
     }
     
