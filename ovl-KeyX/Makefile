@@ -55,9 +55,11 @@ NO_ICON		:=  1
 #---------------------------------------------------------------------------------
 # options for code generation
 #---------------------------------------------------------------------------------
-ARCH	:=	-march=armv8-a+crc+crypto -mtune=cortex-a57 -mtp=soft -fPIE
+ARCH	:=	-march=armv8-a+simd+crc+crypto -mtune=cortex-a57 -mtp=soft -fPIE
 
-CFLAGS	:=	-g -Wall -O2 -ffunction-sections \
+CFLAGS	:=	-Wall -Os -ffunction-sections -fdata-sections -flto=auto \
+			-fuse-linker-plugin -fomit-frame-pointer -finline-small-functions \
+			-fno-strict-aliasing -frename-registers \
 			$(ARCH) $(DEFINES)
 
 CFLAGS	+=	$(INCLUDE) -D__SWITCH__
@@ -79,8 +81,8 @@ CFLAGS += -DNO_FSTREAM_DIRECTIVE=$(NO_FSTREAM_DIRECTIVE)
 
 CXXFLAGS	:= $(CFLAGS) -fno-exceptions -std=c++20
 
-ASFLAGS	:=	-g $(ARCH)
-LDFLAGS	=	-specs=$(DEVKITPRO)/libnx/switch.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)
+ASFLAGS	:=	$(ARCH)
+LDFLAGS	=	-specs=$(DEVKITPRO)/libnx/switch.specs $(ARCH) -flto=auto -Wl,--gc-sections -Wl,-Map,$(notdir $*.map)
 
 LIBS	:= -lcurl -lz -lzzip -lminizip -lmbedtls -lmbedx509 -lmbedcrypto -ljansson -lnx
 
