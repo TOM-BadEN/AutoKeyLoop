@@ -40,6 +40,12 @@ public:
     static Result toggleModule();
     
     /**
+     * 重启系统模块（未运行则直接返回成功，运行中则先停止再启动）
+     * @return Result 0=成功，其他=失败
+     */
+    static Result restartModule();
+    
+    /**
      * 检查是否有 boot2.flag（自启动标志）
      * @return true=有 flag，false=无 flag
      */

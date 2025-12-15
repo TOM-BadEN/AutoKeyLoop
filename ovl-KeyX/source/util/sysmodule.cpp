@@ -64,6 +64,14 @@ Result SysModuleManager::toggleModule() {
     else return startModule();
 }
 
+// 重启系统模块（未运行则直接返回成功，运行中则先停止再启动）
+Result SysModuleManager::restartModule() {
+    if (!isRunning()) return 0;
+    Result rc = stopModule();
+    if (R_FAILED(rc)) return rc;
+    return startModule();
+}
+
 // 检查是否有 boot2.flag（自启动标志）
 bool SysModuleManager::hasBootFlag() {
     return ult::isFile(BOOT2_FLAG_PATH);

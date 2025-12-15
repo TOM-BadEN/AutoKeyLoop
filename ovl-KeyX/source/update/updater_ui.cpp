@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <cmath>
+#include "sysmodule.hpp"
 
 namespace {
     constexpr const char* refreshIcon[] = {"", "", "", "", "", "", "", ""};
@@ -39,9 +40,16 @@ tsl::elm::Element* UpdaterUI::createUI() {
     auto list = new tsl::elm::List();
     auto textArea = new tsl::elm::CustomDrawer([this](tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h) {
         switch (m_state) {
-            case UpdateState::GettingJson:  drawGettingJson(r, x, y, w, h); break;
-            case UpdateState::NetworkError: drawNetworkError(r, x, y, w, h); break;
-            case UpdateState::NoUpdate:     drawNoUpdate(r, x, y, w, h); break;
+            case UpdateState::GettingJson:  
+                drawGettingJson(r, x, y, w, h); 
+                break;
+            case UpdateState::NetworkError: 
+                drawNetworkError(r, x, y, w, h); 
+                break;
+            case UpdateState::UpdateSuccess: 
+            case UpdateState::NoUpdate:     
+                drawNoUpdate(r, x, y, w, h); 
+                break;
             case UpdateState::HasUpdate:
             case UpdateState::Downloading:
             case UpdateState::Unzipping:
@@ -89,8 +97,12 @@ void UpdaterUI::update() {
     
     else if (m_state == UpdateState::Unzipping && m_taskDone) {
         stopThread();
-        if (m_successUnzip) m_state = UpdateState::NoUpdate;
-        else m_state = UpdateState::UpdateError;
+        if (m_successUnzip) {
+            SysModuleManager::restartModule();
+            m_state = UpdateState::UpdateSuccess;
+        } else {
+            m_state = UpdateState::UpdateError;
+        }
     }
 }
 
@@ -166,10 +178,15 @@ void UpdaterUI::drawNoUpdate(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h) 
     s32 textFont = 32;
     s32 gap = 55;
     
+    bool isSuccess = (m_state == UpdateState::UpdateSuccess);
+    
     auto iconDim = r->getTextDimensions("", false, iconFont);
     auto textDim = r->getTextDimensions("已是最新版本", false, textFont);
+    auto hintDim = r->getTextDimensions("重启按键助手生效", false, textFont);
     
     s32 totalHeight = iconDim.second + gap + textDim.second;
+    if (isSuccess) totalHeight += gap / 2 + hintDim.second;
+    
     s32 blockTop = y + (h - totalHeight) / 2;
     
     s32 iconX = x + (w - iconDim.first) / 2;
@@ -180,6 +197,12 @@ void UpdaterUI::drawNoUpdate(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h) 
     
     r->drawString("", false, iconX, iconY, iconFont, tsl::Color(0xF, 0xF, 0xF, 0xF));
     r->drawString("已是最新版本", false, textX, textY, textFont, tsl::Color(0xF, 0xF, 0xF, 0xF));
+    
+    if (isSuccess) {
+        s32 hintX = x + (w - hintDim.first) / 2;
+        s32 hintY = textY + gap / 2 + hintDim.second;
+        r->drawString("重启按键助手生效", false, hintX, hintY, textFont, tsl::Color(0xF, 0xF, 0xF, 0xF));
+    }
 }
 
 void UpdaterUI::drawHasUpdate(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h) {

@@ -11,7 +11,8 @@ enum class UpdateState {
     Downloading,    // 下载中
     Unzipping,      // 解压中
     CancelUpdate,   // 取消更新
-    UpdateError     // 更新错误
+    UpdateError,    // 更新错误
+    UpdateSuccess   // 更新成功
 };
 
 class UpdaterUI : public tsl::Gui 
