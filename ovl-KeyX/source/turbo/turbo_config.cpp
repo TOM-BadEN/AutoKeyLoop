@@ -4,6 +4,7 @@
 #include "ipc.hpp"
 #include "hiddata.hpp"
 #include "refresh.hpp"
+#include "i18n.hpp"
 
 namespace {
     u64 s_TurboButtons = 0;
@@ -207,7 +208,7 @@ tsl::elm::Element* SettingTurboButton::createUI() {
     for (const auto& btn : TurboConfig::Buttons) {
         bool isSelected = (s_TurboButtons & btn.flag) != 0;
         const char* icon = HidHelper::getIconByMask(btn.flag);
-        std::string buttonName = std::string(ult::i18n(btn.name)) + "  " + icon;
+        std::string buttonName = std::string(i18n(btn.name)) + "  " + icon;
         auto item = new tsl::elm::ToggleListItem(buttonName, isSelected);
         item->setStateChangedListener([this, btn](bool state) {
             Refresh::RefrRequest(Refresh::MainMenu);

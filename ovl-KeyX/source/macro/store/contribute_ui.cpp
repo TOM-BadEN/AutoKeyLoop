@@ -1,6 +1,5 @@
 #include "contribute_ui.hpp"
 #include "qrcodegen.hpp"
-#include <ultra.hpp>
 
 using qrcodegen::QrCode;
 
@@ -54,7 +53,7 @@ tsl::elm::Element* ContributeGui::createUI() {
         // 双标题：GitHub 仓库（左）  向我捐赠（右，绿色，居中于二维码）
         r->drawString("GitHub 仓库", false, textX, currentY, 24, titleColor);
         
-        auto [donateW, donateH] = r->getTextDimensions(ult::i18n("向我捐赠"), false, 24);
+        auto [donateW, donateH] = r->getTextDimensions("向我捐赠", false, 24);
         s32 donateTitleX = startXAfdian + (totalSizeAfdian - donateW) / 2;
         tsl::Color donateColor = {0x66, 0xFF, 0x66, 0xFF};  // 绿色
         r->drawString("向我捐赠", false, donateTitleX, currentY, 24, donateColor);

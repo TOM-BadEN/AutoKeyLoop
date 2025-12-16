@@ -4,6 +4,7 @@
 #include <cmath>
 #include "sysmodule.hpp"
 #include <ultra.hpp>
+#include "i18n.hpp"
 
 namespace {
     constexpr const char* refreshIcon[] = {"", "", "", "", "", "", "", ""};
@@ -211,7 +212,7 @@ void UpdaterUI::drawHasUpdate(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h)
     s32 currentY = y + 35;
     
     // 发现新版本 • v1.4.2 (青色，大字号)
-    std::string versionText = ult::i18n("发现新版本 ") + m_updateInfo.version;
+    std::string versionText = i18n("发现新版本 ") + m_updateInfo.version;
     r->drawString(versionText, false, textX, currentY, 28, r->a(tsl::onTextColor));
     currentY += 50;
     

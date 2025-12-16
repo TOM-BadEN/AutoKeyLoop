@@ -120,8 +120,6 @@ namespace ult {
     bool parseJsonToMap(const std::string& filePath, std::unordered_map<std::string, std::string>& result);
 
     bool loadTranslationsFromJSON(const std::string& filePath);
-    
-    std::string i18n(const std::string& text);
 
     extern u16 activeHeaderHeight;
 

@@ -172,7 +172,7 @@
     "选择设置项  检查更新  关于插件": "Settings  Check Update  About",
     "请检查网络连接": "Check Network",
     "JSON 解析失败": "JSON Parse Error",
-    " 在线获取": "Online",
+    " 在线获取": " Online",
     "脚本商店": "Macro Store",
     "我要投稿": "Contribute",
     " 录制说明": " Record Tips",
@@ -180,11 +180,12 @@
     "欢迎向我提供各种脚本": "Welcome to contribute macros",
     "投稿方式": "How to Contribute",
     " • 通过社交软件直接向我投稿": " • Contact me via social media",
-    " • 只需要提供宏文件和说明即可": " • Just provide macro file and description",
+    " • 只需要提供宏文件和说明即可": " • provide macro file and description",
     " • 向我的 GitHub 仓库提交 PR": " • Submit PR to my GitHub repo",
     "联系方式": "Contact",
     " • QQ群: 1051287661": " • QQ Group: 1051287661",
     " • DC: phenomenal_tiger_48068": " • DC: phenomenal_tiger_48068",
-    "GitHub 仓库": "GitHub Repo"
+    "GitHub 仓库": "GitHub Repo",
+    " 脚本管理": " Macro Manager"
 }
 

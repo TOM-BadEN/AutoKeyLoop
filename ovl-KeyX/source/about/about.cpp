@@ -93,7 +93,7 @@ tsl::elm::Element* AboutPlugin::createUI()
         int qrY = startY + 34;
         
         // 标题“向我捐赠”居中于二维码上方，与 KeyX 同一水平线
-        auto [donateW, donateH] = renderer->getTextDimensions("向我捐赠"), false, titleFontSize);
+        auto [donateW, donateH] = renderer->getTextDimensions(("向我捐赠"), false, titleFontSize);
         s32 donateTitleX = qrX + (totalSize - donateW) / 2;
         tsl::Color donateColor = {0x66, 0xFF, 0x66, 0xFF};  // 绿色
         renderer->drawString("向我捐赠", false, donateTitleX, startY, titleFontSize, donateColor);

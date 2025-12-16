@@ -135,7 +135,7 @@ tsl::elm::Element* SettingMacro::createUI() {
     auto frame = new tsl::elm::OverlayFrame("脚本设置", "配置脚本功能");
     auto list = new tsl::elm::List();
     
-    auto ItemBasicSetting = new tsl::elm::CategoryHeader("脚本管理");
+    auto ItemBasicSetting = new tsl::elm::CategoryHeader(" 脚本管理");
     list->addItem(ItemBasicSetting);
 
     auto listItemRecord = new tsl::elm::ListItem("录制脚本", "");

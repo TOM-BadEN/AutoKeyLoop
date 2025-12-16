@@ -10,6 +10,7 @@
 #include <algorithm>
 #include "ipc.hpp"
 #include "macro_edit.hpp"
+#include "i18n.hpp"
 
 namespace {
     constexpr const u64 buttons[] = {
@@ -70,15 +71,15 @@ tsl::elm::Element* MacroViewGui::createUI() {
         char line[64];
         constexpr const u32 fontSize = 20;
         const s32 startX = x + 26;
-        s32 lineHeight = r->getTextDimensions(ult::i18n("你"), false, fontSize).second + 15;
+        s32 lineHeight = r->getTextDimensions("你", false, fontSize).second + 15;
         s32 totalHeight = lineHeight * static_cast<s32>(std::size(kLabels));
         s32 startY = y + (h - totalHeight) / 2 - 20;
         for (size_t i = 0; i < std::size(kLabels); ++i) {
-            snprintf(line, sizeof(line), "%s%s", ult::i18n(kLabels[i]).c_str(), values[i]);
+            snprintf(line, sizeof(line), "%s%s", i18n(kLabels[i]).c_str(), values[i]);
             r->drawStringWithColoredSections(
                 line,
                 false,
-                {ult::i18n(kLabels[i])},
+                {i18n(kLabels[i])},
                 startX,
                 startY + lineHeight,
                 fontSize,

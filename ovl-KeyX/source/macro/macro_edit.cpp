@@ -1,11 +1,10 @@
 #include "macro_edit.hpp"
 #include "macro_data.hpp"
 #include "hiddata.hpp"
-#include <ultra.hpp>
 #include "refresh.hpp"
 #include "ipc.hpp"
 #include "macro_view.hpp"
-#include <ultra.hpp>
+#include "i18n.hpp"
 
 namespace {
     static constexpr s32 TIMELINE_HEIGHT = 100;       // 时间轴区域高度
@@ -23,7 +22,7 @@ namespace {
         if (action.stickL != StickDir::None) text = text + "" + getStickDirIcon(action.stickL);
         if (action.stickR != StickDir::None) text = text + (!text.empty() ? "+" : "") + "" + getStickDirIcon(action.stickR);
         if (action.buttons != 0) text = text + (!text.empty() ? "+" : "") + HidHelper::getCombinedIcons(action.buttons);
-        if (text.empty()) text = ult::i18n("无动作");
+        if (text.empty()) text = i18n("无动作");
         return text;
     }
     
@@ -64,7 +63,7 @@ MacroEditGui::~MacroEditGui() {
 
 tsl::elm::Element* MacroEditGui::createUI() {
     const auto& info = MacroData::getBasicInfo();
-    std::string subtitle = std::string(info.fileName) + ult::i18n(" 撤销修改");
+    std::string subtitle = std::string(info.fileName) + i18n(" 撤销修改");
     auto frame = new tsl::elm::HeaderOverlayFrame(97);
     
     // 自定义头部绘制器（包含标题和底部按钮）
@@ -78,7 +77,7 @@ tsl::elm::Element* MacroEditGui::createUI() {
         } else {
             r->drawString(m_gameName, false, 20, 50, 32, r->a(tsl::defaultOverlayColor));
             tsl::Color undoColor = MacroData::canUndo() ? r->a(tsl::onTextColor) : tsl::style::color::ColorDescription;
-            r->drawStringWithColoredSections(subtitle.c_str(), false, {ult::i18n(" 撤销修改")}, 20, 73, 15, tsl::style::color::ColorDescription, undoColor);
+            r->drawStringWithColoredSections(subtitle.c_str(), false, {i18n(" 撤销修改")}, 20, 73, 15, tsl::style::color::ColorDescription, undoColor);
         }
         const char* btnText = m_selectMode ? "  修改" : "  保存";
         r->drawString(btnText, false, 280, 693, 23, r->a(tsl::style::color::ColorText));
