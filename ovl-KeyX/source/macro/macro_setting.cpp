@@ -8,6 +8,7 @@
 #include "macro_list.hpp"
 #include "macro_sampler.hpp"
 #include "contribute_ui.hpp"
+#include "store_ui.hpp"
 
 // 录制消息全局变量
 std::string g_recordMessage = "";
@@ -164,7 +165,8 @@ tsl::elm::Element* SettingMacro::createUI() {
     auto listItemStore = new tsl::elm::ListItem("脚本商店", ">");
     listItemStore->setClickListener([this](u64 keys) {
         if (keys & HidNpadButton_A) {
-
+            tsl::changeTo<StoreGui>();
+            return true;
         }
         return false;
     });
