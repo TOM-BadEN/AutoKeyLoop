@@ -65,6 +65,8 @@ https://github.com/user-attachments/assets/d7f530b9-baed-455c-9887-5b7a96a9dadf
 [![Latest Version](https://img.shields.io/github/v/release/TOM-BadEN/KeyX?label=Latest&color=blue&logo=github&logoColor=FFFFFF)](https://github.com/TOM-BadEN/KeyX/releases/latest)
 [![GitHub Downloads](https://img.shields.io/github/downloads/TOM-BadEN/KeyX/total?label=Downloads&color=6f42c1&logo=github&logoColor=FFFFFF)](https://somsubhra.github.io/github-release-stats/?username=TOM-BadEN&repository=KeyX&page=1&per_page=300)
 [![HB App Store](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/TOM-BadEN/KeyX/main/.github/hbappstore.json&label=HB%20store&color=green&logo=homeassistantcommunitystore&logoColor=FFFFFF)](https://hb-app.store/switch/KeyX)
+[![PayPal](https://img.shields.io/badge/PayPal-Donate-blue?logo=paypal&logoColor=FFFFFF)](https://PayPal.me/TomSun666)
+[![微信](https://img.shields.io/badge/微信-捐助-07C160?logo=wechat&logoColor=FFFFFF)](https://github.com/TOM-BadEN/KeyX/blob/main/image/WeChat%20Pay.png)
 
 Nintendo Switch 按键助手，支持连发、按键重新分配、按键宏三大功能。且拥有全局或游戏独立配置，根据记忆自动启动功能。
 整个插件由特斯拉插件与系统模块两部分组成。
@@ -229,6 +231,8 @@ cd KeyX && make
 [![Latest Version](https://img.shields.io/github/v/release/TOM-BadEN/KeyX?label=Latest&color=blue&logo=github&logoColor=FFFFFF)](https://github.com/TOM-BadEN/KeyX/releases/latest)
 [![GitHub Downloads](https://img.shields.io/github/downloads/TOM-BadEN/KeyX/total?label=Downloads&color=6f42c1&logo=github&logoColor=FFFFFF)](https://somsubhra.github.io/github-release-stats/?username=TOM-BadEN&repository=KeyX&page=1&per_page=300)
 [![HB App Store](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/TOM-BadEN/KeyX/main/.github/hbappstore.json&label=HB%20store&color=green&logo=homeassistantcommunitystore&logoColor=FFFFFF)](https://hb-app.store/switch/KeyX)
+[![PayPal](https://img.shields.io/badge/PayPal-Donate-blue?logo=paypal&logoColor=FFFFFF)](https://PayPal.me/TomSun666)
+[![WeChat](https://img.shields.io/badge/WeChat-Donate-07C160?logo=wechat&logoColor=FFFFFF)](https://github.com/TOM-BadEN/KeyX/blob/main/image/WeChat%20Pay.png)
 
 Nintendo Switch button assistant supporting turbo, key remapping, and macro recording. Features global or per-game configuration with auto-start memory.
 The complete plugin consists of Tesla overlay and system module.
