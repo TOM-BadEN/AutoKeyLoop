@@ -80,7 +80,7 @@ tsl::elm::Element* RecordingGui::createUI() {
 
 // 退出录制并返回主界面
 void RecordingGui::exitRecording() {
-    tsl::disableComboHide.store(false, std::memory_order_release);  
+    tsl::disableHiding = false;
     tsl::gfx::Renderer::get().setLayerPos(0, 0);
     tsl::hlp::requestForeground(true);
     tsl::goBack();  // 返回脚本主界面
@@ -127,7 +127,7 @@ bool RecordingGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &
         strcpy(filename, MacroSampler::GetFilePath());
         char gameName[64];
         GameMonitor::getTitleIdGameName(titleId, gameName);
-        tsl::disableComboHide.store(false, std::memory_order_release);  // 恢复特斯拉区域触摸和快捷键hide的功能
+        tsl::disableHiding = false;                                     // 恢复特斯拉区域触摸和快捷键hide的功能
         tsl::gfx::Renderer::get().setLayerPos(0, 0);                    // 恢复特斯拉区默认位置
         tsl::hlp::requestForeground(true);                              // 恢复特斯拉的输入焦点
         g_recordMessage = "";                                           // 清空录制消息

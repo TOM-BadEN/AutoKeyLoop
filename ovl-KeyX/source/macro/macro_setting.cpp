@@ -15,7 +15,7 @@ std::string g_recordMessage = "";
 // 中间层用的 Frame
 interlayerFrame::interlayerFrame()
 {
-    tsl::disableComboHide.store(true, std::memory_order_release);  // 禁用特斯拉区域触摸和快捷键hide的功能
+    tsl::disableHiding = true;  // 禁用特斯拉区域触摸和快捷键hide的功能
 }
 
 void interlayerFrame::draw(tsl::gfx::Renderer* renderer) {
@@ -92,7 +92,7 @@ void CountdownGui::update() {
         FocusState focusState = FocusMonitor::GetState(GameMonitor::getCurrentTitleId());
         if (focusState == FocusState::OutOfFocus) {
             tsl::gfx::Renderer::get().setLayerPos(0, 0);
-            tsl::disableComboHide.store(false, std::memory_order_release);  // 恢复特斯拉区域触摸和快捷键hide的功能
+            tsl::disableHiding = false;  // 恢复特斯拉区域触摸和快捷键hide的功能
             g_recordMessage = "请在游戏中录制";
             MacroSampler::Cancel();
             tsl::goBack();
