@@ -1,3 +1,9 @@
 [submodule "sys-KeyX/lib/libnotification"]
 	path = sys-KeyX/lib/libnotification
 	url = https://github.com/TOM-BadEN/NX-Notification.git
+[submodule "libs/libultrahand"]
+	path = libs/libultrahand
+	url = https://github.com/ppkantorski/libultrahand
+[submodule "ovl-KeyX/libs/libultrahand"]
+	path = ovl-KeyX/libs/libultrahand
+	url = https://github.com/ppkantorski/libultrahand
