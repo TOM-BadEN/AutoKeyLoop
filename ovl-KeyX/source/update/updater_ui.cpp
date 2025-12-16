@@ -278,6 +278,7 @@ void UpdaterUI::drawHasUpdate(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h)
             prefix = "   ";
             isFirstLine = false;
         }
+        currentY += 3;  // 条目间隙
     }
     
     // 执行任务的时候绘制对应的进度条（在选中框内部）
