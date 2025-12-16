@@ -7,6 +7,7 @@
 #include "focus.hpp"
 #include "macro_list.hpp"
 #include "macro_sampler.hpp"
+#include "contribute_ui.hpp"
 
 // 录制消息全局变量
 std::string g_recordMessage = "";
@@ -127,13 +128,14 @@ bool CountdownGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &
 // 设置界面类
 SettingMacro::SettingMacro()
 {
+    g_recordMessage = "使用特斯拉快捷键结束录制";
 }
 
 tsl::elm::Element* SettingMacro::createUI() {
     auto frame = new tsl::elm::OverlayFrame("脚本设置", "配置脚本功能");
     auto list = new tsl::elm::List();
     
-    auto ItemBasicSetting = new tsl::elm::CategoryHeader(" 脚本管理");
+    auto ItemBasicSetting = new tsl::elm::CategoryHeader("脚本管理");
     list->addItem(ItemBasicSetting);
 
     auto listItemRecord = new tsl::elm::ListItem("录制脚本", "");
@@ -157,31 +159,42 @@ tsl::elm::Element* SettingMacro::createUI() {
     });
     list->addItem(listItemView);
 
-    auto ItemRecordTutorial = new tsl::elm::CategoryHeader(" 录制教程");
-    list->addItem(ItemRecordTutorial);
-    list->addItem(new tsl::elm::CustomDrawer([](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
-        renderer->drawString("1. 仅在游戏中可以点击脚本录制", false, x + 5, y + 20-7, 16, (tsl::highlightColor2));
-    }), 30);
-    list->addItem(new tsl::elm::CustomDrawer([](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
-        renderer->drawString("2. 倒数3秒开始录制，按B可取消", false, x + 5, y + 20-7, 16, (tsl::highlightColor2));
-    }), 30);
-    list->addItem(new tsl::elm::CustomDrawer([](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
-        renderer->drawString("3. 最大录制30s，使用特斯拉快捷键完成录制", false, x + 5, y + 20-7, 16, (tsl::highlightColor2));
-    }), 30);
+    list->addItem(new tsl::elm::CategoryHeader(" 在线获取"));
+
+    auto listItemStore = new tsl::elm::ListItem("脚本商店", ">");
+    listItemStore->setClickListener([this](u64 keys) {
+        if (keys & HidNpadButton_A) {
+
+        }
+        return false;
+    });
+    list->addItem(listItemStore);
+
+    auto listItemContribute = new tsl::elm::ListItem("我要投稿", ">");
+    listItemContribute->setClickListener([this](u64 keys) {
+        if (keys & HidNpadButton_A) {
+            tsl::changeTo<ContributeGui>();
+            return true;
+        }
+        return false;
+    });
+    list->addItem(listItemContribute);
+
+    list->addItem(new tsl::elm::CategoryHeader(" 录制说明"));
 
     auto countdown = new tsl::elm::CustomDrawer([](tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h) {
-        s32 fontSize = 54;
+        s32 fontSize = 27;
         auto textDim = r->getTextDimensions(g_recordMessage, false, fontSize);
         while (textDim.first > w - 30) {
             fontSize = fontSize * 9 / 10;  // 缩小 10%
             textDim = r->getTextDimensions(g_recordMessage, false, fontSize);
         }
-        s32 centerX = x + (w - textDim.first) / 2;
-        s32 centerY = y + (h + textDim.second) / 2;
-        r->drawString(g_recordMessage, false, centerX, centerY, fontSize, tsl::Color(0xF, 0x5, 0x5, 0xF));
+        s32 textX = x + 19;  // 与 ListItem 的 key 左对齐
+        s32 textY = y + (h + textDim.second) / 2;
+        r->drawString(g_recordMessage, false, textX, textY, fontSize, tsl::Color(0xF, 0x5, 0x5, 0xF));
     });
 
-    list->addItem(countdown, 194);
+    list->addItem(countdown, 80);
     
     frame->setContent(list);
     return frame;

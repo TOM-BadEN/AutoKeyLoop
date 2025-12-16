@@ -31,23 +31,27 @@ SOURCES		:=	source \
 				source/turbo \
 				source/remap \
 				source/macro \
+				source/macro/store \
 				source/util \
 				source/common \
 				source/update \
 				libs/libultrahand/libultra/source \
-				libs/libultrahand/common
+				libs/libultrahand/common \
+				libs/lib-QR-Code-generator
 DATA		:=	data
 INCLUDES	:=	include \
 				include/about \
 				include/turbo \
 				include/remap \
 				include/macro \
+				include/macro/store \
 				include/util \
 				include/common \
 				include/update \
 				libs/libultrahand/libultra/include \
 				libs/libultrahand/libtesla/include \
-				libs/libultrahand/common
+				libs/libultrahand/common \
+				libs/lib-QR-Code-generator
 				
 
 NO_ICON		:=  1

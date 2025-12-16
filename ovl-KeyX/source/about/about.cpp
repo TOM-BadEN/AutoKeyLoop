@@ -1,4 +1,9 @@
 #include "about.hpp"
+#include "qrcodegen.hpp"
+
+using qrcodegen::QrCode;
+
+static const char* AFDIAN_URL = "https://afdian.com/a/TOM-BadEN?from=keyx";
 
 // 关于插件界面构造函数
 AboutPlugin::AboutPlugin()
@@ -76,6 +81,31 @@ tsl::elm::Element* AboutPlugin::createUI()
             }
             
             renderer->drawString(aboutInfo[i], false, textX, textY, currentFontSize, textColor);
+        }
+        
+        // 向我捐赠 - 绿色标题和二维码
+        static QrCode qrAfdian = QrCode::encodeText(AFDIAN_URL, QrCode::Ecc::LOW);
+        int scale = 4;
+        int margin = 6;
+        int qrSize = qrAfdian.getSize();
+        int totalSize = qrSize * scale;
+        int qrX = x + w - 20 - totalSize - 15;
+        int qrY = startY + 34;
+        
+        // 标题“向我捐赠”居中于二维码上方，与 KeyX 同一水平线
+        auto [donateW, donateH] = renderer->getTextDimensions("向我捐赠"), false, titleFontSize);
+        s32 donateTitleX = qrX + (totalSize - donateW) / 2;
+        tsl::Color donateColor = {0x66, 0xFF, 0x66, 0xFF};  // 绿色
+        renderer->drawString("向我捐赠", false, donateTitleX, startY, titleFontSize, donateColor);
+        
+        // 绘制二维码
+        renderer->drawRect(qrX - margin, qrY - margin, totalSize + margin * 2, totalSize + margin * 2, tsl::Color(0xF, 0xF, 0xF, 0xF));
+        for (int qy = 0; qy < qrSize; qy++) {
+            for (int qx = 0; qx < qrSize; qx++) {
+                if (qrAfdian.getModule(qx, qy)) {
+                    renderer->drawRect(qrX + qx * scale, qrY + qy * scale, scale, scale, tsl::Color(0x0, 0x0, 0x0, 0xF));
+                }
+            }
         }
     });
     
