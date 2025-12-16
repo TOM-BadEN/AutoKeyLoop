@@ -446,7 +446,17 @@ void StoreMacroViewGui::drawContent(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, 
     // 使用说明
     r->drawString("使用说明:", false, textX, currentY, 20, r->a(tsl::defaultTextColor));
     currentY += 28;
-    drawWrappedText(s_selectedMacro.desc, " • ");
+    
+    // 按 \n 分割描述文本
+    std::string desc = s_selectedMacro.desc;
+    size_t pos = 0;
+    while ((pos = desc.find('\n')) != std::string::npos) {
+        drawWrappedText(desc.substr(0, pos), " • ");
+        desc = desc.substr(pos + 1);
+    }
+    if (!desc.empty()) {
+        drawWrappedText(desc, " • ");
+    }
     
     // 绘制底部按钮
     s32 listYPos = y + h - 10 - ITEM_HEIGHT;
