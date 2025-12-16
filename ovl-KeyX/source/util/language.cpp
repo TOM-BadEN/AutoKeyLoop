@@ -4,14 +4,16 @@
 const std::string LANG_PATH = "/switch/.overlays/lang/KeyX/";
 
 SetLanguage g_systemLanguage = SetLanguage_ENUS;
-bool g_isSimplifiedChinese = false;  // 是否为简体中文
+bool g_isSimplifiedChinese = false;   // 是否为简体中文
+bool g_isTraditionalChinese = false;  // 是否为繁体中文
 
 // 初始化语言系统
 void LanguageManager::initialize() {
     std::string langFileName = getSystemLanguageCode();
     
-    // 判断是否为简体中文
+    // 判断是否为简体中文或繁体中文
     g_isSimplifiedChinese = (langFileName == "zh-cn.json");
+    g_isTraditionalChinese = (langFileName == "zh-tw.json");
     
     // 如果系统语言是简体中文，不需要翻译（中文已经硬编码了）
     if (g_isSimplifiedChinese) return;
@@ -73,4 +75,10 @@ std::string LanguageManager::getSystemLanguageCode() {
 
 bool LanguageManager::isSimplifiedChinese() {
     return g_isSimplifiedChinese;
+}
+
+int LanguageManager::getZhcnOrZhtwOrEnIndex() {
+    if (g_isSimplifiedChinese) return 0;
+    if (g_isTraditionalChinese) return 1;
+    return 2;
 }

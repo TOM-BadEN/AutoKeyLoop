@@ -149,6 +149,23 @@ std::vector<u64> GameMonitor::getInstalledAppIds() {
     return result;
 }
 
+// 获取所有已安装应用和游戏的Title ID集合（不过滤）
+std::unordered_set<u64> GameMonitor::getInstalledAppAndGameIds() {
+    std::unordered_set<u64> result;
+    
+    NsApplicationRecord records[250];
+    s32 count = 0;
+    
+    Result rc = nsListApplicationRecord(records, 250, 0, &count);
+    if (R_SUCCEEDED(rc)) {
+        for (s32 i = 0; i < count; i++) {
+            result.insert(records[i].application_id);
+        }
+    }
+    
+    return result;
+}
+
 void GameMonitor::loadWhitelist() {
     s_whitelist.clear();
     auto kvPairs = ult::getKeyValuePairsFromSection(WHITE_INI_PATH, "white");

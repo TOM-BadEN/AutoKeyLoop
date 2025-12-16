@@ -32,6 +32,12 @@ public:
     static std::vector<u64> getInstalledAppIds();
 
     /**
+     * 获取所有已安装应用和游戏的Title ID集合（不过滤）
+     * @return 已安装应用和游戏的Title ID集合
+     */
+    static std::unordered_set<u64> getInstalledAppAndGameIds();
+
+    /**
      * 加载白名单到内存（启动时调用一次）
      */
     static void loadWhitelist();
