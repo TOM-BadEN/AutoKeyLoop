@@ -441,7 +441,7 @@ void StoreMacroViewGui::drawContent(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, 
     r->drawString("下载路径:", false, textX, currentY, 20, r->a(tsl::defaultTextColor));
     currentY += 28;
     drawWrappedText(m_localPath, " • ");
-    currentY += 15;
+    currentY += 20;
     
     // 使用说明
     r->drawString("使用说明:", false, textX, currentY, 20, r->a(tsl::defaultTextColor));
