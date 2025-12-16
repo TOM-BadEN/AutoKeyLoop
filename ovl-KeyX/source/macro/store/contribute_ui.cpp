@@ -1,10 +1,13 @@
 #include "contribute_ui.hpp"
 #include "qrcodegen.hpp"
+#include "language.hpp"
 
 using qrcodegen::QrCode;
+using qrcodegen::QrSegment;
 
 static const char* GITHUB_URL = "https://github.com/TOM-BadEN/KeyX-Macro-Repo";
-static const char* AFDIAN_URL = "https://afdian.com/a/TOM-BadEN?from=keyx";
+static const char* WECHAT_PAY_URL = "wxp://f2f0mMaZS-xnKyAZaTyn813TQRZHTRKPzI6UWxldiWDYemRIq8Stt_LPfd1sLyV4v1jR";
+static const char* PAYPAL_URL = "PayPal.me/TomSun666";
 
 ContributeGui::ContributeGui() {}
 
@@ -37,26 +40,31 @@ tsl::elm::Element* ContributeGui::createUI() {
         r->drawString(" • DC: phenomenal_tiger_48068", false, textX, currentY, 20, textColor);
         currentY += 65;
         
-        // 两个二维码 - 先计算位置
-        static QrCode qrGithub = QrCode::encodeText(GITHUB_URL, QrCode::Ecc::LOW);
-        static QrCode qrAfdian = QrCode::encodeText(AFDIAN_URL, QrCode::Ecc::LOW);
+        // 两个二维码 - 使用固定 Version 5 (37x37) 保证大小一致
+        static QrCode qrGithub = QrCode::encodeSegments(QrSegment::makeSegments(GITHUB_URL), QrCode::Ecc::LOW, 5, 5);
+        static QrCode qrWechat = QrCode::encodeSegments(QrSegment::makeSegments(WECHAT_PAY_URL), QrCode::Ecc::LOW, 5, 5);
+        static QrCode qrPaypal = QrCode::encodeSegments(QrSegment::makeSegments(PAYPAL_URL), QrCode::Ecc::LOW, 5, 5);
         
-        int scale = 4;
+        bool isChinese = LanguageManager::isSimplifiedChinese();
+        const QrCode& qrDonate = isChinese ? qrWechat : qrPaypal;
+        const char* donateTitle = isChinese ? "微信捐赠" : "PayPal Donate";
+        
+        int scale = 3;
         int margin = 6;
         int qrSizeGithub = qrGithub.getSize();
-        int qrSizeAfdian = qrAfdian.getSize();
+        int qrSizeDonate = qrDonate.getSize();
         int totalSizeGithub = qrSizeGithub * scale;
-        int totalSizeAfdian = qrSizeAfdian * scale;
+        int totalSizeDonate = qrSizeDonate * scale;
         int startXGithub = textX + 15;
-        int startXAfdian = x + w - 20 - totalSizeAfdian - 15;
+        int startXDonate = x + w - 20 - totalSizeDonate - 15;
         
-        // 双标题：GitHub 仓库（左）  向我捐赠（右，绿色，居中于二维码）
+        // 双标题：GitHub 仓库（左）  捐赠（右，绿色，居中于二维码）
         r->drawString("GitHub 仓库", false, textX, currentY, 24, titleColor);
         
-        auto [donateW, donateH] = r->getTextDimensions("向我捐赠", false, 24);
-        s32 donateTitleX = startXAfdian + (totalSizeAfdian - donateW) / 2;
+        auto [donateW, donateH] = r->getTextDimensions(donateTitle, false, 24);
+        s32 donateTitleX = startXDonate + (totalSizeDonate - donateW) / 2;
         tsl::Color donateColor = {0x66, 0xFF, 0x66, 0xFF};  // 绿色
-        r->drawString("向我捐赠", false, donateTitleX, currentY, 24, donateColor);
+        r->drawString(donateTitle, false, donateTitleX, currentY, 24, donateColor);
         currentY += 34;
         
         // GitHub 二维码（左）
@@ -71,14 +79,14 @@ tsl::elm::Element* ContributeGui::createUI() {
             }
         }
         
-        // 爱发电二维码（右）
-        int startYAfdian = currentY;
+        // 捐赠二维码（右）
+        int startYDonate = currentY;
         
-        r->drawRect(startXAfdian - margin, startYAfdian - margin, totalSizeAfdian + margin * 2, totalSizeAfdian + margin * 2, tsl::Color(0xF, 0xF, 0xF, 0xF));
-        for (int qy = 0; qy < qrSizeAfdian; qy++) {
-            for (int qx = 0; qx < qrSizeAfdian; qx++) {
-                if (qrAfdian.getModule(qx, qy)) {
-                    r->drawRect(startXAfdian + qx * scale, startYAfdian + qy * scale, scale, scale, tsl::Color(0x0, 0x0, 0x0, 0xF));
+        r->drawRect(startXDonate - margin, startYDonate - margin, totalSizeDonate + margin * 2, totalSizeDonate + margin * 2, tsl::Color(0xF, 0xF, 0xF, 0xF));
+        for (int qy = 0; qy < qrSizeDonate; qy++) {
+            for (int qx = 0; qx < qrSizeDonate; qx++) {
+                if (qrDonate.getModule(qx, qy)) {
+                    r->drawRect(startXDonate + qx * scale, startYDonate + qy * scale, scale, scale, tsl::Color(0x0, 0x0, 0x0, 0xF));
                 }
             }
         }

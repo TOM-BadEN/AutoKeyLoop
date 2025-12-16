@@ -1,13 +1,17 @@
 #include "about.hpp"
 #include "qrcodegen.hpp"
+#include "language.hpp"
 
 using qrcodegen::QrCode;
+using qrcodegen::QrSegment;
 
-static const char* AFDIAN_URL = "https://afdian.com/a/TOM-BadEN?from=keyx";
+static const char* WECHAT_PAY_URL = "wxp://f2f0mMaZS-xnKyAZaTyn813TQRZHTRKPzI6UWxldiWDYemRIq8Stt_LPfd1sLyV4v1jR";
+static const char* PAYPAL_URL = "PayPal.me/TomSun666";
 
 // 关于插件界面构造函数
 AboutPlugin::AboutPlugin()
 {
+    
 }
 
 // 创建关于插件界面UI
@@ -83,26 +87,32 @@ tsl::elm::Element* AboutPlugin::createUI()
             renderer->drawString(aboutInfo[i], false, textX, textY, currentFontSize, textColor);
         }
         
-        // 向我捐赠 - 绿色标题和二维码
-        static QrCode qrAfdian = QrCode::encodeText(AFDIAN_URL, QrCode::Ecc::LOW);
-        int scale = 4;
+        // 捐赠二维码 - 使用固定 Version 5 (37x37) 保证大小一致
+        static QrCode qrWechat = QrCode::encodeSegments(QrSegment::makeSegments(WECHAT_PAY_URL), QrCode::Ecc::LOW, 5, 5);
+        static QrCode qrPaypal = QrCode::encodeSegments(QrSegment::makeSegments(PAYPAL_URL), QrCode::Ecc::LOW, 5, 5);
+        
+        bool isChinese = LanguageManager::isSimplifiedChinese();
+        const QrCode& qr = isChinese ? qrWechat : qrPaypal;
+        const char* donateTitle = isChinese ? "微信捐赠" : "PayPal Donate";
+        
+        int scale = 3;
         int margin = 6;
-        int qrSize = qrAfdian.getSize();
+        int qrSize = qr.getSize();
         int totalSize = qrSize * scale;
         int qrX = x + w - 20 - totalSize - 15;
         int qrY = startY + 34;
         
-        // 标题“向我捐赠”居中于二维码上方，与 KeyX 同一水平线
-        auto [donateW, donateH] = renderer->getTextDimensions(("向我捐赠"), false, titleFontSize);
+        // 标题居中于二维码上方，与 KeyX 同一水平线
+        auto [donateW, donateH] = renderer->getTextDimensions(donateTitle, false, titleFontSize);
         s32 donateTitleX = qrX + (totalSize - donateW) / 2;
         tsl::Color donateColor = {0x66, 0xFF, 0x66, 0xFF};  // 绿色
-        renderer->drawString("向我捐赠", false, donateTitleX, startY, titleFontSize, donateColor);
+        renderer->drawString(donateTitle, false, donateTitleX, startY, titleFontSize, donateColor);
         
         // 绘制二维码
         renderer->drawRect(qrX - margin, qrY - margin, totalSize + margin * 2, totalSize + margin * 2, tsl::Color(0xF, 0xF, 0xF, 0xF));
         for (int qy = 0; qy < qrSize; qy++) {
             for (int qx = 0; qx < qrSize; qx++) {
-                if (qrAfdian.getModule(qx, qy)) {
+                if (qr.getModule(qx, qy)) {
                     renderer->drawRect(qrX + qx * scale, qrY + qy * scale, scale, scale, tsl::Color(0x0, 0x0, 0x0, 0xF));
                 }
             }
