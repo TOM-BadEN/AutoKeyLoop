@@ -6,7 +6,7 @@ using qrcodegen::QrCode;
 using qrcodegen::QrSegment;
 
 static const char* WECHAT_PAY_URL = "wxp://f2f0mMaZS-xnKyAZaTyn813TQRZHTRKPzI6UWxldiWDYemRIq8Stt_LPfd1sLyV4v1jR";
-static const char* PAYPAL_URL = "PayPal.me/TomSun666";
+static const char* PAYPAL_URL = "https://www.paypal.com/qrcodes/p2pqrc/7CQ7FTPN26AJ8";
 
 // 关于插件界面构造函数
 AboutPlugin::AboutPlugin()
