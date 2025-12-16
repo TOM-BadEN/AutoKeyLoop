@@ -119,15 +119,8 @@ MacroListResult StoreData::getMacroList(const std::string& gameId) {
     return result;
 }
 
-bool StoreData::downloadMacro(const std::string& gameId, const std::string& fileName) {
+bool StoreData::downloadMacro(const std::string& gameId, const std::string& fileName, const std::string& localPath) {
     std::string url = std::string(m_isSimplifiedChinese ? CN_BASE_URL : EN_BASE_URL) + "games/" + gameId + "/" + fileName;
-    std::string dirPath = std::string(MACROS_DIR) + gameId + "/";
-    std::string baseName = fileName.substr(0, fileName.size() - 6);
-    std::string localPath = dirPath + fileName;
-    int suffix = 1;
-    while (ult::isFile(localPath)) {
-        localPath = dirPath + baseName + "-" + std::to_string(suffix++) + ".macro";
-    }
     bool success = ult::downloadFile(url, localPath, false);
     if (!success) ult::deleteFileOrDirectory(localPath);
     return success;

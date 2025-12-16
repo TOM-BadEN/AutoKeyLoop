@@ -228,21 +228,26 @@ void UpdaterUI::drawHasUpdate(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h)
     s32 maxY = listY - 20;
     bool stopDrawing = false;
     
+    std::string prefix = " • ";
+    auto [prefixW, prefixH] = r->getTextDimensions(prefix, false, fontSize);
+    
     for (const auto& item : m_updateInfo.changelog) {
         if (stopDrawing) break;
         std::string text = item;
-        std::string prefix = " • ";
         bool isFirstLine = true;
         
         while (!text.empty()) {
             if (currentY > maxY) { stopDrawing = true; break; }
             
-            std::string tryLine = prefix + text;
-            auto [tw, th] = r->getTextDimensions(tryLine, false, fontSize);
-            s32 drawX = isFirstLine ? textX : textX + 2;
+            s32 lineMaxWidth = isFirstLine ? maxWidth : (maxWidth - prefixW);
+            auto [tw, th] = r->getTextDimensions(text, false, fontSize);
             
-            if (tw <= maxWidth) {
-                r->drawString(tryLine, false, drawX, currentY, fontSize, r->a(tsl::style::color::ColorDescription));
+            if (tw <= lineMaxWidth) {
+                if (isFirstLine) {
+                    r->drawString(prefix + text, false, textX, currentY, fontSize, r->a(tsl::style::color::ColorDescription));
+                } else {
+                    r->drawString(text, false, textX + prefixW, currentY, fontSize, r->a(tsl::style::color::ColorDescription));
+                }
                 currentY += lineHeight;
                 break;
             }
@@ -258,12 +263,12 @@ void UpdaterUI::drawHasUpdate(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h)
                 charBounds.push_back(i);
             }
             
-            // 二分查找截断点（按字符数）
+            // 二分查找截断点
             size_t lo = 1, hi = charBounds.size() - 1, cutIdx = 1;
             while (lo <= hi) {
                 size_t mid = (lo + hi) / 2;
-                auto [mw, mh] = r->getTextDimensions(prefix + text.substr(0, charBounds[mid]), false, fontSize);
-                if (mw <= maxWidth) {
+                auto [mw, mh] = r->getTextDimensions(text.substr(0, charBounds[mid]), false, fontSize);
+                if (mw <= lineMaxWidth) {
                     cutIdx = mid;
                     lo = mid + 1;
                 } else {
@@ -272,11 +277,14 @@ void UpdaterUI::drawHasUpdate(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h)
             }
             
             size_t cut = charBounds[cutIdx];
-            r->drawString(prefix + text.substr(0, cut), false, drawX, currentY, fontSize, r->a(tsl::style::color::ColorDescription));
+            if (isFirstLine) {
+                r->drawString(prefix + text.substr(0, cut), false, textX, currentY, fontSize, r->a(tsl::style::color::ColorDescription));
+                isFirstLine = false;
+            } else {
+                r->drawString(text.substr(0, cut), false, textX + prefixW, currentY, fontSize, r->a(tsl::style::color::ColorDescription));
+            }
             currentY += lineHeight;
             text = text.substr(cut);
-            prefix = "   ";
-            isFirstLine = false;
         }
         currentY += 3;  // 条目间隙
     }

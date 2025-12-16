@@ -165,7 +165,8 @@ tsl::elm::Element* SettingMacro::createUI() {
     auto listItemStore = new tsl::elm::ListItem("脚本商店", ">");
     listItemStore->setClickListener([this](u64 keys) {
         if (keys & HidNpadButton_A) {
-            tsl::changeTo<StoreGui>();
+            u64 tid = GameMonitor::getCurrentTitleId();
+            tsl::changeTo<StoreGetDataGui>(tid);
             return true;
         }
         return false;

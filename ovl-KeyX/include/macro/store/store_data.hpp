@@ -42,8 +42,8 @@ public:
     // 获取指定游戏的宏列表（从远程 games/{gameId}/macrolist.json）
     MacroListResult getMacroList(const std::string& gameId);
 
-    // 下载宏文件到本地（games/{gameId}/{fileName} → /config/KeyX/Macros/{gameId}/{fileName}）
-    bool downloadMacro(const std::string& gameId, const std::string& fileName);
+    // 下载宏文件到本地
+    bool downloadMacro(const std::string& gameId, const std::string& fileName, const std::string& localPath);
 
 private:
     bool m_isSimplifiedChinese = false;
