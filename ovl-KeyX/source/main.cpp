@@ -4,6 +4,8 @@
 #include "language.hpp"
 #include "refresh.hpp"
 #include "game.hpp"
+#include "Tthread.hpp"
+#include "updater_data.hpp"
 
 
 namespace {
@@ -25,12 +27,20 @@ namespace {
             .bsd_service_type    = BsdServiceType_Auto  // 自动选择服务类型
         };
 
+    // 设置更新检查标志
+    void checkUpdate() {
+        UpdaterData data;
+        UpdateInfo info = data.getUpdateInfo();
+        if (info.success) UpdateChecker::g_hasNewVersion = data.hasNewVersion(info.version, APP_VERSION_STRING);
+    }
+
 }
 // KeyX 特斯拉覆盖层主类
 class KeyXOverlay : public tsl::Overlay {
 
 private:
-    bool m_isFirstShow = true;
+
+    bool m_isFirstShow = true;          // 是否是第一次显示
 
 public:
     // 初始化系统服务
@@ -54,21 +64,23 @@ public:
             memcpy(pdmqrySrv, &pdmqryClone, sizeof(Service));
         }
         GameMonitor::loadWhitelist();                                 // 加载白名单
-        socketInitialize(&socketInitConfig);
-        nifmInitialize(NifmServiceType_User);
+        socketInitialize(&socketInitConfig);                          // 初始化网络服务
+        nifmInitialize(NifmServiceType_User);                         // 初始化网络服务
+        Thd::start(checkUpdate);                                      // 启动更新检查线程
     }
     
     // 退出系统服务
     virtual void exitServices() override 
     {
-        curl_global_cleanup();
-        nifmExit();
-        socketExit();
-        nsExit();
-        pdmqryExit();
-        pmshellExit();        // 退出进程Shell服务
-        pmdmntExit();         // 退出进程管理服务
-        fsdevUnmountAll();    // 卸载所有文件系统
+        Thd::stop();                // 清理线程
+        curl_global_cleanup();      // 清理 cURL
+        nifmExit();                 // 退出 nifm 服务
+        socketExit();               // 退出 socket 服务
+        nsExit();                   // 退出 ns 服务
+        pdmqryExit();               // 退出 pdmqry 服务
+        pmshellExit();              // 退出进程Shell服务
+        pmdmntExit();               // 退出进程管理服务
+        fsdevUnmountAll();          // 卸载所有文件系统
     }
 
     // 覆盖层显示时调用，用于更新游戏信息
