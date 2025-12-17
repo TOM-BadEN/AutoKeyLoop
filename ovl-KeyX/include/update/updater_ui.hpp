@@ -33,7 +33,6 @@ private:
 
     bool m_successDownload = false;                                          // 是否下载成功
     bool m_successUnzip = false;                                             // 是否解压成功
-    std::atomic<bool> m_taskDone{false};                                     // 任务完成标志
 
     void drawGettingJson(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h); // 绘制加载中
     void drawNetworkError(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h);// 绘制网络错误

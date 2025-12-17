@@ -27,7 +27,7 @@ namespace {
 
 UpdaterUI::UpdaterUI() {
     m_state = UpdateState::GettingJson;
-    Thd::start([this]{ m_updateInfo = m_updateData.getUpdateInfo(); m_taskDone = true; });
+    Thd::start([this]{ m_updateInfo = m_updateData.getUpdateInfo();});
 }
 
 UpdaterUI::~UpdaterUI() {
@@ -73,7 +73,7 @@ void UpdaterUI::update() {
             m_frameIndex = (m_frameIndex + 1) % 8;
         }
         
-        if (m_taskDone) {
+        if (Thd::isDone()) {
             Thd::stop();
             if (!m_updateInfo.success) {
                 m_state = UpdateState::NetworkError;
@@ -85,18 +85,17 @@ void UpdaterUI::update() {
         
     }
 
-    else if (m_state == UpdateState::Downloading && m_taskDone) {
+    else if (m_state == UpdateState::Downloading && Thd::isDone()) {
+        Thd::stop();
         if (m_successDownload) {
-            Thd::stop();
             m_state = UpdateState::Unzipping;
-            Thd::start([this]{ m_successUnzip = m_updateData.unzipZip(); m_taskDone = true; });
+            Thd::start([this]{ m_successUnzip = m_updateData.unzipZip();});
         } else {
-            Thd::stop();
             m_state = UpdateState::UpdateError;
         }    
     }
     
-    else if (m_state == UpdateState::Unzipping && m_taskDone) {
+    else if (m_state == UpdateState::Unzipping && Thd::isDone()) {
         Thd::stop();
         if (m_successUnzip) {
             SysModuleManager::restartModule();
@@ -111,7 +110,7 @@ bool UpdaterUI::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &tou
     if (m_state == UpdateState::HasUpdate || m_state == UpdateState::CancelUpdate || m_state == UpdateState::UpdateError) {
         if (keysDown & HidNpadButton_Plus) {
             m_state = UpdateState::Downloading;
-            Thd::start([this]{ m_successDownload = m_updateData.downloadZip(); m_taskDone = true; });
+            Thd::start([this]{ m_successDownload = m_updateData.downloadZip();});
             return true;
         }
     }
