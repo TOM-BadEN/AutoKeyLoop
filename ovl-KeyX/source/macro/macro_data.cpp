@@ -1,4 +1,5 @@
 #include "macro_data.hpp"
+#include "macro_util.hpp"
 #include <cstdio>
 #include <sys/stat.h>
 #include <cstring>
@@ -82,14 +83,10 @@ bool MacroData::load(const char* filePath) {
     struct stat st{};
     if (stat(filePath, &st) == 0) s_basicInfo.fileSize = st.st_size;
     else s_basicInfo.fileSize = 0;
-    // 提取文件名
-    const char* lastSlash = strrchr(filePath, '/');
-    const char* name = lastSlash ? lastSlash + 1 : filePath;
-    const char* dot = strrchr(name, '.');
-    size_t len = dot ? (size_t)(dot - name) : strlen(name);
-    if (len >= sizeof(s_basicInfo.fileName)) len = sizeof(s_basicInfo.fileName) - 1;
-    strncpy(s_basicInfo.fileName, name, len);
-    s_basicInfo.fileName[len] = '\0';
+    // 获取显示名称（优先从元数据读取，否则用文件名）
+    std::string displayName = MacroUtil::getDisplayName(filePath);
+    strncpy(s_basicInfo.fileName, displayName.c_str(), sizeof(s_basicInfo.fileName) - 1);
+    s_basicInfo.fileName[sizeof(s_basicInfo.fileName) - 1] = '\0';
     
     return true;
 }

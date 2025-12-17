@@ -370,9 +370,11 @@ bool StoreMacroViewGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchSt
             snprintf(tidStr, sizeof(tidStr), "%016lX", m_tid);
             std::string gameId = tidStr;
             std::string fileName = s_selectedMacro.file;
+            s_selectedMacro.file = m_localPath.substr(m_localPath.find_last_of('/') + 1);
             std::string localPath = m_localPath;
             Thd::start([gameId, fileName, localPath] {
                 s_downloadSuccess = StoreData().downloadMacro(gameId, fileName, localPath);
+                if (s_downloadSuccess) StoreData::saveMacroMetadataInfo(gameId, s_selectedMacro);
             });
             return true;
         }

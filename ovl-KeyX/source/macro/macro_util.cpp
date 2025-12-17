@@ -186,3 +186,69 @@ bool MacroUtil::updateMacroPath(u64 titleId, const char* oldPath, const char* ne
     }
     return false;
 }
+
+std::string MacroUtil::getDisplayName(const std::string& macroPath) {
+    u64 tid = getTitleIdFromPath(macroPath.c_str());
+    std::string fileName = ult::getFileName(macroPath);
+    
+    char tidStr[17];
+    snprintf(tidStr, sizeof(tidStr), "%016lX", tid);
+    std::string iniPath = std::string(MACROS_DIR) + "/" + tidStr + "/macroMetadata.ini";
+    
+    std::string name = IniHelper::getString(fileName, "name", "", iniPath);
+    
+    if (name.empty()) {
+        auto dot = fileName.rfind('.');
+        if (dot != std::string::npos) name = fileName.substr(0, dot);
+        else name = fileName;
+    }
+    
+    return name;
+}
+
+bool MacroUtil::deleteMacro(u64 titleId, const char* macroPath) {
+    // 删除宏文件
+    ult::deleteFileOrDirectory(macroPath);
+    
+    // 删除快捷键配置
+    bool hadHotkey = removeHotkey(titleId, macroPath);
+    
+    // 删除元数据
+    char tidStr[17];
+    snprintf(tidStr, sizeof(tidStr), "%016lX", titleId);
+    std::string iniPath = std::string(MACROS_DIR) + "/" + tidStr + "/macroMetadata.ini";
+    std::string fileName = ult::getFileName(macroPath);
+    IniHelper::removeSection(fileName, iniPath);
+    
+    return hadHotkey;
+}
+
+bool MacroUtil::renameMacro(const char* oldPath, const char* newPath) {
+    // 重命名文件
+    rename(oldPath, newPath);
+    
+    u64 titleId = getTitleIdFromPath(oldPath);
+    
+    // 更新快捷键配置
+    bool hadHotkey = updateMacroPath(titleId, oldPath, newPath);
+    
+    // 更新元数据 section
+    char tidStr[17];
+    snprintf(tidStr, sizeof(tidStr), "%016lX", titleId);
+    std::string iniPath = std::string(MACROS_DIR) + "/" + tidStr + "/macroMetadata.ini";
+    std::string oldFileName = ult::getFileName(oldPath);
+    std::string newFileName = ult::getFileName(newPath);
+    
+    std::string name = IniHelper::getString(oldFileName, "name", "", iniPath);
+    std::string author = IniHelper::getString(oldFileName, "author", "", iniPath);
+    std::string desc = IniHelper::getString(oldFileName, "desc", "", iniPath);
+    
+    if (!name.empty() || !author.empty() || !desc.empty()) {
+        if (!name.empty()) IniHelper::setString(newFileName, "name", name, iniPath);
+        if (!author.empty()) IniHelper::setString(newFileName, "author", author, iniPath);
+        if (!desc.empty()) IniHelper::setString(newFileName, "desc", desc, iniPath);
+        IniHelper::removeSection(oldFileName, iniPath);
+    }
+    
+    return hadHotkey;
+}

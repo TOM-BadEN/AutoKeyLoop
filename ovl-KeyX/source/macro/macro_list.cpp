@@ -119,10 +119,8 @@ tsl::elm::Element* MacroListGuiGame::createUI() {
 
     list->addItem(new tsl::elm::CategoryHeader(" 选择要查看的脚本"));
     for (const auto& entry : m_macro) {
-        std::string fileName = ult::getFileName(entry.path);
-        auto dot = fileName.rfind('.');
-        if (dot != std::string::npos) fileName = fileName.substr(0, dot); 
-        auto item = new tsl::elm::ListItem(fileName, HidHelper::getCombinedIcons(entry.hotkey));
+        std::string displayName = MacroUtil::getDisplayName(entry.path);
+        auto item = new tsl::elm::ListItem(displayName, HidHelper::getCombinedIcons(entry.hotkey));
         item->setClickListener([this, entry](u64 keys) {
             if (keys & HidNpadButton_A) {
                 tsl::changeTo<MacroViewGui>(entry.path.c_str(), m_gameName);

@@ -55,7 +55,8 @@ tsl::elm::Element* MacroRenameGui::createUI() {
         auto inputDim = r->getTextDimensions(m_input, false, 22);
         s32 centerX = inputX + inputW / 2;
         s32 textX = centerX - inputDim.first / 2;
-        r->drawString(m_input, false, textX, inputY + 35, 22, tsl::Color(0xF,0xF,0xF,0xF));
+        tsl::Color inputColor = m_isDuplicate ? tsl::Color(0xF,0x3,0x3,0xF) : tsl::Color(0xF,0xF,0xF,0xF);
+        r->drawString(m_input, false, textX, inputY + 35, 22, inputColor);
         
         // 光标
         if ((m_cursorBlink / 30) % 2 == 0) {
@@ -174,6 +175,7 @@ bool MacroRenameGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState
         if (m_inputLen < sizeof(m_input) - 1) {
             m_input[m_inputLen++] = keyboard[m_row][m_col];
             m_input[m_inputLen] = '\0';
+            checkDuplicate();
         }
     };
 
@@ -183,6 +185,7 @@ bool MacroRenameGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState
         --m_inputLen;
         m_input[m_inputLen] = '\0';
         m_backspaceTick = kRepeatFrames;
+        checkDuplicate();
         return true;
     };
 
@@ -211,6 +214,7 @@ bool MacroRenameGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState
     } else if (keysDown & HidNpadButton_X) {         // 重置
         strcpy(m_input, m_inputOld);
         m_inputLen = strlen(m_input);
+        checkDuplicate();
         return true;
     }
 
@@ -222,29 +226,51 @@ bool MacroRenameGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState
 }
 
 void MacroRenameGui::MacroRename(){
-    if (m_inputLen == 0) return;
+    if (m_inputLen == 0 || m_isDuplicate) return;
+
+    // 获取目录长度：sdmc:/config/KeyX/macros/TID/old.macro -> dirLen = 到最后一个 '/' 的位置 + 1
     const char* lastSlash = strrchr(m_macroFilePath, '/');
     if (!lastSlash) return;
-    // 构造新路径
-    size_t dirLen = lastSlash - m_macroFilePath + 1;  // 包括 '/'
-    // 复制目录部分
+    size_t dirLen = lastSlash - m_macroFilePath + 1; 
+
+    // 获取新路径：sdmc:/config/KeyX/macros/TID/ + m_input + .macro
     char newMacroFilePath[96];
     memcpy(newMacroFilePath, m_macroFilePath, dirLen);
     snprintf(newMacroFilePath + dirLen, sizeof(newMacroFilePath) - dirLen, "%s.macro", m_input);
-    rename(m_macroFilePath, newMacroFilePath);
+    
+    // 复制一个game名字
     char gameName[64];
     strcpy(gameName, m_gameName);
+
+    // 文件改名（内部含元数据更新以及快捷键配置文件的名字修改）
+    bool needReload = MacroUtil::renameMacro(m_macroFilePath, newMacroFilePath);
+
+    // 如果是从录制状态跳转进来的，就不需要重新加载宏列表
     bool isRecord = m_isRecord;
-    if (!isRecord) {  // 如果不是从录制中跳转进来的
-        if (updateConfigPath(newMacroFilePath)) g_ipcManager.sendReloadMacroCommand();    
+    if (!isRecord) {  
+        if (needReload) g_ipcManager.sendReloadMacroCommand();    
         Refresh::RefrRequest(Refresh::MacroGameList);  
         tsl::swapTo<MacroViewGui>(SwapDepth(2), newMacroFilePath, gameName, isRecord);
     } 
     else tsl::swapTo<MacroViewGui>(SwapDepth(1), newMacroFilePath, gameName, isRecord);
 }
 
-// 当修改名称后，更新配置文件中的脚本路径
-bool MacroRenameGui::updateConfigPath(const char* newPath) {
-    u64 titleId = MacroUtil::getTitleIdFromPath(m_macroFilePath);
-    return MacroUtil::updateMacroPath(titleId, m_macroFilePath, newPath);
+void MacroRenameGui::checkDuplicate() {
+    // 构造新路径
+    const char* lastSlash = strrchr(m_macroFilePath, '/');
+    if (!lastSlash) { m_isDuplicate = false; return; }
+    size_t dirLen = lastSlash - m_macroFilePath + 1;
+    
+    char newPath[96];
+    memcpy(newPath, m_macroFilePath, dirLen);
+    snprintf(newPath + dirLen, sizeof(newPath) - dirLen, "%s.macro", m_input);
+    
+    // 如果新路径等于原路径，不算重名
+    if (strcmp(newPath, m_macroFilePath) == 0) {
+        m_isDuplicate = false;
+        return;
+    }
+    
+    // 检查文件是否存在
+    m_isDuplicate = ult::isFile(newPath);
 }

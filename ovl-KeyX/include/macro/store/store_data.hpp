@@ -44,6 +44,9 @@ public:
 
     // 下载宏文件到本地
     bool downloadMacro(const std::string& gameId, const std::string& fileName, const std::string& localPath);
+    
+    // 保存宏元数据到 macrosMetadata.ini
+    static void saveMacroMetadataInfo(const std::string& gameId, const StoreMacroEntry& macro);
 
 private:
     bool m_isSimplifiedChinese = false;

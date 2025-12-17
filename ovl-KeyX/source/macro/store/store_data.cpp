@@ -1,6 +1,7 @@
 #include "store_data.hpp"
 #include "language.hpp"
 #include "game.hpp"
+#include "ini_helper.hpp"
 #include <download_funcs.hpp>
 #include <json_funcs.hpp>
 #include <cJSON.h>
@@ -124,4 +125,11 @@ bool StoreData::downloadMacro(const std::string& gameId, const std::string& file
     bool success = ult::downloadFile(url, localPath, false);
     if (!success) ult::deleteFileOrDirectory(localPath);
     return success;
+}
+
+void StoreData::saveMacroMetadataInfo(const std::string& gameId, const StoreMacroEntry& macro) {
+    std::string iniPath = std::string(MACROS_DIR) + gameId + "/macroMetadata.ini";
+    IniHelper::setString(macro.file, "name", macro.name, iniPath);
+    IniHelper::setString(macro.file, "author", macro.author, iniPath);
+    IniHelper::setString(macro.file, "desc", macro.desc, iniPath);
 }

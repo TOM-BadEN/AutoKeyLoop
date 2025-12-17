@@ -56,8 +56,8 @@ tsl::elm::Element* MacroViewGui::createUI() {
         const auto& info = MacroData::getBasicInfo();
         char titleId[17], fileSize[16], duration[16], fps[16], frames[16], fileName[80];
         snprintf(titleId, sizeof(titleId), "%016lX", info.titleId);
-        snprintf(fileName, sizeof(fileName), "%s (V%u)", info.fileName, info.version);
-        snprintf(fileSize, sizeof(fileSize), "%u KB", (info.fileSize + 1023) / 1024);
+        snprintf(fileName, sizeof(fileName), "%s", info.fileName);
+        snprintf(fileSize, sizeof(fileSize), "%u KB (V%u)", (info.fileSize + 1023) / 1024, info.version);
         snprintf(duration, sizeof(duration), "%u s", info.durationMs / 1000);
         snprintf(fps, sizeof(fps), "%u FPS", info.frameRate);
         snprintf(frames, sizeof(frames), "%u", info.frameCount);
@@ -144,9 +144,8 @@ bool MacroViewGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &
     }
     if ((keysDown & HidNpadButton_Minus) && m_deleteItem) {
         if (getFocusedElement() == m_deleteItem) {
-            ult::deleteFileOrDirectory(m_macroFilePath);
             u64 titleId = MacroData::getBasicInfo().titleId;
-            if (MacroUtil::removeHotkey(titleId, m_macroFilePath)) g_ipcManager.sendReloadMacroCommand();
+            if (MacroUtil::deleteMacro(titleId, m_macroFilePath)) g_ipcManager.sendReloadMacroCommand();
             Refresh::RefrRequest(Refresh::MacroGameList);
             MacroData::allCleanup();
             tsl::goBack();

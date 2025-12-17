@@ -35,6 +35,15 @@ public:
     
     // 更新配置中的宏路径（重命名时使用）
     static bool updateMacroPath(u64 titleId, const char* oldPath, const char* newPath);
+    
+    // 获取宏的显示名称（优先从元数据读取，否则用文件名）
+    static std::string getDisplayName(const std::string& macroPath);
+    
+    // 删除宏文件及相关数据（快捷键配置、元数据），返回是否成功删除了快捷键
+    static bool deleteMacro(u64 titleId, const char* macroPath);
+    
+    // 重命名宏文件后更新配置和元数据，返回是否有快捷键需要重载
+    static bool renameMacro(const char* oldPath, const char* newPath);
 
 private:
     // 获取游戏配置文件路径

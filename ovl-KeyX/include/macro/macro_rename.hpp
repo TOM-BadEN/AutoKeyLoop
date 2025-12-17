@@ -23,10 +23,11 @@ private:
     u16 m_dirTick = 0;
     HidNpadButton m_lastDir = (HidNpadButton)0;
     bool m_useLower = true;
+    bool m_isDuplicate = false;
 
     // 改名函数
     void MacroRename();
     
-    // 更新配置文件中的脚本路径
-    bool updateConfigPath(const char* newPath);
+    // 检测重名
+    void checkDuplicate();
 };
