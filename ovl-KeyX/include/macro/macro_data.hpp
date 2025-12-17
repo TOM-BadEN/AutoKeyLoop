@@ -62,6 +62,8 @@ struct MacroBasicInfo {
 class MacroData {
 public:
     static bool load(const char* filePath);
+    static bool loadFrameAndBasicInfo(const char* filePath);
+    static bool loadBakMacroData();
     static bool saveForEdit();
     static const char* getFilePath();
     static const MacroHeader& getHeader();

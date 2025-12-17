@@ -242,6 +242,11 @@ bool MacroUtil::deleteMacro(u64 titleId, const char* macroPath) {
 bool MacroUtil::renameMacro(const char* oldPath, const char* newPath) {
     // 重命名文件
     rename(oldPath, newPath);
+    // 重命名备份文件
+    char oldBakPath[128], newBakPath[128];
+    snprintf(oldBakPath, sizeof(oldBakPath), "%s.bak", oldPath);
+    snprintf(newBakPath, sizeof(newBakPath), "%s.bak", newPath);
+    rename(oldBakPath, newBakPath);
     
     u64 titleId = getTitleIdFromPath(oldPath);
     

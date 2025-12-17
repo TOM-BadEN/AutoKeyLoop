@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <sys/stat.h>
 #include <cstring>
+#include <ultra.hpp>
 
 // 静态成员定义
 char MacroData::s_filePath[128];
@@ -56,6 +57,20 @@ bool MacroData::isSameState(const MacroFrameV2& a, const MacroFrameV2& b) {
 bool MacroData::load(const char* filePath) {
     strncpy(s_filePath, filePath, sizeof(s_filePath) - 1);
     s_filePath[sizeof(s_filePath) - 1] = '\0';
+    return loadFrameAndBasicInfo(filePath);
+}
+
+// 从备份文件加载宏数据
+bool MacroData::loadBakMacroData() {
+    char bakPath[128];
+    snprintf(bakPath, sizeof(bakPath), "%s.bak", s_filePath);
+    if (!loadFrameAndBasicInfo(bakPath)) return false;
+    parseActions();
+    return true;
+}
+
+// 加载帧数据和基础信息
+bool MacroData::loadFrameAndBasicInfo(const char* filePath) {
     s_frames.clear();
     s_framesV2.clear();
     s_basicInfo = {};
@@ -84,7 +99,11 @@ bool MacroData::load(const char* filePath) {
     if (stat(filePath, &st) == 0) s_basicInfo.fileSize = st.st_size;
     else s_basicInfo.fileSize = 0;
     // 获取显示名称（优先从元数据读取，否则用文件名）
-    std::string displayName = MacroUtil::getDisplayName(filePath);
+    std::string pathStr = filePath;
+    if (pathStr.size() > 4 && pathStr.substr(pathStr.size() - 4) == ".bak") {
+        pathStr = pathStr.substr(0, pathStr.size() - 4);
+    }
+    std::string displayName = MacroUtil::getDisplayName(pathStr.c_str());
     strncpy(s_basicInfo.fileName, displayName.c_str(), sizeof(s_basicInfo.fileName) - 1);
     s_basicInfo.fileName[sizeof(s_basicInfo.fileName) - 1] = '\0';
     
@@ -98,6 +117,11 @@ const char* MacroData::getFilePath() {
 
 // 保存编辑后的宏数据（统一入口）
 bool MacroData::saveForEdit() {
+    // 先将原文件备份
+    char bakPath[128];
+    snprintf(bakPath, sizeof(bakPath), "%s.bak", s_filePath);
+    ult::copyFileOrDirectory(s_filePath, bakPath);
+    // 再修改
     FILE* fp = fopen(s_filePath, "wb");
     if (!fp) return false;
     if (s_header.version == 1) saveForEditV1(fp);

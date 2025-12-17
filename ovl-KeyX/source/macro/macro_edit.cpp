@@ -5,6 +5,7 @@
 #include "ipc.hpp"
 #include "macro_view.hpp"
 #include "i18n.hpp"
+#include <ultra.hpp>
 
 namespace {
     static constexpr s32 TIMELINE_HEIGHT = 100;       // 时间轴区域高度
@@ -55,6 +56,9 @@ MacroEditGui::MacroEditGui(const char* gameName, bool isRecord)
  , m_isRecord(isRecord)
 {
     MacroData::parseActions();
+    char bakPath[128];
+    snprintf(bakPath, sizeof(bakPath), "%s.bak", MacroData::getFilePath());
+    m_bakMacro = ult::isFile(bakPath);
 }
 
 MacroEditGui::~MacroEditGui() {
@@ -63,11 +67,8 @@ MacroEditGui::~MacroEditGui() {
 
 tsl::elm::Element* MacroEditGui::createUI() {
     const auto& info = MacroData::getBasicInfo();
-    std::string subtitle = std::string(info.fileName) + i18n(" 撤销修改");
     auto frame = new tsl::elm::HeaderOverlayFrame(97);
-    
-    // 自定义头部绘制器（包含标题和底部按钮）
-    frame->setHeader(new tsl::elm::CustomDrawer([this, subtitle](tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h) {
+    frame->setHeader(new tsl::elm::CustomDrawer([this, &info](tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h) {
         // 标题（菜单模式下显示菜单项名称）
         if (m_menuMode) {
             const char* menuTitles[] = {"在前面插入新动作", "在后面插入新动作", "重置动作", "删除动作", "修改持续时间", "修改触发按钮"};
@@ -76,8 +77,27 @@ tsl::elm::Element* MacroEditGui::createUI() {
             r->drawString(menuTips[m_menuIndex], false, 20, 73, 15, r->a(tsl::style::color::ColorDescription));
         } else {
             r->drawString(m_gameName, false, 20, 50, 32, r->a(tsl::defaultOverlayColor));
+            // 宏名字
+            std::string fileName = info.fileName;
+            auto [fnW, fnH] = r->getTextDimensions(fileName, false, 15);
+            r->drawString(fileName, false, 20, 73, 15, r->a(tsl::style::color::ColorDescription));
+            s32 offsetX = 20 + fnW;
+            // 分界线
+            auto [sepW, sepH] = r->getTextDimensions("", false, 15);
+            r->drawString("", false, offsetX, 73, 15, tsl::style::color::ColorDescription);
+            offsetX += sepW;
+            // 恢复备份
+            tsl::Color bakColor = m_bakMacro ? r->a(tsl::onTextColor) : tsl::style::color::ColorDescription;
+            std::string bakText = " 恢复备份";
+            auto [bakW, bakH] = r->getTextDimensions(bakText, false, 15);
+            r->drawString(bakText, false, offsetX, 73, 15, bakColor);
+            offsetX += bakW;
+            // 分界线
+            r->drawString("", false, offsetX, 73, 15, tsl::style::color::ColorDescription);
+            offsetX += sepW;
+            // 撤销修改
             tsl::Color undoColor = MacroData::canUndo() ? r->a(tsl::onTextColor) : tsl::style::color::ColorDescription;
-            r->drawStringWithColoredSections(subtitle.c_str(), false, {i18n(" 撤销修改")}, 20, 73, 15, tsl::style::color::ColorDescription, undoColor);
+            r->drawString(" 撤销修改", false, offsetX, 73, 15, undoColor);
         }
         const char* btnText = m_selectMode ? "  修改" : "  保存";
         r->drawString(btnText, false, 280, 693, 23, r->a(tsl::style::color::ColorText));
@@ -451,6 +471,16 @@ bool MacroEditGui::handleNormalInput(u64 keysDown, u64 keysHeld) {
     if (keysDown & HidNpadButton_X) {
         if (MacroData::undo()) {
             if (m_selectedIndex >= (s32)actions.size()) m_selectedIndex = actions.size() - 1;
+            m_selectMode = false;
+            m_selectAnchor = -1;
+            return true;
+        }
+    }
+    if (keysDown & HidNpadButton_StickL) {
+        if (m_bakMacro && MacroData::loadBakMacroData()) {
+            MacroData::undoCleanup();
+            m_bakMacro = false;
+            m_selectedIndex = 0;
             m_selectMode = false;
             m_selectAnchor = -1;
             return true;

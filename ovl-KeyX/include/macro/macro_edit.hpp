@@ -12,6 +12,7 @@ public:
 private:
     const char* m_gameName;
     bool m_isRecord;
+    bool m_bakMacro = false;
     
     s32 m_scrollOffset = 0;
     s32 m_selectedIndex = 0;
