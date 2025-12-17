@@ -5,6 +5,7 @@
 #include "sysmodule.hpp"
 #include <ultra.hpp>
 #include "i18n.hpp"
+#include "Tthread.hpp"
 
 namespace {
     constexpr const char* refreshIcon[] = {"", "", "", "", "", "", "", ""};
@@ -23,18 +24,16 @@ namespace {
     }
 }
 
-// 静态成员定义
-alignas(0x1000) char UpdaterUI::s_threadStack[32 * 1024];
 
 UpdaterUI::UpdaterUI() {
     m_state = UpdateState::GettingJson;
-    startThread();    // 启动后台线程,这里是下载updateJSON    
+    Thd::start([this]{ m_updateInfo = m_updateData.getUpdateInfo(); m_taskDone = true; });
 }
 
 UpdaterUI::~UpdaterUI() {
     ult::abortDownload = true;    // 通知 curl 取消下载
     ult::abortUnzip = true;       // 通知 unzip 取消解压
-    stopThread();     // 确保线程被正确清理
+    Thd::stop();
 }
 
 tsl::elm::Element* UpdaterUI::createUI() {
@@ -75,7 +74,7 @@ void UpdaterUI::update() {
         }
         
         if (m_taskDone) {
-            stopThread();
+            Thd::stop();
             if (!m_updateInfo.success) {
                 m_state = UpdateState::NetworkError;
             } else {
@@ -88,17 +87,17 @@ void UpdaterUI::update() {
 
     else if (m_state == UpdateState::Downloading && m_taskDone) {
         if (m_successDownload) {
-            stopThread();
+            Thd::stop();
             m_state = UpdateState::Unzipping;
-            startThread();
+            Thd::start([this]{ m_successUnzip = m_updateData.unzipZip(); m_taskDone = true; });
         } else {
-            stopThread();
+            Thd::stop();
             m_state = UpdateState::UpdateError;
         }    
     }
     
     else if (m_state == UpdateState::Unzipping && m_taskDone) {
-        stopThread();
+        Thd::stop();
         if (m_successUnzip) {
             SysModuleManager::restartModule();
             m_state = UpdateState::UpdateSuccess;
@@ -112,7 +111,7 @@ bool UpdaterUI::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &tou
     if (m_state == UpdateState::HasUpdate || m_state == UpdateState::CancelUpdate || m_state == UpdateState::UpdateError) {
         if (keysDown & HidNpadButton_Plus) {
             m_state = UpdateState::Downloading;
-            startThread();
+            Thd::start([this]{ m_successDownload = m_updateData.downloadZip(); m_taskDone = true; });
             return true;
         }
     }
@@ -121,7 +120,7 @@ bool UpdaterUI::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &tou
         if (keysDown & HidNpadButton_B) {
             ult::abortDownload = true;
             ult::abortUnzip = true;
-            stopThread();
+            Thd::stop();
             m_state = UpdateState::CancelUpdate;
             return true;
         }
@@ -354,32 +353,3 @@ void UpdaterUI::drawHasUpdate(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h)
     r->drawString(valText, false, x + w - 15 - valDim.first, valY, valFont, r->a(valColor));
 }
 
-// 线程函数
-void UpdaterUI::ThreadFunc(void* arg) {
-    UpdaterUI* self = static_cast<UpdaterUI*>(arg);
-    if (self->m_state == UpdateState::GettingJson) self->m_updateInfo = self->m_updateData.getUpdateInfo();
-    else if (self->m_state == UpdateState::Downloading) self->m_successDownload = self->m_updateData.downloadZip();
-    else if (self->m_state == UpdateState::Unzipping) self->m_successUnzip = self->m_updateData.unzipZip();
-    self->m_taskDone = true;
-}
-
-// 启动线程
-void UpdaterUI::startThread() {
-    m_taskDone = false;
-    m_threadCreated = false;
-    memset(&m_thread, 0, sizeof(Thread));
-    Result rc = threadCreate(&m_thread, ThreadFunc, this, s_threadStack, sizeof(s_threadStack), 0x2C, -2);
-    if (R_SUCCEEDED(rc)) {
-        m_threadCreated = true;
-        threadStart(&m_thread);
-    }
-}
-
-// 停止线程
-void UpdaterUI::stopThread() {
-    if (m_threadCreated) {
-        threadWaitForExit(&m_thread);
-        threadClose(&m_thread);
-        m_threadCreated = false;
-    }
-}
