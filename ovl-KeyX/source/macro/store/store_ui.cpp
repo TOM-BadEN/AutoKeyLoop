@@ -362,10 +362,19 @@ void StoreMacroViewGui::drawContent(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, 
     s32 currentY = y + 35;
     
     // 脚本名称 + 作者（青色）
-    auto nameDim = r->getTextDimensions(s_selectedMacro.name, false, 28);
-    r->drawString(s_selectedMacro.name, false, textX, currentY, 28, r->a(tsl::onTextColor));
+    s32 nameFontSize = 28;
+    s32 byFontSize = 20;
     std::string byText = " by " + s_selectedMacro.author;
-    r->drawString(byText, false, textX + nameDim.first, currentY, 20, r->a(tsl::onTextColor));
+    auto nameDim = r->getTextDimensions(s_selectedMacro.name, false, nameFontSize);
+    auto byDim = r->getTextDimensions(byText, false, byFontSize);
+    while (nameDim.first + byDim.first > w - 19 - 15) {
+        nameFontSize = nameFontSize * 9 / 10;
+        byFontSize = byFontSize * 9 / 10;
+        nameDim = r->getTextDimensions(s_selectedMacro.name, false, nameFontSize);
+        byDim = r->getTextDimensions(byText, false, byFontSize);
+    }
+    r->drawString(s_selectedMacro.name, false, textX, currentY, nameFontSize, r->a(tsl::onTextColor));
+    r->drawString(byText, false, textX + nameDim.first, currentY, byFontSize, r->a(tsl::onTextColor));
     currentY += 50;
     
     // 通用换行绘制函数

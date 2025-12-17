@@ -366,11 +366,20 @@ tsl::elm::Element* MacroDescGui::createUI() {
             displayName = ult::getFileName(m_filePath);
             if (displayName.size() > 6) displayName = displayName.substr(0, displayName.size() - 6);
         }
-        auto nameDim = r->getTextDimensions(displayName, false, 28);
-        r->drawString(displayName, false, textX, currentY, 28, r->a(tsl::onTextColor));
-        if (!m_meta.author.empty()) {
-            std::string byText = " by " + m_meta.author;
-            r->drawString(byText, false, textX + nameDim.first, currentY, 20, r->a(tsl::onTextColor));
+        s32 nameFontSize = 28;
+        s32 byFontSize = 20;
+        std::string byText = m_meta.author.empty() ? "" : " by " + m_meta.author;
+        auto nameDim = r->getTextDimensions(displayName, false, nameFontSize);
+        auto byDim = r->getTextDimensions(byText, false, byFontSize);
+        while (nameDim.first + byDim.first > w - 19 - 15) {
+            nameFontSize = nameFontSize * 9 / 10;
+            byFontSize = byFontSize * 9 / 10;
+            nameDim = r->getTextDimensions(displayName, false, nameFontSize);
+            byDim = r->getTextDimensions(byText, false, byFontSize);
+        }
+        r->drawString(displayName, false, textX, currentY, nameFontSize, r->a(tsl::onTextColor));
+        if (!byText.empty()) {
+            r->drawString(byText, false, textX + nameDim.first, currentY, byFontSize, r->a(tsl::onTextColor));
         }
         currentY += 50;
         
