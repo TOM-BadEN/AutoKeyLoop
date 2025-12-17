@@ -34,7 +34,7 @@ tsl::elm::Element* SettingMenu::createUI() {
     auto frame = new tsl::elm::HeaderOverlayFrame(97);
     frame->setHeader(new tsl::elm::CustomDrawer([this](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
         renderer->drawString("功能设置", false, 20, 50+2, 32, renderer->a(tsl::defaultOverlayColor));
-        renderer->drawString("选择设置项  检查更新  关于插件", false, 20, 50+23, 15, renderer->a(tsl::bannerVersionTextColor));
+        renderer->drawString("选择设置项  关于插件  检查更新", false, 20, 50+23, 15, renderer->a(tsl::bannerVersionTextColor));
         renderer->drawString("  白名单", false, 280, 693, 23, renderer->a(tsl::style::color::ColorText));
     }));
 
