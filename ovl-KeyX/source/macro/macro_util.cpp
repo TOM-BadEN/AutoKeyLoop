@@ -206,6 +206,22 @@ std::string MacroUtil::getDisplayName(const std::string& macroPath) {
     return name;
 }
 
+MacroUtil::MacroMetadata MacroUtil::getMetadata(const std::string& macroPath) {
+    u64 tid = getTitleIdFromPath(macroPath.c_str());
+    std::string fileName = ult::getFileName(macroPath);
+    
+    char tidStr[17];
+    snprintf(tidStr, sizeof(tidStr), "%016lX", tid);
+    std::string iniPath = std::string(MACROS_DIR) + "/" + tidStr + "/macroMetadata.ini";
+    
+    MacroMetadata meta;
+    meta.name = IniHelper::getString(fileName, "name", "", iniPath);
+    meta.author = IniHelper::getString(fileName, "author", "", iniPath);
+    meta.desc = IniHelper::getString(fileName, "desc", "", iniPath);
+    
+    return meta;
+}
+
 bool MacroUtil::deleteMacro(u64 titleId, const char* macroPath) {
     // 删除宏文件
     ult::deleteFileOrDirectory(macroPath);

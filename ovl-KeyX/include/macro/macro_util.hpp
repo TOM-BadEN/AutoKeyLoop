@@ -11,6 +11,15 @@ public:
         std::string path;
         u64 hotkey;
     };
+    
+    // 获取宏的元数据（name、author、desc）
+    struct MacroMetadata {
+        std::string name;
+        std::string author;
+        std::string desc;
+    };
+    
+    static MacroMetadata getMetadata(const std::string& macroPath);
 
     // 获取有脚本的游戏目录列表（titleId字符串）
     static std::vector<std::string> getGameDirs();
