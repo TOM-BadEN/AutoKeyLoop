@@ -1,6 +1,12 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <atomic>
+
+namespace UpdateChecker {
+    // 开局main中独立线程获取是否有更新信息的标志
+    inline std::atomic<bool> g_hasNewVersion{false};
+}
 
 struct UpdateInfo {
     bool success = false;                   // 获取是否成功
