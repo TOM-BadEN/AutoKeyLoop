@@ -61,6 +61,7 @@ public:
     // 退出系统服务
     virtual void exitServices() override 
     {
+        curl_global_cleanup();
         nifmExit();
         socketExit();
         nsExit();
