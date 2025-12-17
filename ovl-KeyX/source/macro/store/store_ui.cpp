@@ -5,6 +5,7 @@
 #include <cmath>
 #include <ultra.hpp>
 #include "game.hpp"
+#include "Tthread.hpp"
 
 namespace {
     GameListResult s_gameList;
@@ -14,41 +15,6 @@ namespace {
     
     constexpr const char* s_refreshIcon[] = {"", "", "", "", "", "", "", ""};
 }
-
-namespace Thd {
-    alignas(0x1000) char stack[32 * 1024];
-    Thread thread;
-    std::function<void()> task;
-    std::atomic<bool> done{true};
-    bool created = false;
-    
-    void func(void*) {
-        if (task) task();
-        done = true;
-    }
-    
-    void stop() {
-        if (created) {
-            threadWaitForExit(&thread);
-            threadClose(&thread);
-            created = false;
-        }
-    }
-    
-    void start(std::function<void()> t) {
-        stop();
-        task = t;
-        done = false;
-        memset(&thread, 0, sizeof(Thread));
-        if (R_SUCCEEDED(threadCreate(&thread, func, nullptr, stack, sizeof(stack), 0x2C, -2))) {
-            created = true;
-            threadStart(&thread);
-        }
-    }
-    
-    bool isDone() { return done; }
-}
-
 
 
 // ==================== StoreGetDataGui ====================
