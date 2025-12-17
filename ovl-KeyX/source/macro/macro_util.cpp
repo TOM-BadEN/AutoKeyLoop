@@ -223,8 +223,10 @@ MacroUtil::MacroMetadata MacroUtil::getMetadata(const std::string& macroPath) {
 }
 
 bool MacroUtil::deleteMacro(u64 titleId, const char* macroPath) {
-    // 删除宏文件
+    // 删除宏文件与备份文件
     ult::deleteFileOrDirectory(macroPath);
+    std::string backupPath = std::string(macroPath) + ".bak";
+    ult::deleteFileOrDirectory(backupPath);
     
     // 删除快捷键配置
     bool hadHotkey = removeHotkey(titleId, macroPath);
