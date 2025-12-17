@@ -53,15 +53,12 @@ namespace Thd {
 
 // ==================== StoreGetDataGui ====================
 
+
 StoreGetDataGui::StoreGetDataGui(u64 tid) : m_tid(tid) {
     if (tid == 0) {
         Thd::start([]{ s_gameList = StoreData().getGameList(); });
     } else {
-        Thd::start([tid]{ 
-            char tidStr[17];
-            snprintf(tidStr, 17, "%016lX", tid);
-            s_macroList = StoreData().getMacroList(tidStr); 
-        });
+        Thd::start([tid]{ getMacroListForTid(tid); });
     }
 }
 
@@ -77,9 +74,11 @@ tsl::elm::Element* StoreGetDataGui::createUI() {
         s32 iconFont = 150;
         s32 textFont = 32;
         s32 gap = 55;
+        s32 lineGap = 40;
         
         std::string icon;
         std::string text;
+        std::string text2;
         
         switch (m_state) {
             case LoadState::Loading:
@@ -88,12 +87,13 @@ tsl::elm::Element* StoreGetDataGui::createUI() {
                 break;
             case LoadState::NetworkError:
                 icon = "";
-                text = (m_tid == 0) ? s_gameList.error : s_macroList.error;
+                text = s_gameList.error.empty() ? s_macroList.error : s_gameList.error;
                 break;
             case LoadState::GameListEmpty:
             case LoadState::MacroListEmpty:
                 icon = "";
                 text = "未发现可用的脚本";
+                text2 = "欢迎向我投稿作品";
                 break;
             case LoadState::Success:
                 return;
@@ -101,8 +101,10 @@ tsl::elm::Element* StoreGetDataGui::createUI() {
         
         auto iconDim = r->getTextDimensions(icon, false, iconFont);
         auto textDim = r->getTextDimensions(text, false, textFont);
+        auto text2Dim = r->getTextDimensions(text2, false, textFont);
         
         s32 totalHeight = iconDim.second + gap + textDim.second;
+        if (!text2.empty()) totalHeight += lineGap + text2Dim.second;
         s32 blockTop = y + (h - totalHeight) / 2;
         
         s32 iconX = x + (w - iconDim.first) / 2;
@@ -113,6 +115,12 @@ tsl::elm::Element* StoreGetDataGui::createUI() {
         
         r->drawString(icon, false, iconX, iconY, iconFont, tsl::Color(0xF, 0xF, 0xF, 0xF));
         r->drawString(text, false, textX, textY, textFont, tsl::Color(0xF, 0xF, 0xF, 0xF));
+        
+        if (!text2.empty()) {
+            s32 text2X = x + (w - text2Dim.first) / 2;
+            s32 text2Y = textY + lineGap + text2Dim.second;
+            r->drawString(text2, false, text2X, text2Y, textFont, tsl::Color(0xF, 0xF, 0xF, 0xF));
+        }
     });
     
     list->addItem(drawer, 520);
@@ -128,24 +136,25 @@ void StoreGetDataGui::update() {
             m_frameIndex = (m_frameIndex + 1) % 8;
         }
         
-        if (Thd::isDone()) {
+        if (Thd::isDone() && m_tid == 0) {
             Thd::stop();
-            if (m_tid == 0) {
-                if (!s_gameList.success) m_state = LoadState::NetworkError;
-                else if (s_gameList.games.empty()) m_state = LoadState::GameListEmpty;
-                else {
-                    m_state = LoadState::Success;
-                    tsl::swapTo<StoreGameListGui>();
-                }
-            } else {
-                if (!s_macroList.success) m_state = LoadState::NetworkError;
-                else if (s_macroList.macros.empty()) m_state = LoadState::MacroListEmpty;
-                else {
-                    m_state = LoadState::Success;
-                    char nameBuf[64]{};
-                    GameMonitor::getTitleIdGameName(m_tid, nameBuf);
-                    tsl::swapTo<StoreMacroListGui>(m_tid, nameBuf);
-                }
+            if (!s_gameList.success) m_state = LoadState::NetworkError;
+            else if (s_gameList.games.empty()) m_state = LoadState::GameListEmpty;
+            else {
+                m_state = LoadState::Success;
+                tsl::swapTo<StoreGameListGui>();
+            }
+        }
+        else if (Thd::isDone() && m_tid != 0) {
+            Thd::stop();
+            if (!s_gameList.success) m_state = LoadState::NetworkError;
+            else if (!s_macroList.success) m_state = LoadState::NetworkError;
+            else if (s_macroList.macros.empty()) m_state = LoadState::MacroListEmpty;
+            else {
+                m_state = LoadState::Success;
+                char nameBuf[64]{};
+                GameMonitor::getTitleIdGameName(m_tid, nameBuf);
+                tsl::swapTo<StoreMacroListGui>(m_tid, nameBuf);
             }
         }
     }
@@ -163,7 +172,24 @@ bool StoreGetDataGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchStat
     return false;
 }
 
-
+void StoreGetDataGui::getMacroListForTid(u64 tid) {
+    s_gameList = StoreData().getGameList();
+    if (!s_gameList.success) return;
+    
+    bool found = false;
+    for (const auto& g : s_gameList.games) {
+        if (g.id == tid) { found = true; break; }
+    }
+    if (!found) {
+        s_macroList = MacroListResult{};
+        s_macroList.success = true;
+        return;
+    }
+    
+    char tidStr[17];
+    snprintf(tidStr, 17, "%016lX", tid);
+    s_macroList = StoreData().getMacroList(tidStr);
+}
 // ==================== StoreGameListGui ====================
 
 StoreGameListGui::StoreGameListGui() {

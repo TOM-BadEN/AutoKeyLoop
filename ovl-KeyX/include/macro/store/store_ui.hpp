@@ -28,6 +28,8 @@ private:
     LoadState m_state = LoadState::Loading;
     int m_frameIndex = 0;
     int m_frameCounter = 0;
+    
+    static void getMacroListForTid(u64 tid);
 };
 
 
