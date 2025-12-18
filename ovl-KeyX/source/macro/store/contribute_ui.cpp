@@ -37,7 +37,7 @@ tsl::elm::Element* ContributeGui::createUI() {
         currentY += 34;
         r->drawString(" • QQ群: 1051287661", false, textX, currentY, 20, textColor);
         currentY += lineHeight;
-        r->drawString(" • DC: phenomenal_tiger_48068", false, textX, currentY, 20, textColor);
+        r->drawString(" • DC: tom_baden", false, textX, currentY, 20, textColor);
         currentY += 65;
         
         // 两个二维码 - 使用固定 Version 5 (37x37) 保证大小一致
