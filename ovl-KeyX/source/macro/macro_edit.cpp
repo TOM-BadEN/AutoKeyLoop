@@ -47,14 +47,78 @@ namespace {
         BTN_UP, BTN_DOWN, BTN_LEFT, BTN_RIGHT, BTN_SELECT, BTN_START, BTN_STICKL, BTN_STICKR
     };
     
-    // 菜单项
-    enum MenuItem { InsertBefore, InsertAfter, Reset, Delete, EditDuration, EditButton };
+    // 菜单项标识枚举
+    enum class MenuId {
+        // 一级菜单
+        Move, Insert, Delete, Duration, Buttons, Stick,
+        // 移动子菜单
+        MoveUp, MoveDown,
+        // 插入子菜单
+        InsertBefore, InsertAfter, CopyBefore, CopyAfter,
+        // 删除子菜单
+        DeleteAction, ResetAction,
+        // 摇杆子菜单
+        StickModify, StickDeleteAll, StickDeleteL, StickDeleteR,
+    };
+    
+    // 菜单项定义
+    struct MenuDef {
+        MenuId id;
+        const char* icon;
+        const char* title;
+        const char* tip;
+        const MenuDef* children;
+        int childCount;
+    };
+    
+    // 子菜单定义
+    constexpr MenuDef INSERT_SUB[] = {
+        {MenuId::InsertBefore, "", "向前插入", "插入空动作到前面", nullptr, 0},
+        {MenuId::InsertAfter, "", "向后插入", "插入空动作到后面", nullptr, 0},
+        {MenuId::CopyBefore, "", "向前复制", "复制动作到前面", nullptr, 0},
+        {MenuId::CopyAfter, "", "向后复制", "复制动作到后面", nullptr, 0},
+    };
+    
+    constexpr MenuDef DELETE_SUB[] = {
+        {MenuId::DeleteAction, "", "删除动作", "删除选中动作", nullptr, 0},
+        {MenuId::ResetAction, "", "重置动作", "重置为无动作", nullptr, 0},
+    };
+    
+    constexpr MenuDef STICK_SUB[] = {
+        {MenuId::StickModify, "", "修改摇杆", "修改摇杆方向", nullptr, 0},
+        {MenuId::StickDeleteAll, "", "删除摇杆", "清除所有摇杆输入", nullptr, 0},
+        {MenuId::StickDeleteL, "", "删除左摇杆", "清除左摇杆输入", nullptr, 0},
+        {MenuId::StickDeleteR, "", "删除右摇杆", "清除右摇杆输入", nullptr, 0},
+    };
+    
+    constexpr MenuDef MOVE_SUB[] = {
+        {MenuId::MoveUp, "", "向前移动", "与前一个交换", nullptr, 0},
+        {MenuId::MoveDown, "", "向后移动", "与后一个交换", nullptr, 0},
+    };
+    
+    // 一级菜单
+    constexpr MenuDef ROOT_MENU[] = {
+        {MenuId::Move, "", "移动", "调整位置", MOVE_SUB, 2},
+        {MenuId::Insert, "", "插入", "选择插入方式", INSERT_SUB, 4},
+        {MenuId::Delete, "", "删除", "删除或重置", DELETE_SUB, 2},
+        {MenuId::Duration, "", "时长", "修改持续时间", nullptr, 0},
+        {MenuId::Buttons, "", "按键", "修改按键", nullptr, 0},
+        {MenuId::Stick, "", "摇杆", "修改摇杆", STICK_SUB, 4},
+    };
+    constexpr int ROOT_MENU_COUNT = 6;
+    
+    // 获取菜单项的 id
+    constexpr MenuId getMenuId(int menuLevel, int parentIndex, int index) {
+        if (menuLevel == 0) return ROOT_MENU[index].id;
+        return ROOT_MENU[parentIndex].children[index].id;
+    }
 }
 
 MacroEditGui::MacroEditGui(const char* gameName, bool isRecord) 
  : m_gameName(gameName)
  , m_isRecord(isRecord)
 {
+    MacroData::loadFrameAndBasicInfo();
     MacroData::parseActions();
     char bakPath[128];
     snprintf(bakPath, sizeof(bakPath), "%s.bak", MacroData::getFilePath());
@@ -71,10 +135,9 @@ tsl::elm::Element* MacroEditGui::createUI() {
     frame->setHeader(new tsl::elm::CustomDrawer([this, &info](tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h) {
         // 标题（菜单模式下显示菜单项名称）
         if (m_menuMode) {
-            const char* menuTitles[] = {"在前面插入新动作", "在后面插入新动作", "重置动作", "删除动作", "修改持续时间", "修改触发按钮"};
-            const char* menuTips[] = {"按  插入新动作", "按  插入新动作", "按  重置动作为无动作", "按  删除整个动作", "/ 切换位 / 调整  保存  取消", " 选中/取消选中  保存  返回"};
-            r->drawString(menuTitles[m_menuIndex], false, 20, 50, 32, r->a(tsl::defaultOverlayColor));
-            r->drawString(menuTips[m_menuIndex], false, 20, 73, 15, r->a(tsl::style::color::ColorDescription));
+            const MenuDef* items = (m_menuLevel == 0) ? ROOT_MENU : ROOT_MENU[m_parentIndex].children;
+            r->drawString(items[m_menuIndex].title, false, 20, 50, 32, r->a(tsl::defaultOverlayColor));
+            r->drawString(items[m_menuIndex].tip, false, 20, 73, 15, r->a(tsl::style::color::ColorDescription));
         } else {
             r->drawString(m_gameName, false, 20, 50, 32, r->a(tsl::defaultOverlayColor));
             // 宏名字
@@ -107,6 +170,7 @@ tsl::elm::Element* MacroEditGui::createUI() {
         double progress = calcBlinkProgress();
         if (m_buttonEditMode) drawButtonEditArea(r, x, y, w, progress);
         else if (m_durationEditMode) drawDurationEditArea(r, x, y, w, progress);
+        else if (m_stickEditMode) drawStickEditArea(r, x, y, w, progress);
         else if (m_menuMode) drawMenuArea(r, x, y, w, progress);
         else drawTimelineArea(r, x, y, w, progress);
         drawActionList(r, x, y, w, h, progress);
@@ -116,25 +180,59 @@ tsl::elm::Element* MacroEditGui::createUI() {
     return frame;
 }
 
-bool MacroEditGui::isMenuItemEnabled(int index) const {
+bool MacroEditGui::hasVirtualMergedStick() const {
     auto& actions = MacroData::getActions();
-    s32 count = m_menuSelEnd - m_menuSelStart + 1;
-    
-    // "删除动作"(index=3)：选中全部时不可删除
-    if (index == 3) {
-        return count < (s32)actions.size();
+    for (s32 i = m_menuSelStart; i <= m_menuSelEnd; i++) {
+        if (actions[i].stickMergedVirtual) return true;
     }
-    
-    // "修改持续时间"(index=4)和"修改触发按钮"(index=5)需要判断
-    if (index != 4 && index != 5) return true;
-    
-    if (count > 1) return false;
-    
-    // 检查是否是"仅摇杆"（有摇杆 && 无按键）
-    const auto& action = actions[m_menuSelStart];
-    bool isStickOnly = (action.buttons == 0) && 
-                       (action.stickL != StickDir::None || action.stickR != StickDir::None);
-    return !isStickOnly;
+    return false;
+}
+
+bool MacroEditGui::hasStickL() const {
+    auto& actions = MacroData::getActions();
+    for (s32 i = m_menuSelStart; i <= m_menuSelEnd; i++) {
+        if (actions[i].stickL != StickDir::None) return true;
+    }
+    return false;
+}
+
+bool MacroEditGui::hasStickR() const {
+    auto& actions = MacroData::getActions();
+    for (s32 i = m_menuSelStart; i <= m_menuSelEnd; i++) {
+        if (actions[i].stickR != StickDir::None) return true;
+    }
+    return false;
+}
+
+bool MacroEditGui::isMenuItemEnabled(int index) const {
+    bool isMultiSelect = (m_menuSelStart != m_menuSelEnd);
+    MenuId id = getMenuId(m_menuLevel, m_parentIndex, index);
+    switch (id) {
+        case MenuId::Buttons:
+            // 按键菜单：多选直接禁用，单选有虚拟合并摇杆禁用
+            return !isMultiSelect && !hasVirtualMergedStick();
+        case MenuId::Duration:
+            // 有虚拟合并摇杆时禁用时长菜单
+            return !hasVirtualMergedStick();
+        case MenuId::StickModify:
+            // 摇杆子菜单：多选时禁用修改摇杆
+            return !isMultiSelect;
+        case MenuId::StickDeleteAll:
+            // 没有摇杆数据时禁用删除摇杆菜单
+            return hasStickL() || hasStickR();
+        case MenuId::StickDeleteL:
+            return hasStickL();
+        case MenuId::StickDeleteR:
+            return hasStickR();
+        case MenuId::MoveUp:
+            return m_menuSelStart > 0;
+        case MenuId::MoveDown: {
+            auto& actions = MacroData::getActions();
+            return m_menuSelEnd < (s32)actions.size() - 1;
+        }
+        default:
+            return true;
+    }
 }
 
 void MacroEditGui::drawActionList(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h, double progress) {
@@ -164,14 +262,20 @@ void MacroEditGui::drawActionList(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s3
             std::string duration = std::to_string(actions[i].duration) + "ms";
             std::string fullText = std::to_string(i + 1) + ". " + text;
             
-            bool inSelectRange = false;
-            if (m_selectMode && m_selectAnchor >= 0) {
-                s32 selStart = std::min(m_selectAnchor, m_selectedIndex);
-                s32 selEnd = std::max(m_selectAnchor, m_selectedIndex);
-                inSelectRange = ((s32)i >= selStart && (s32)i <= selEnd);
+            tsl::Color textColor = tsl::defaultTextColor;
+            if (actions[i].stickMergedVirtual) {
+                // 虚拟合并摇杆：红色（最高优先级）
+                textColor = tsl::Color(0xF, 0x5, 0x5, 0xF);
+            } else {
+                bool inSelectRange = false;
+                if (m_selectMode && m_selectAnchor >= 0) {
+                    s32 selStart = std::min(m_selectAnchor, m_selectedIndex);
+                    s32 selEnd = std::max(m_selectAnchor, m_selectedIndex);
+                    inSelectRange = ((s32)i >= selStart && (s32)i <= selEnd);
+                }
+                if (inSelectRange) textColor = tsl::Color(0xF, 0xD, 0x0, 0xF);
+                else if (actions[i].modified) textColor = tsl::Color(0xF, 0xA, 0xC, 0xF);
             }
-            tsl::Color textColor = inSelectRange ? tsl::Color(0xF, 0xD, 0x0, 0xF) 
-                                 : (actions[i].modified ? tsl::Color(0xF, 0xA, 0xC, 0xF) : tsl::defaultTextColor);
             
             auto [durW, durH] = r->drawString(duration.c_str(), false, 0, 0, 20, tsl::Color(0,0,0,0));
             s32 maxTextWidth = w - 19 - durW - 25;
@@ -220,10 +324,13 @@ void MacroEditGui::drawTimelineArea(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, 
         bool inRange = ((s32)i >= selStart && (s32)i <= selEnd);
         s32 drawY = inRange ? barY - 3 : barY;
         s32 drawH = inRange ? barH + 6 : barH;
-        tsl::Color blockColor = actions[i].modified ? tsl::Color(0xF, 0xA, 0xC, 0xF)
-                              : (actions[i].buttons != 0) ? tsl::Color(0x2, 0xA, 0x2, 0xF)
-                              : (actions[i].stickL != StickDir::None || actions[i].stickR != StickDir::None) ? tsl::Color(0xA, 0x2, 0x2, 0xF)
-                              : tsl::Color(0x8, 0x8, 0x8, 0xF);
+        bool hasStick = (actions[i].stickL != StickDir::None || actions[i].stickR != StickDir::None);
+        bool hasButtons = (actions[i].buttons != 0);
+        tsl::Color blockColor = actions[i].modified ? tsl::Color(0xF, 0xA, 0xC, 0xF)              // 粉色：已修改
+                              : (hasButtons && !hasStick) ? tsl::Color(0x2, 0xA, 0x2, 0xF)       // 绿色：纯按键
+                              : actions[i].stickMergedVirtual ? tsl::Color(0xF, 0x5, 0x5, 0xF)   // 红色：虚拟合并摇杆
+                              : hasStick ? tsl::Color(0xF, 0xA, 0x3, 0xF)                        // 橙色：非虚拟合并摇杆（含按键+摇杆）
+                              : tsl::Color(0x8, 0x8, 0x8, 0xF);                                  // 灰色：无动作
         r->drawRect(blockX, drawY, blockW, drawH, r->a(blockColor));
         if ((s32)i == selStart) rangeStartX = blockX;
         if ((s32)i == selEnd) rangeEndX = blockX + blockW;
@@ -242,16 +349,25 @@ void MacroEditGui::drawTimelineArea(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, 
 
 void MacroEditGui::drawMenuArea(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, double progress) {
     tsl::Color highlightColor = calcBlinkColor(tsl::highlightColor1, tsl::highlightColor2, progress);
+    
+    // 根据层级获取当前菜单
+    const MenuDef* items = (m_menuLevel == 0) ? ROOT_MENU : ROOT_MENU[m_parentIndex].children;
+    int count = (m_menuLevel == 0) ? ROOT_MENU_COUNT : ROOT_MENU[m_parentIndex].childCount;
+    
+    // 始终显示6格
     s32 itemW = w / 6;
-    const char* icons[] = {"", "", "", "", "", ""};
     for (int i = 0; i < 6; i++) {
         s32 itemX = x + i * itemW;
-        bool enabled = isMenuItemEnabled(i);
-        tsl::Color iconColor = enabled ? tsl::defaultTextColor : tsl::Color(0x5, 0x5, 0x5, 0xF);
-        auto [iconW, iconH] = r->drawString(icons[i], false, 0, 0, 30, tsl::Color(0,0,0,0));
-        r->drawString(icons[i], false, itemX + (itemW - iconW) / 2, y + 58, 30, r->a(iconColor));
+        // 只绘制有内容的格子
+        if (i < count) {
+            bool enabled = isMenuItemEnabled(i);
+            tsl::Color iconColor = enabled ? tsl::defaultTextColor : tsl::Color(0x5, 0x5, 0x5, 0xF);
+            auto [iconW, iconH] = r->getTextDimensions(items[i].icon, false, 30);
+            r->drawString(items[i].icon, false, itemX + (itemW - iconW) / 2, y + 58, 30, r->a(iconColor));
+            if (i == m_menuIndex) r->drawBorderedRoundedRect(itemX, y + 7, itemW + 5, 73, 5, 5, r->a(highlightColor));
+        }
+        // 分隔线（除了最后一格）
         if (i < 5) r->drawRect(itemX + itemW, y + 22, 1, 56, r->a(tsl::separatorColor));
-        if (i == m_menuIndex) r->drawBorderedRoundedRect(itemX, y + 7, itemW + 5, 73, 5, 5, r->a(highlightColor));
     }
 }
 
@@ -338,6 +454,92 @@ bool MacroEditGui::handleButtonEditInput(u64 keysDown) {
     return true;
 }
 
+void MacroEditGui::drawStickEditArea(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, double progress) {
+    tsl::Color highlightColor = calcBlinkColor(tsl::highlightColor1, tsl::highlightColor2, progress);
+    s32 cellW = w / 9;  // 9列：1图标 + 8方向
+    s32 rowH = 40;
+    tsl::Color staticHighlight = tsl::Color(0x0, 0xF, 0xF, 0xF);
+    
+    // 绘制左摇杆行（行0）和右摇杆行（行1）
+    for (int row = 0; row < 2; row++) {
+        s32 cellY = y + 15 + row * rowH;
+        
+        // 第0列：摇杆图标（不可选）
+        const char* stickIcon = (row == 0) ? "" : "";
+        auto [sW, sH] = r->drawString(stickIcon, false, 0, 0, 24, tsl::Color(0,0,0,0));
+        r->drawString(stickIcon, false, x + (cellW - sW) / 2, cellY + 28, 24, r->a(tsl::defaultTextColor));
+        
+        // 第1-8列：8个方向（可选，跳过None）
+        for (int col = 0; col < 8; col++) {
+            int i = row * 8 + col;  // 0-7=左摇杆, 8-15=右摇杆
+            s32 cellX = x + (col + 1) * cellW;  // 从第1列开始
+            
+            StickDir dir = static_cast<StickDir>(col + 1);  // 跳过None(0)，从Up(1)开始
+            const char* icon = getStickDirIcon(dir);
+            
+            // 判断是否被选中
+            bool isSelected = (row == 0) ? (m_editingStickL == dir) : (m_editingStickR == dir);
+            tsl::Color iconColor = isSelected ? staticHighlight : tsl::defaultTextColor;
+            
+            auto [iconW, iconH] = r->drawString(icon, false, 0, 0, 24, tsl::Color(0,0,0,0));
+            r->drawString(icon, false, cellX + (cellW - iconW) / 2, cellY + 28, 24, r->a(iconColor));
+            
+            // 绘制光标
+            if (i == m_stickEditIndex) {
+                r->drawBorderedRoundedRect(cellX + 3, cellY + 3, cellW - 3, rowH - 10, 3, 2, r->a(highlightColor));
+            }
+        }
+    }
+}
+
+bool MacroEditGui::handleStickEditInput(u64 keysDown) {
+    if (keysDown & HidNpadButton_AnyLeft) {
+        m_stickEditIndex = (m_stickEditIndex % 8 == 0) ? m_stickEditIndex + 7 : m_stickEditIndex - 1;
+        return true;
+    }
+    if (keysDown & HidNpadButton_AnyRight) {
+        m_stickEditIndex = (m_stickEditIndex % 8 == 7) ? m_stickEditIndex - 7 : m_stickEditIndex + 1;
+        return true;
+    }
+    if (keysDown & HidNpadButton_AnyUp) {
+        m_stickEditIndex = (m_stickEditIndex + 8) % 16;
+        return true;
+    }
+    if (keysDown & HidNpadButton_AnyDown) {
+        m_stickEditIndex = (m_stickEditIndex + 8) % 16;
+        return true;
+    }
+    if (keysDown & HidNpadButton_A) {
+        StickDir dir = static_cast<StickDir>((m_stickEditIndex % 8) + 1);  // +1跳过None
+        if (m_stickEditIndex < 8) {
+            m_editingStickL = dir;
+        } else {
+            m_editingStickR = dir;
+        }
+        return true;
+    }
+    if (keysDown & HidNpadButton_Plus) {
+        MacroData::setActionStick(m_menuSelStart, m_editingStickL, m_editingStickR);
+        m_stickEditMode = false;
+        m_selectMode = false;
+        m_menuMode = false;
+        return true;
+    }
+    if (keysDown & HidNpadButton_B) {
+        m_stickEditMode = false;
+        return true;
+    }
+    return true;
+}
+
+void MacroEditGui::enterStickEditMode() {
+    auto& actions = MacroData::getActions();
+    m_editingStickL = actions[m_menuSelStart].stickL;
+    m_editingStickR = actions[m_menuSelStart].stickR;
+    m_stickEditIndex = 0;
+    m_stickEditMode = true;
+}
+
 bool MacroEditGui::handleDurationEditInput(u64 keysDown) {
     auto& actions = MacroData::getActions();
     if (keysDown & HidNpadButton_AnyLeft) {
@@ -366,12 +568,12 @@ bool MacroEditGui::handleDurationEditInput(u64 keysDown) {
         m_editingDuration = m_editingDuration - ((m_editingDuration / divisor) % 10) * divisor + digit * divisor;
         return true;
     }
-    if (keysDown & HidNpadButton_A) {
+    if (keysDown & HidNpadButton_Plus) {
         s32 currentActionMs = actions[m_menuSelStart].duration;
         s32 totalMs = MacroData::getBasicInfo().durationMs;
         s32 maxEditMs = 30000 - (totalMs - currentActionMs);
         if (m_editingDuration > maxEditMs) return true;
-        MacroData::setActionDuration(m_menuSelStart, m_editingDuration);
+        MacroData::setActionDuration(m_menuSelStart, m_menuSelEnd, m_editingDuration);
         m_durationEditMode = false;
         m_selectMode = false;
         m_menuMode = false;
@@ -409,40 +611,88 @@ void MacroEditGui::enterButtonEditMode() {
 }
 
 bool MacroEditGui::handleMenuInput(u64 keysDown) {
+    // 获取当前层级菜单信息
+    const MenuDef* items = (m_menuLevel == 0) ? ROOT_MENU : ROOT_MENU[m_parentIndex].children;
+    int count = (m_menuLevel == 0) ? ROOT_MENU_COUNT : ROOT_MENU[m_parentIndex].childCount;
+    
     if (keysDown & HidNpadButton_AnyLeft) {
-        int next = (m_menuIndex + 5) % 6;
-        for (int i = 0; i < 6; i++) {
+        int next = (m_menuIndex + count - 1) % count;
+        for (int i = 0; i < count; i++) {
             if (isMenuItemEnabled(next)) break;
-            next = (next + 5) % 6;
+            next = (next + count - 1) % count;
         }
         m_menuIndex = next;
         return true;
     }
     if (keysDown & HidNpadButton_AnyRight) {
-        int next = (m_menuIndex + 1) % 6;
-        for (int i = 0; i < 6; i++) {
+        int next = (m_menuIndex + 1) % count;
+        for (int i = 0; i < count; i++) {
             if (isMenuItemEnabled(next)) break;
-            next = (next + 1) % 6;
+            next = (next + 1) % count;
         }
         m_menuIndex = next;
         return true;
     }
     if (keysDown & HidNpadButton_A) {
         if (isMenuItemEnabled(m_menuIndex)) {
-            switch (m_menuIndex) {
-                case InsertBefore:  MacroData::insertAction(m_menuSelStart, true); break;
-                case InsertAfter:   MacroData::insertAction(m_menuSelEnd, false); break;
-                case Reset:         MacroData::resetActions(m_menuSelStart, m_menuSelEnd); break;
-                case Delete:        executeDeleteAction(); break;
-                case EditDuration:  enterDurationEditMode(); return true;
-                case EditButton:    enterButtonEditMode(); return true;
+            // 如果有子菜单，进入子菜单
+            if (items[m_menuIndex].children != nullptr) {
+                m_parentIndex = m_menuIndex;
+                m_menuLevel = 1;
+                m_menuIndex = 0;
+                // 跳过禁用项
+                int subCount = items[m_parentIndex].childCount;
+                while (m_menuIndex < subCount && !isMenuItemEnabled(m_menuIndex)) {
+                    m_menuIndex++;
+                }
+                return true;
+            }
+            // 根据菜单项执行功能
+            auto& actions = MacroData::getActions();
+            MenuId id = getMenuId(m_menuLevel, m_parentIndex, m_menuIndex);
+            switch (id) {
+                case MenuId::Duration: enterDurationEditMode(); return true;
+                case MenuId::Buttons: enterButtonEditMode(); return true;
+                case MenuId::StickModify: enterStickEditMode(); return true;
+                case MenuId::DeleteAction: executeDeleteAction(); break;
+                case MenuId::InsertBefore: MacroData::insertAction(m_menuSelStart, true); break;
+                case MenuId::InsertAfter: MacroData::insertAction(m_menuSelEnd, false); break;
+                case MenuId::CopyBefore: MacroData::copyActions(m_menuSelStart, m_menuSelEnd, true); break;
+                case MenuId::CopyAfter: MacroData::copyActions(m_menuSelStart, m_menuSelEnd, false); break;
+                case MenuId::ResetAction: MacroData::resetActions(m_menuSelStart, m_menuSelEnd); break;
+                case MenuId::StickDeleteAll: MacroData::clearStick(m_menuSelStart, m_menuSelEnd, MacroData::StickTarget::Both); break;
+                case MenuId::StickDeleteL: MacroData::clearStick(m_menuSelStart, m_menuSelEnd, MacroData::StickTarget::Left); break;
+                case MenuId::StickDeleteR: MacroData::clearStick(m_menuSelStart, m_menuSelEnd, MacroData::StickTarget::Right); break;
+                case MenuId::MoveUp:
+                    if (m_menuSelStart > 0) {
+                        MacroData::moveAction(m_menuSelStart - 1, m_menuSelEnd + 1);
+                        m_selectedIndex--;
+                    }
+                    break;
+                case MenuId::MoveDown:
+                    if (m_menuSelEnd < (s32)actions.size() - 1) {
+                        MacroData::moveAction(m_menuSelEnd + 1, m_menuSelStart);
+                        m_selectedIndex++;
+                    }
+                    break;
+                default: break;
             }
             m_selectMode = false;
             m_menuMode = false;
+            m_menuLevel = 0;
+            m_parentIndex = -1;
         }
         return true;
     }
     if (keysDown & HidNpadButton_B) {
+        // 如果在子菜单，返回上一级
+        if (m_menuLevel > 0) {
+            m_menuIndex = m_parentIndex;
+            m_menuLevel = 0;
+            m_parentIndex = -1;
+            return true;
+        }
+        // 否则退出菜单模式
         m_selectMode = false;
         m_menuMode = false;
         return true;
@@ -501,7 +751,7 @@ bool MacroEditGui::handleNormalInput(u64 keysDown, u64 keysHeld) {
             m_menuSelEnd = std::max(m_selectAnchor, m_selectedIndex);
             m_menuMode = true;
             m_menuIndex = 0;
-            while (!isMenuItemEnabled(m_menuIndex) && m_menuIndex < 5) m_menuIndex++;
+            while (!isMenuItemEnabled(m_menuIndex) && m_menuIndex < ROOT_MENU_COUNT - 1) m_menuIndex++;
             return true;
         }
     }
@@ -590,6 +840,7 @@ bool MacroEditGui::handleNormalInput(u64 keysDown, u64 keysHeld) {
 bool MacroEditGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) {
     if (m_buttonEditMode) return handleButtonEditInput(keysDown);
     if (m_durationEditMode) return handleDurationEditInput(keysDown);
+    if (m_stickEditMode) return handleStickEditInput(keysDown);
     if (m_menuMode) return handleMenuInput(keysDown);
     return handleNormalInput(keysDown, keysHeld);
 }

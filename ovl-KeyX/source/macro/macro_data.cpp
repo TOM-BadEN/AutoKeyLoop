@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <sys/stat.h>
 #include <cstring>
+#include <algorithm>
 #include <ultra.hpp>
 
 // 静态成员定义
@@ -71,10 +72,11 @@ bool MacroData::loadBakMacroData() {
 
 // 加载帧数据和基础信息
 bool MacroData::loadFrameAndBasicInfo(const char* filePath) {
+    const char* path = filePath ? filePath : s_filePath;
     s_frames.clear();
     s_framesV2.clear();
     s_basicInfo = {};
-    FILE* fp = fopen(filePath, "rb");
+    FILE* fp = fopen(path, "rb");
     if (!fp) return false;
     // 读取文件头
     fread(&s_header, sizeof(MacroHeader), 1, fp);
@@ -96,10 +98,10 @@ bool MacroData::loadFrameAndBasicInfo(const char* filePath) {
     if (s_header.version == 1) s_basicInfo.durationMs = s_header.frameRate ? (s_header.frameCount * 1000 / s_header.frameRate) : 0;
     else for (const auto& frame : s_framesV2) s_basicInfo.durationMs += frame.durationMs;
     struct stat st{};
-    if (stat(filePath, &st) == 0) s_basicInfo.fileSize = st.st_size;
+    if (stat(path, &st) == 0) s_basicInfo.fileSize = st.st_size;
     else s_basicInfo.fileSize = 0;
     // 获取显示名称（优先从元数据读取，否则用文件名）
-    std::string pathStr = filePath;
+    std::string pathStr = path;
     if (pathStr.size() > 4 && pathStr.substr(pathStr.size() - 4) == ".bak") {
         pathStr = pathStr.substr(0, pathStr.size() - 4);
     }
@@ -143,6 +145,22 @@ void MacroData::saveForEditV1(FILE* fp) {
 
 // V2: 保存帧数据
 void MacroData::saveForEditV2(FILE* fp) {
+    
+    // 合并相邻相同的帧（消除编辑产生的碎片）
+    for (size_t i = 1; i < s_framesV2.size(); ) {
+        auto& prev = s_framesV2[i - 1];
+        auto& curr = s_framesV2[i];
+        if (prev.keysHeld == curr.keysHeld && 
+            prev.leftX == curr.leftX && prev.leftY == curr.leftY &&
+            prev.rightX == curr.rightX && prev.rightY == curr.rightY) {
+            prev.durationMs += curr.durationMs;
+            s_framesV2.erase(s_framesV2.begin() + i);
+        } else {
+            i++;
+        }
+    }
+    
+    // 确保最后有空帧释放所有输入
     if (!s_framesV2.empty()) {
         auto& f = s_framesV2.back();
         if (f.keysHeld | f.leftX | f.leftY | f.rightX | f.rightY) s_framesV2.push_back({33, 0, 0, 0, 0, 0});
@@ -172,21 +190,58 @@ void MacroData::parseActions() {
 // V1: 解析帧数据到动作列表
 void MacroData::parseActionsV1() {
     if (s_frames.empty()) return;
+    
     Action current;
     current.buttons = s_frames[0].keysHeld;
     current.stickL = getStickDir(s_frames[0].leftX, s_frames[0].leftY);
     current.stickR = getStickDir(s_frames[0].rightX, s_frames[0].rightY);
     current.frameCount = 1;
+    current.stickMergedVirtual = false;
+    
     for (size_t i = 1; i < s_frames.size(); i++) {
-        if (isSameState(s_frames[i], s_frames[i-1])) {
+        const auto& cur = s_frames[i];
+        const auto& prev = s_frames[i-1];
+        
+        // 判断是否是纯摇杆
+        bool curIsPureStick = (cur.keysHeld == 0) && 
+            (getStickDir(cur.leftX, cur.leftY) != StickDir::None || 
+             getStickDir(cur.rightX, cur.rightY) != StickDir::None);
+        bool prevIsPureStick = (prev.keysHeld == 0) && 
+            (getStickDir(prev.leftX, prev.leftY) != StickDir::None || 
+             getStickDir(prev.rightX, prev.rightY) != StickDir::None);
+        
+        bool canMerge = false;
+        if (curIsPureStick && prevIsPureStick) {
+            // 纯摇杆：八向相同即合并
+            canMerge = isSameState(cur, prev);
+            if (canMerge) current.stickMergedVirtual = true;
+        } else if (!curIsPureStick && !prevIsPureStick) {
+            // 非纯摇杆
+            bool hasStick = (getStickDir(cur.leftX, cur.leftY) != StickDir::None || 
+                             getStickDir(cur.rightX, cur.rightY) != StickDir::None);
+            if (hasStick) {
+                // 按键+摇杆：按键相同 + 八向相同即合并
+                canMerge = (cur.keysHeld == prev.keysHeld && isSameState(cur, prev));
+                if (canMerge) current.stickMergedVirtual = true;
+            } else {
+                // 纯按键：帧完全相同才合并
+                canMerge = (cur.keysHeld == prev.keysHeld &&
+                            cur.leftX == prev.leftX && cur.leftY == prev.leftY &&
+                            cur.rightX == prev.rightX && cur.rightY == prev.rightY);
+            }
+        }
+        // 类型不同：不合并
+        
+        if (canMerge) {
             current.frameCount++;
         } else {
             current.duration = current.frameCount * 1000 / s_header.frameRate;
             s_actions.push_back(current);
-            current.buttons = s_frames[i].keysHeld;
-            current.stickL = getStickDir(s_frames[i].leftX, s_frames[i].leftY);
-            current.stickR = getStickDir(s_frames[i].rightX, s_frames[i].rightY);
+            current.buttons = cur.keysHeld;
+            current.stickL = getStickDir(cur.leftX, cur.leftY);
+            current.stickR = getStickDir(cur.rightX, cur.rightY);
             current.frameCount = 1;
+            current.stickMergedVirtual = false;
         }
     }
     current.duration = current.frameCount * 1000 / s_header.frameRate;
@@ -196,26 +251,64 @@ void MacroData::parseActionsV1() {
 // V2: 解析帧数据到动作列表
 void MacroData::parseActionsV2() {
     if (s_framesV2.empty()) return;
+    
     Action current;
-    current.buttons = s_framesV2[0].keysHeld;
-    current.stickL = getStickDir(s_framesV2[0].leftX, s_framesV2[0].leftY);
-    current.stickR = getStickDir(s_framesV2[0].rightX, s_framesV2[0].rightY);
-    current.duration = s_framesV2[0].durationMs;
-    current.frameCount = 1;
-    for (size_t i = 1; i < s_framesV2.size(); i++) {
-        if (isSameState(s_framesV2[i], s_framesV2[i-1])) {
-            current.duration += s_framesV2[i].durationMs;
-            current.frameCount++;
+    bool inStickMerge = false;  // 正在累积摇杆（纯摇杆或按键+摇杆）
+    
+    for (size_t i = 0; i < s_framesV2.size(); i++) {
+        const auto& frame = s_framesV2[i];
+        
+        bool hasStick = (getStickDir(frame.leftX, frame.leftY) != StickDir::None || 
+                         getStickDir(frame.rightX, frame.rightY) != StickDir::None);
+        
+        if (hasStick) {
+            // 有摇杆（纯摇杆或按键+摇杆）
+            if (!inStickMerge) {
+                // 开始新的摇杆累积
+                current.buttons = frame.keysHeld;
+                current.stickL = getStickDir(frame.leftX, frame.leftY);
+                current.stickR = getStickDir(frame.rightX, frame.rightY);
+                current.duration = frame.durationMs;
+                current.frameCount = 1;
+                current.stickMergedVirtual = false;
+                inStickMerge = true;
+            } else {
+                // 继续累积，检查按键相同+八向相同
+                if (frame.keysHeld == current.buttons && isSameState(frame, s_framesV2[i-1])) {
+                    current.duration += frame.durationMs;
+                    current.frameCount++;
+                    current.stickMergedVirtual = true;
+                } else {
+                    // 不同，推入当前动作，开始新动作
+                    s_actions.push_back(current);
+                    current.buttons = frame.keysHeld;
+                    current.stickL = getStickDir(frame.leftX, frame.leftY);
+                    current.stickR = getStickDir(frame.rightX, frame.rightY);
+                    current.duration = frame.durationMs;
+                    current.frameCount = 1;
+                    current.stickMergedVirtual = false;
+                }
+            }
         } else {
-            s_actions.push_back(current);
-            current.buttons = s_framesV2[i].keysHeld;
-            current.stickL = getStickDir(s_framesV2[i].leftX, s_framesV2[i].leftY);
-            current.stickR = getStickDir(s_framesV2[i].rightX, s_framesV2[i].rightY);
-            current.duration = s_framesV2[i].durationMs;
+            // 无摇杆（纯按键或无动作，录制时已合并）
+            if (inStickMerge) {
+                s_actions.push_back(current);
+                inStickMerge = false;
+            }
+            current.buttons = frame.keysHeld;
+            current.stickL = StickDir::None;
+            current.stickR = StickDir::None;
+            current.duration = frame.durationMs;
             current.frameCount = 1;
+            current.stickMergedVirtual = false;
+            s_actions.push_back(current);
         }
     }
-    s_actions.push_back(current);
+    
+    // 循环结束，推入累积中的动作
+    if (inStickMerge) {
+        s_actions.push_back(current);
+    }
 }
 
 // 获取所有动作
@@ -223,122 +316,137 @@ std::vector<Action>& MacroData::getActions() {
     return s_actions;
 }
 
-// 对比两个动作的数据是否相同
-bool MacroData::isSameAction(const Action& a, const Action& b) {
-    return (a.buttons == b.buttons) && 
-           (a.stickL == b.stickL) && 
-           (a.stickR == b.stickR);
-}
-
-// 尝试合并指定位置与前后相邻的相同动作
-void MacroData::tryMergeAt(s32 actionIndex) {
-    if (actionIndex < 0 || actionIndex >= (s32)s_actions.size()) return;
-    
-    // 先尝试与后面合并
-    if (actionIndex + 1 < (s32)s_actions.size() && 
-        isSameAction(s_actions[actionIndex], s_actions[actionIndex + 1])) {
-        s_actions[actionIndex].duration += s_actions[actionIndex + 1].duration;
-        s_actions[actionIndex].frameCount += s_actions[actionIndex + 1].frameCount;
-        s_actions[actionIndex].modified = s_actions[actionIndex].modified || s_actions[actionIndex + 1].modified;
-        s_actions.erase(s_actions.begin() + actionIndex + 1);
-    }
-    
-    // 再尝试与前面合并
-    if (actionIndex > 0 && 
-        isSameAction(s_actions[actionIndex - 1], s_actions[actionIndex])) {
-        s_actions[actionIndex - 1].duration += s_actions[actionIndex].duration;
-        s_actions[actionIndex - 1].frameCount += s_actions[actionIndex].frameCount;
-        s_actions[actionIndex - 1].modified = s_actions[actionIndex - 1].modified || s_actions[actionIndex].modified;
-        s_actions.erase(s_actions.begin() + actionIndex);
+// 更新总时长
+void MacroData::updateDurationMs() {
+    s_basicInfo.durationMs = 0;
+    for (const auto& action : s_actions) {
+        s_basicInfo.durationMs += action.duration;
     }
 }
 
-// 删除后尝试合并
-void MacroData::tryMergeAfterDelete(s32 deletedIndex) {
-    // 删除后，检查 deletedIndex-1 与 deletedIndex 位置是否可合并
-    // （deletedIndex 现在是原来 deletedIndex+1 的位置）
-    if (deletedIndex > 0 && deletedIndex < (s32)s_actions.size() &&
-        isSameAction(s_actions[deletedIndex - 1], s_actions[deletedIndex])) {
-        s_actions[deletedIndex - 1].duration += s_actions[deletedIndex].duration;
-        s_actions[deletedIndex - 1].frameCount += s_actions[deletedIndex].frameCount;
-        s_actions[deletedIndex - 1].modified = s_actions[deletedIndex - 1].modified || s_actions[deletedIndex].modified;
-        s_actions.erase(s_actions.begin() + deletedIndex);
-    }
-}
-
-// 插入一个新的动作（无动作，默认100ms）
+// 插入一个无动作（100ms，不合并）
 void MacroData::insertAction(s32 actionIndex, bool insertBefore) {
     saveSnapshot();
     s32 insertPos = insertBefore ? actionIndex : actionIndex + 1;
     
-    // 计算帧插入位置（V1/V2 统一用 frameCount）
+    // 计算帧插入位置
     s32 frameInsertPos = 0;
     for (s32 i = 0; i < insertPos && i < (s32)s_actions.size(); i++)
         frameInsertPos += s_actions[i].frameCount;
     
     if (s_header.version == 1) {
-        // V1: 计算100ms对应的帧数（四舍五入）
+        // V1: 计算100ms对应的帧数
         u32 newFrameCount = (100 * s_header.frameRate + 500) / 1000;
-        u32 durationMs = newFrameCount * 1000 / s_header.frameRate;
-        Action newAction = {0, StickDir::None, StickDir::None, durationMs, newFrameCount, true};
         s_frames.insert(s_frames.begin() + frameInsertPos, newFrameCount, {});
+        s_header.frameCount = s_frames.size();
+        Action newAction = {0, StickDir::None, StickDir::None, 100, newFrameCount, true, false};
         s_actions.insert(s_actions.begin() + insertPos, newAction);
+    } else {
+        // V2: 直接100ms
+        s_framesV2.insert(s_framesV2.begin() + frameInsertPos, {100, 0, 0, 0, 0, 0});
+        s_header.frameCount++;
+        Action newAction = {0, StickDir::None, StickDir::None, 100, 1, true, false};
+        s_actions.insert(s_actions.begin() + insertPos, newAction);
+    }
+    
+    updateDurationMs();
+}
+
+// 复制动作到指定位置
+void MacroData::copyActions(s32 startIndex, s32 endIndex, bool insertBefore) {
+    if (startIndex < 0 || endIndex >= (s32)s_actions.size() || startIndex > endIndex) return;
+    
+    saveSnapshot();
+    
+    // 计算源动作的帧范围
+    s32 srcFrameStart = 0;
+    for (s32 i = 0; i < startIndex; i++) srcFrameStart += s_actions[i].frameCount;
+    u32 totalFrames = 0;
+    for (s32 i = startIndex; i <= endIndex; i++) totalFrames += s_actions[i].frameCount;
+    
+    // 计算插入位置
+    s32 insertPos = insertBefore ? startIndex : endIndex + 1;
+    s32 insertFramePos = 0;
+    for (s32 i = 0; i < insertPos; i++) insertFramePos += s_actions[i].frameCount;
+    
+    // 复制帧数据
+    if (s_header.version == 1) {
+        std::vector<MacroFrame> copiedFrames(s_frames.begin() + srcFrameStart, s_frames.begin() + srcFrameStart + totalFrames);
+        s_frames.insert(s_frames.begin() + insertFramePos, copiedFrames.begin(), copiedFrames.end());
         s_header.frameCount = s_frames.size();
     } else {
-        // V2: 直接用100ms
-        Action newAction = {0, StickDir::None, StickDir::None, 100, 1, true};
-        s_framesV2.insert(s_framesV2.begin() + frameInsertPos, {100, 0, 0, 0, 0, 0});
-        s_actions.insert(s_actions.begin() + insertPos, newAction);
+        std::vector<MacroFrameV2> copiedFrames(s_framesV2.begin() + srcFrameStart, s_framesV2.begin() + srcFrameStart + totalFrames);
+        s_framesV2.insert(s_framesV2.begin() + insertFramePos, copiedFrames.begin(), copiedFrames.end());
         s_header.frameCount = s_framesV2.size();
     }
     
-    tryMergeAt(insertPos);
+    // 先保存要复制的动作（避免插入时索引偏移）
+    std::vector<Action> copiedActions;
+    for (s32 i = startIndex; i <= endIndex; i++) {
+        Action copied = s_actions[i];
+        copied.modified = true;
+        copiedActions.push_back(copied);
+    }
+    
+    // 再插入动作（不合并，保持独立）
+    for (size_t i = 0; i < copiedActions.size(); i++) {
+        s_actions.insert(s_actions.begin() + insertPos + i, copiedActions[i]);
+    }
+    
+    updateDurationMs();
 }
 
 void MacroData::resetActions(s32 startIndex, s32 endIndex) {
     saveSnapshot();
-    
-    // 计算总帧数和总时长
-    u32 totalFrames = 0;
-    u32 totalDuration = 0;
-    for (s32 i = startIndex; i <= endIndex; i++) {
-        totalFrames += s_actions[i].frameCount;
-        totalDuration += s_actions[i].duration;
-    }
     
     // 计算帧起始位置
     s32 frameStart = 0;
     for (s32 i = 0; i < startIndex; i++)
         frameStart += s_actions[i].frameCount;
     
-    // 清零帧数据
+    // 计算总帧数和V2总时长
+    u32 totalFrames = 0;
+    u32 totalDurationV2 = 0;
+    for (s32 i = startIndex; i <= endIndex; i++) {
+        totalFrames += s_actions[i].frameCount;
+        totalDurationV2 += s_actions[i].duration;
+    }
+    
     if (s_header.version == 1) {
+        // V1: 每帧清零，帧数量不变
         for (u32 i = 0; i < totalFrames; i++)
             s_frames[frameStart + i] = {};
+        
+        // 删除选中动作
+        for (s32 i = endIndex; i >= startIndex; i--)
+            s_actions.erase(s_actions.begin() + i);
+        
+        // 插入新无动作，duration从帧数重新计算
+        u32 totalDuration = totalFrames * 1000 / s_header.frameRate;
+        Action newAction = {0, StickDir::None, StickDir::None, totalDuration, totalFrames, true, false};
+        s_actions.insert(s_actions.begin() + startIndex, newAction);
     } else {
-        // V2: 合并成1帧
-        s_framesV2[frameStart] = {totalDuration, 0, 0, 0, 0, 0};
+        // V2: 合并成1帧，清零
+        s_framesV2[frameStart] = {totalDurationV2, 0, 0, 0, 0, 0};
         if (totalFrames > 1) {
             s_framesV2.erase(s_framesV2.begin() + frameStart + 1, s_framesV2.begin() + frameStart + totalFrames);
             s_header.frameCount = s_framesV2.size();
         }
+        
+        // 删除选中动作
+        for (s32 i = endIndex; i >= startIndex; i--)
+            s_actions.erase(s_actions.begin() + i);
+        
+        // 插入新无动作
+        Action newAction = {0, StickDir::None, StickDir::None, totalDurationV2, 1, true, false};
+        s_actions.insert(s_actions.begin() + startIndex, newAction);
     }
-    
-    // 删除选中范围的动作
-    for (s32 i = endIndex; i >= startIndex; i--)
-        s_actions.erase(s_actions.begin() + i);
-    
-    // 插入新的无动作
-    u32 newFrameCount = (s_header.version == 1) ? totalFrames : 1;
-    Action newAction = {0, StickDir::None, StickDir::None, totalDuration, newFrameCount, true};
-    s_actions.insert(s_actions.begin() + startIndex, newAction);
-    
-    tryMergeAt(startIndex);
+
+    updateDurationMs();
 }
 
-void MacroData::deleteActions(s32 startIndex, s32 endIndex) {
-    saveSnapshot();
-    
+// 删除动作内部实现（不保存快照、不合并、不更新时长）
+void MacroData::deleteActionsInternal(s32 startIndex, s32 endIndex) {
     // 计算帧起始位置
     s32 frameStart = 0;
     for (s32 i = 0; i < startIndex; i++) {
@@ -362,42 +470,250 @@ void MacroData::deleteActions(s32 startIndex, s32 endIndex) {
     
     // 删除动作
     s_actions.erase(s_actions.begin() + startIndex, s_actions.begin() + endIndex + 1);
-    
-    tryMergeAfterDelete(startIndex);
 }
 
-// 修改持续时间
-void MacroData::setActionDuration(s32 actionIndex, u32 durationMs) {
-    if (actionIndex < 0 || actionIndex >= (s32)s_actions.size()) return;
+void MacroData::deleteActions(s32 startIndex, s32 endIndex) {
+    saveSnapshot();
+    deleteActionsInternal(startIndex, endIndex);
+    updateDurationMs();
+}
+
+// 清除摇杆数据
+void MacroData::clearStick(s32 startIndex, s32 endIndex, StickTarget target) {
+    if (startIndex < 0 || endIndex >= (s32)s_actions.size() || startIndex > endIndex) return;
+    
     saveSnapshot();
     
-    // 计算帧起始位置
-    s32 frameStart = 0;
-    for (s32 i = 0; i < actionIndex; i++) {
-        frameStart += s_actions[i].frameCount;
+    // 从后往前遍历（避免删除后索引变化）
+    for (s32 i = endIndex; i >= startIndex; i--) {
+        bool hasButtons = (s_actions[i].buttons != 0);
+        bool hasTargetStick = false;
+        bool hasOtherInput = false;
+        
+        // 检查是否有目标摇杆，以及是否有其他输入
+        if (target == StickTarget::Both) {
+            hasTargetStick = (s_actions[i].stickL != StickDir::None || s_actions[i].stickR != StickDir::None);
+            hasOtherInput = hasButtons;
+        } else if (target == StickTarget::Left) {
+            hasTargetStick = (s_actions[i].stickL != StickDir::None);
+            hasOtherInput = hasButtons || (s_actions[i].stickR != StickDir::None);
+        } else {
+            hasTargetStick = (s_actions[i].stickR != StickDir::None);
+            hasOtherInput = hasButtons || (s_actions[i].stickL != StickDir::None);
+        }
+        
+        if (!hasTargetStick) continue;  // 没有目标摇杆，跳过
+        
+        if (!hasOtherInput) {
+            // 没有其他输入：删除整个动作
+            deleteActionsInternal(i, i);
+        } else {
+            // 有按键：清零摇杆坐标
+            s32 frameStart = 0;
+            for (s32 j = 0; j < i; j++) frameStart += s_actions[j].frameCount;
+            
+            for (u32 f = 0; f < s_actions[i].frameCount; f++) {
+                if (s_header.version == 1) {
+                    if (target != StickTarget::Right) {
+                        s_frames[frameStart + f].leftX = 0;
+                        s_frames[frameStart + f].leftY = 0;
+                    }
+                    if (target != StickTarget::Left) {
+                        s_frames[frameStart + f].rightX = 0;
+                        s_frames[frameStart + f].rightY = 0;
+                    }
+                } else {
+                    if (target != StickTarget::Right) {
+                        s_framesV2[frameStart + f].leftX = 0;
+                        s_framesV2[frameStart + f].leftY = 0;
+                    }
+                    if (target != StickTarget::Left) {
+                        s_framesV2[frameStart + f].rightX = 0;
+                        s_framesV2[frameStart + f].rightY = 0;
+                    }
+                }
+            }
+            
+            // 更新虚拟摇杆方向
+            if (target != StickTarget::Right) s_actions[i].stickL = StickDir::None;
+            if (target != StickTarget::Left) s_actions[i].stickR = StickDir::None;
+            // 如果两个摇杆都为None，清除虚拟合并标记
+            if (s_actions[i].stickL == StickDir::None && s_actions[i].stickR == StickDir::None)
+                s_actions[i].stickMergedVirtual = false;
+            s_actions[i].modified = true;
+        }
     }
+    
+    updateDurationMs();
+}
+
+// 方向转坐标的辅助函数
+static void dirToCoord(StickDir dir, s32& outX, s32& outY) {
+    constexpr s32 STICK_MAX = 32767;
+    switch (dir) {
+        case StickDir::Up:        outX = 0;          outY = STICK_MAX;  break;
+        case StickDir::Down:      outX = 0;          outY = -STICK_MAX; break;
+        case StickDir::Left:      outX = -STICK_MAX; outY = 0;          break;
+        case StickDir::Right:     outX = STICK_MAX;  outY = 0;          break;
+        case StickDir::UpLeft:    outX = -STICK_MAX; outY = STICK_MAX;  break;
+        case StickDir::UpRight:   outX = STICK_MAX;  outY = STICK_MAX;  break;
+        case StickDir::DownLeft:  outX = -STICK_MAX; outY = -STICK_MAX; break;
+        case StickDir::DownRight: outX = STICK_MAX;  outY = -STICK_MAX; break;
+        default:                  outX = 0;          outY = 0;          break;
+    }
+}
+
+// 设置动作摇杆方向
+void MacroData::setActionStick(s32 actionIndex, StickDir leftDir, StickDir rightDir) {
+    if (actionIndex < 0 || actionIndex >= (s32)s_actions.size()) return;
+    
+    saveSnapshot();
+    
+    // 计算帧范围
+    s32 frameStart = 0;
+    for (s32 i = 0; i < actionIndex; i++) frameStart += s_actions[i].frameCount;
+    
+    // 转换方向为坐标
+    s32 lx, ly, rx, ry;
+    dirToCoord(leftDir, lx, ly);
+    dirToCoord(rightDir, rx, ry);
     
     if (s_header.version == 1) {
-        // V1: 需要调整帧数
-        u32 newFrameCount = (durationMs * s_header.frameRate + 500) / 1000;
-        if (newFrameCount == 0) newFrameCount = 1;
-        u32 oldFrameCount = s_actions[actionIndex].frameCount;
-        if (newFrameCount != oldFrameCount) {
-            MacroFrame templateFrame = s_frames[frameStart];
-            if (newFrameCount > oldFrameCount) s_frames.insert(s_frames.begin() + frameStart + oldFrameCount, newFrameCount - oldFrameCount, templateFrame);
-            else s_frames.erase(s_frames.begin() + frameStart + newFrameCount, s_frames.begin() + frameStart + oldFrameCount);
-            s_header.frameCount = s_frames.size();
+        // V1：遍历所有帧设置坐标
+        for (u32 f = 0; f < s_actions[actionIndex].frameCount; f++) {
+            s_frames[frameStart + f].leftX = lx;
+            s_frames[frameStart + f].leftY = ly;
+            s_frames[frameStart + f].rightX = rx;
+            s_frames[frameStart + f].rightY = ry;
         }
-        s_actions[actionIndex].frameCount = newFrameCount;
-        s_actions[actionIndex].duration = newFrameCount * 1000 / s_header.frameRate;
     } else {
-        // V2: 直接修改帧的 durationMs
-        s_framesV2[frameStart].durationMs = durationMs;
-        s_actions[actionIndex].duration = durationMs;
+        // V2
+        if (s_actions[actionIndex].stickMergedVirtual) {
+            // 虚拟合并：合并多帧为1帧
+            u32 totalDuration = 0;
+            for (u32 f = 0; f < s_actions[actionIndex].frameCount; f++)
+                totalDuration += s_framesV2[frameStart + f].durationMs;
+            
+            // 设置第一帧
+            s_framesV2[frameStart].leftX = lx;
+            s_framesV2[frameStart].leftY = ly;
+            s_framesV2[frameStart].rightX = rx;
+            s_framesV2[frameStart].rightY = ry;
+            s_framesV2[frameStart].durationMs = totalDuration;
+            
+            // 删除多余帧
+            if (s_actions[actionIndex].frameCount > 1) {
+                s_framesV2.erase(s_framesV2.begin() + frameStart + 1,
+                                 s_framesV2.begin() + frameStart + s_actions[actionIndex].frameCount);
+                s_header.frameCount = s_framesV2.size();
+            }
+            s_actions[actionIndex].frameCount = 1;
+        } else {
+            // 非虚拟合并：直接设置那1帧的坐标
+            s_framesV2[frameStart].leftX = lx;
+            s_framesV2[frameStart].leftY = ly;
+            s_framesV2[frameStart].rightX = rx;
+            s_framesV2[frameStart].rightY = ry;
+        }
     }
     
+    // 更新动作的虚拟方向
+    s_actions[actionIndex].stickL = leftDir;
+    s_actions[actionIndex].stickR = rightDir;
+    s_actions[actionIndex].stickMergedVirtual = false;
     s_actions[actionIndex].modified = true;
-    tryMergeAt(actionIndex);
+}
+
+// 移动动作到指定位置
+void MacroData::moveAction(s32 fromIndex, s32 toIndex) {
+    if (fromIndex < 0 || fromIndex >= (s32)s_actions.size()) return;
+    if (toIndex < 0 || toIndex > (s32)s_actions.size()) return;
+    if (fromIndex == toIndex || fromIndex == toIndex - 1) return;
+    
+    // 保存快照
+    saveSnapshot();
+    
+    // 计算 fromIndex 动作的帧起始位置和帧数
+    s32 fromFrameStart = 0;
+    for (s32 i = 0; i < fromIndex; i++) fromFrameStart += s_actions[i].frameCount;
+    u32 frameCount = s_actions[fromIndex].frameCount;
+    
+    // 计算 toIndex 对应的帧插入位置
+    s32 toFrameStart = 0;
+    for (s32 i = 0; i < toIndex; i++) toFrameStart += s_actions[i].frameCount;
+    
+    // 移动帧数据
+    if (s_header.version == 1) {
+        std::vector<MacroFrame> extractedFrames(s_frames.begin() + fromFrameStart, s_frames.begin() + fromFrameStart + frameCount);
+        s_frames.erase(s_frames.begin() + fromFrameStart, s_frames.begin() + fromFrameStart + frameCount);
+        if (toFrameStart > fromFrameStart) toFrameStart -= frameCount;
+        s_frames.insert(s_frames.begin() + toFrameStart, extractedFrames.begin(), extractedFrames.end());
+    } else {
+        std::vector<MacroFrameV2> extractedFrames( s_framesV2.begin() + fromFrameStart, s_framesV2.begin() + fromFrameStart + frameCount);
+        s_framesV2.erase(s_framesV2.begin() + fromFrameStart, s_framesV2.begin() + fromFrameStart + frameCount);
+        if (toFrameStart > fromFrameStart) toFrameStart -= frameCount;
+        s_framesV2.insert(s_framesV2.begin() + toFrameStart, extractedFrames.begin(), extractedFrames.end());
+    }
+    
+    // 标记受影响范围内的动作为 modified（toIndex 是插入位置，实际范围是 [from, to-1] 或 [to, from]）
+    s32 rangeStart = (fromIndex < toIndex) ? fromIndex : toIndex;
+    s32 rangeEnd = (fromIndex < toIndex) ? toIndex - 1 : fromIndex;
+    for (s32 i = rangeStart; i <= rangeEnd && i < (s32)s_actions.size(); i++) {
+        s_actions[i].modified = true;
+    }
+    
+    // 移动动作
+    Action extractedAction = s_actions[fromIndex];
+    s_actions.erase(s_actions.begin() + fromIndex);
+    if (toIndex > fromIndex) toIndex--;
+    s_actions.insert(s_actions.begin() + toIndex, extractedAction);
+}
+
+// 修改持续时间（支持多选）
+void MacroData::setActionDuration(s32 startIndex, s32 endIndex, u32 durationMs) {
+    if (startIndex < 0 || endIndex >= (s32)s_actions.size() || startIndex > endIndex) return;
+    saveSnapshot();
+    
+    if (s_header.version == 1) {
+        // V1: 根据持续时间计算帧数，修改每个动作对应的帧数据
+        u32 newFrameCount = (durationMs * s_header.frameRate + 500) / 1000;
+        if (newFrameCount == 0) newFrameCount = 1;
+        u32 actualDuration = newFrameCount * 1000 / s_header.frameRate;
+        
+        for (s32 i = startIndex; i <= endIndex; i++) {
+            // 计算当前动作的帧起始位置
+            s32 frameStart = 0;
+            for (s32 j = 0; j < i; j++)
+                frameStart += s_actions[j].frameCount;
+            
+            u32 oldFrameCount = s_actions[i].frameCount;
+            if (newFrameCount != oldFrameCount) {
+                MacroFrame templateFrame = s_frames[frameStart];
+                if (newFrameCount > oldFrameCount)
+                    s_frames.insert(s_frames.begin() + frameStart + oldFrameCount, newFrameCount - oldFrameCount, templateFrame);
+                else
+                    s_frames.erase(s_frames.begin() + frameStart + newFrameCount, s_frames.begin() + frameStart + oldFrameCount);
+            }
+            s_actions[i].frameCount = newFrameCount;
+            s_actions[i].duration = actualDuration;
+            s_actions[i].modified = true;
+        }
+        s_header.frameCount = s_frames.size();
+    } else {
+        // V2: 直接修改每个动作对应的帧的持续时间（每个动作都是1帧）
+        for (s32 i = startIndex; i <= endIndex; i++) {
+            // 计算当前动作的帧起始位置
+            s32 frameStart = 0;
+            for (s32 j = 0; j < i; j++)
+                frameStart += s_actions[j].frameCount;
+            
+            s_framesV2[frameStart].durationMs = durationMs;
+            s_actions[i].duration = durationMs;
+            s_actions[i].modified = true;
+        }
+    }
+    
+    updateDurationMs();
 }
 
 // 修改动作的触发按钮
@@ -411,15 +727,18 @@ void MacroData::setActionButtons(s32 actionIndex, u64 buttons) {
     
     // 计算帧起始位置
     s32 frameStart = 0;
-    for (s32 i = 0; i < actionIndex; i++) {
+    for (s32 i = 0; i < actionIndex; i++)
         frameStart += s_actions[i].frameCount;
-    }
     
     // 更新帧的按键
-    if (s_header.version == 1) for (u32 i = 0; i < s_actions[actionIndex].frameCount; i++) s_frames[frameStart + i].keysHeld = buttons;
-    else s_framesV2[frameStart].keysHeld = buttons;
-    
-    tryMergeAt(actionIndex);
+    if (s_header.version == 1) {
+        // V1: 修改该动作对应的所有帧
+        for (u32 i = 0; i < s_actions[actionIndex].frameCount; i++)
+            s_frames[frameStart + i].keysHeld = buttons;
+    } else {
+        // V2: 直接修改那一帧
+        s_framesV2[frameStart].keysHeld = buttons;
+    }
 }
 
 // 保存快照，用于撤销
@@ -442,6 +761,7 @@ bool MacroData::undo() {
     s_actions = snapshot.actions;
     s_header.frameCount = (s_header.version == 1) ? s_frames.size() : s_framesV2.size();
     s_undoStack.pop_back();
+    updateDurationMs();
     return true;
 }
 

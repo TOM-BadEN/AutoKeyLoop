@@ -138,3 +138,41 @@ bool RecordingGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &
     // 录制期间不接受其他输入
     return true;
 }
+
+
+
+    // // 子菜单定义
+    // constexpr MenuDef INSERT_SUB[] = {
+    //     {"", "向前插入", "插入空动作到前面", nullptr, 0},
+    //     {"", "向后插入", "插入空动作到后面", nullptr, 0},
+    //     {"", "向前复制", "复制动作到前面", nullptr, 0},
+    //     {"", "向后复制", "复制动作到后面", nullptr, 0},
+    // };
+    
+    // constexpr MenuDef DELETE_SUB[] = {
+    //     {"", "删除动作", "删除选中动作", nullptr, 0},
+    //     {"", "重置动作", "重置为无动作", nullptr, 0},
+    // };
+    
+    // constexpr MenuDef STICK_SUB[] = {
+    //     {"", "修改摇杆", "修改摇杆方向", nullptr, 0},
+    //     {"", "删除摇杆", "清除摇杆输入", nullptr, 0},
+    //     {"", "删除左摇杆", "清除左摇杆输入", nullptr, 0},
+    //     {"", "删除右摇杆", "清除右摇杆输入", nullptr, 0},
+    // };
+    
+    // constexpr MenuDef MOVE_SUB[] = {
+    //     {"", "向前移动", "与前一个交换", nullptr, 0},
+    //     {"", "向后移动", "与后一个交换", nullptr, 0},
+    // };
+    
+    // // 一级菜单
+    // constexpr MenuDef ROOT_MENU[] = {
+    //     {"", "移动", "调整位置", MOVE_SUB, 2},
+    //     {"", "插入", "选择插入方式", INSERT_SUB, 4},
+    //     {"", "删除", "删除或重置", DELETE_SUB, 2},
+    //     {"", "时长", "修改持续时间", nullptr, 0},
+    //     {"", "按键", "修改按键", nullptr, 0},
+    //     {"", "摇杆", "修改摇杆", STICK_SUB, 4},
+    // };
+    // constexpr int ROOT_MENU_COUNT = 6;

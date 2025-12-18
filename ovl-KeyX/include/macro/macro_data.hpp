@@ -46,6 +46,7 @@ struct Action {
     u32 duration;       // 持续时间（毫秒）
     u32 frameCount;     // 帧数量
     bool modified = false;  // 是否被修改过
+    bool stickMergedVirtual = false;  // 摇杆是否为虚拟合并
 };
 
 // 宏基础信息
@@ -62,7 +63,7 @@ struct MacroBasicInfo {
 class MacroData {
 public:
     static bool load(const char* filePath);
-    static bool loadFrameAndBasicInfo(const char* filePath);
+    static bool loadFrameAndBasicInfo(const char* filePath = nullptr);
     static bool loadBakMacroData();
     static bool saveForEdit();
     static const char* getFilePath();
@@ -73,10 +74,17 @@ public:
     
     // 编辑操作
     static void insertAction(s32 actionIndex, bool insertBefore);
+    static void copyActions(s32 startIndex, s32 endIndex, bool insertBefore);
     static void resetActions(s32 startIndex, s32 endIndex);
     static void deleteActions(s32 startIndex, s32 endIndex);
-    static void setActionDuration(s32 actionIndex, u32 durationMs);
+    static void moveAction(s32 fromIndex, s32 toIndex);
+    static void setActionDuration(s32 startIndex, s32 endIndex, u32 durationMs);
     static void setActionButtons(s32 actionIndex, u64 buttons);
+    
+    // 摇杆操作
+    enum class StickTarget { Both, Left, Right };
+    static void clearStick(s32 startIndex, s32 endIndex, StickTarget target);
+    static void setActionStick(s32 actionIndex, StickDir leftDir, StickDir rightDir);
     
     // 撤销功能
     static bool undo();
@@ -109,14 +117,11 @@ private:
     static bool isSameState(const MacroFrame& a, const MacroFrame& b);
     static bool isSameState(const MacroFrameV2& a, const MacroFrameV2& b);
     
-    // 辅助函数：判断两个动作是否相同（可合并）
-    static bool isSameAction(const Action& a, const Action& b);
+    // 辅助函数：删除动作内部实现（不保存快照）
+    static void deleteActionsInternal(s32 startIndex, s32 endIndex);
     
-    // 辅助函数：尝试合并指定位置与前后相邻的相同动作
-    static void tryMergeAt(s32 actionIndex);
-    
-    // 辅助函数：删除后尝试合并（检查deletedIndex-1与deletedIndex位置）
-    static void tryMergeAfterDelete(s32 deletedIndex);
+    // 辅助函数：更新总时长
+    static void updateDurationMs();
 
     // 辅助函数：保存快照,用于撤销
     static void saveSnapshot();
