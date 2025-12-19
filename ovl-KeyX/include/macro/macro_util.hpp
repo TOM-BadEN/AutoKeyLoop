@@ -12,6 +12,12 @@ public:
         u64 hotkey;
     };
     
+    // 游戏目录条目（titleId + 宏文件数量）
+    struct GameDirEntry {
+        std::string titleId;
+        int macroCount;
+    };
+    
     // 获取宏的元数据（name、author、desc）
     struct MacroMetadata {
         std::string name;
@@ -21,8 +27,8 @@ public:
     
     static MacroMetadata getMetadata(const std::string& macroPath);
 
-    // 获取有脚本的游戏目录列表（titleId字符串）
-    static std::vector<std::string> getGameDirs();
+    // 获取有脚本的游戏目录列表（跳过空目录）
+    static std::vector<GameDirEntry> getGameDirs();
     
     // 获取指定游戏的所有宏列表（已排序：有快捷键的在前）
     static std::vector<MacroEntry> getMacroList(u64 titleId);

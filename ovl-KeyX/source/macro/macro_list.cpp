@@ -16,7 +16,7 @@ MacroListGui::MacroListGui()
     auto dirs = MacroUtil::getGameDirs();
     m_macroDirs.reserve(dirs.size());
     for (const auto& dir : dirs) {
-        m_macroDirs.push_back({dir, nullptr});
+        m_macroDirs.push_back({dir.titleId, dir.macroCount, nullptr});
     }
 
 }
@@ -48,7 +48,7 @@ tsl::elm::Element* MacroListGui::createUI() {
 
     list->addItem(new tsl::elm::CategoryHeader(" 选择要查看的游戏"));
     for (auto& entry : m_macroDirs) {
-        auto item = new tsl::elm::ListItem("");
+        auto item = new tsl::elm::ListItem("", std::to_string(entry.macroCount));
         entry.item = item;
         item->setClickListener([this, entry](u64 keys) {
             if (keys & HidNpadButton_A) {

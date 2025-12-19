@@ -18,8 +18,16 @@ void MacroUtil::getMacroDirPath(u64 titleId, char* outPath, size_t size) {
     snprintf(outPath, size, "%s/%016lX", MACROS_DIR, titleId);
 }
 
-std::vector<std::string> MacroUtil::getGameDirs() {
-    return ult::getSubdirectories(MACROS_DIR);
+std::vector<MacroUtil::GameDirEntry> MacroUtil::getGameDirs() {
+    std::vector<GameDirEntry> result;
+    auto dirs = ult::getSubdirectories(MACROS_DIR);
+    for (const auto& dir : dirs) {
+        char pattern[128];
+        snprintf(pattern, sizeof(pattern), "%s/%s/*.macro", MACROS_DIR, dir.c_str());
+        auto files = ult::getFilesListByWildcards(pattern);
+        if (!files.empty()) result.push_back({dir, (int)files.size()});
+    }
+    return result;
 }
 
 std::vector<MacroUtil::MacroEntry> MacroUtil::getMacroList(u64 titleId) {

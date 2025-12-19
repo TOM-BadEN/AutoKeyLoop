@@ -15,7 +15,8 @@ public:
 private:
 
     struct MacroDirEntry {
-        std::string dirName;          
+        std::string dirName;
+        int macroCount;
         tsl::elm::ListItem* item{};   
     };
 
