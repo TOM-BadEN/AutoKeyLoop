@@ -751,6 +751,7 @@ bool MacroEditGui::handleNormalInput(u64 keysDown, u64 keysHeld) {
             MacroData::undoCleanup();
             m_bakMacro = false;
             m_selectedIndex = 0;
+            m_scrollOffset = 0;
             m_selectMode = false;
             m_selectAnchor = -1;
             return true;
