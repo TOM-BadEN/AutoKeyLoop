@@ -476,62 +476,70 @@ void MacroData::clearStick(s32 startIndex, s32 endIndex, StickTarget target) {
     
     // 从后往前遍历（避免删除后索引变化）
     for (s32 i = endIndex; i >= startIndex; i--) {
-        bool hasButtons = (s_actions[i].buttons != 0);
+        // 检查是否有目标摇杆
         bool hasTargetStick = false;
-        bool hasOtherInput = false;
-        
-        // 检查是否有目标摇杆，以及是否有其他输入
         if (target == StickTarget::Both) {
             hasTargetStick = (s_actions[i].stickL != StickDir::None || s_actions[i].stickR != StickDir::None);
-            hasOtherInput = hasButtons;
         } else if (target == StickTarget::Left) {
             hasTargetStick = (s_actions[i].stickL != StickDir::None);
-            hasOtherInput = hasButtons || (s_actions[i].stickR != StickDir::None);
         } else {
             hasTargetStick = (s_actions[i].stickR != StickDir::None);
-            hasOtherInput = hasButtons || (s_actions[i].stickL != StickDir::None);
         }
         
-        if (!hasTargetStick) continue;  // 没有目标摇杆，跳过
+        if (!hasTargetStick) continue;
         
-        if (!hasOtherInput) {
-            // 没有其他输入：删除整个动作
-            deleteActionsInternal(i, i);
-        } else {
-            // 有按键：清零摇杆坐标
-            s32 frameStart = 0;
-            for (s32 j = 0; j < i; j++) frameStart += s_actions[j].frameCount;
-            
-            for (u32 f = 0; f < s_actions[i].frameCount; f++) {
-                if (s_header.version == 1) {
-                    if (target != StickTarget::Right) {
-                        s_frames[frameStart + f].leftX = 0;
-                        s_frames[frameStart + f].leftY = 0;
-                    }
-                    if (target != StickTarget::Left) {
-                        s_frames[frameStart + f].rightX = 0;
-                        s_frames[frameStart + f].rightY = 0;
-                    }
-                } else {
-                    if (target != StickTarget::Right) {
-                        s_framesV2[frameStart + f].leftX = 0;
-                        s_framesV2[frameStart + f].leftY = 0;
-                    }
-                    if (target != StickTarget::Left) {
-                        s_framesV2[frameStart + f].rightX = 0;
-                        s_framesV2[frameStart + f].rightY = 0;
-                    }
+        // 清零摇杆坐标
+        s32 frameStart = 0;
+        for (s32 j = 0; j < i; j++) frameStart += s_actions[j].frameCount;
+        
+        for (u32 f = 0; f < s_actions[i].frameCount; f++) {
+            if (s_header.version == 1) {
+                if (target != StickTarget::Right) {
+                    s_frames[frameStart + f].leftX = 0;
+                    s_frames[frameStart + f].leftY = 0;
+                }
+                if (target != StickTarget::Left) {
+                    s_frames[frameStart + f].rightX = 0;
+                    s_frames[frameStart + f].rightY = 0;
+                }
+            } else {
+                if (target != StickTarget::Right) {
+                    s_framesV2[frameStart + f].leftX = 0;
+                    s_framesV2[frameStart + f].leftY = 0;
+                }
+                if (target != StickTarget::Left) {
+                    s_framesV2[frameStart + f].rightX = 0;
+                    s_framesV2[frameStart + f].rightY = 0;
                 }
             }
-            
-            // 更新虚拟摇杆方向
-            if (target != StickTarget::Right) s_actions[i].stickL = StickDir::None;
-            if (target != StickTarget::Left) s_actions[i].stickR = StickDir::None;
-            // 如果两个摇杆都为None，清除虚拟合并标记
-            if (s_actions[i].stickL == StickDir::None && s_actions[i].stickR == StickDir::None)
-                s_actions[i].stickMergedVirtual = false;
-            s_actions[i].modified = true;
         }
+        
+        // 更新虚拟摇杆方向
+        if (target != StickTarget::Right) s_actions[i].stickL = StickDir::None;
+        if (target != StickTarget::Left) s_actions[i].stickR = StickDir::None;
+        
+        // 判断清零后是否还有另一边摇杆
+        bool hasOtherStickAfterClear = (s_actions[i].stickL != StickDir::None || s_actions[i].stickR != StickDir::None);
+        
+        if (!hasOtherStickAfterClear && s_actions[i].frameCount > 1) {   // 没有另一边摇杆，需要合并
+            if (s_header.version == 1) {  // V1：帧序列，不删帧，时间用帧数计算
+                s_actions[i].duration = s_actions[i].frameCount * 1000 / s_header.frameRate;
+            } else {   // V2：时间序列，累加时间到第1帧，删除多余帧
+                u32 totalDuration = 0;
+                for (u32 f = 0; f < s_actions[i].frameCount; f++) {
+                    totalDuration += s_framesV2[frameStart + f].durationMs;
+                }
+                s_framesV2[frameStart].durationMs = totalDuration;
+                s_framesV2.erase(s_framesV2.begin() + frameStart + 1, s_framesV2.begin() + frameStart + s_actions[i].frameCount);
+                s_actions[i].frameCount = 1;
+                s_actions[i].duration = totalDuration;
+            }
+            s_actions[i].stickMergedVirtual = false;
+        }
+        
+        // 有另一边摇杆或只有1帧：不需要额外处理
+        
+        s_actions[i].modified = true;
     }
     
     updateDurationMs();
