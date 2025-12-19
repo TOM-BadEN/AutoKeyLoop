@@ -28,7 +28,7 @@ UpdaterData::~UpdaterData() {
 UpdateInfo UpdaterData::getUpdateInfo() {
 
     UpdateInfo info{};
-    if (!ult::downloadFile(m_isSimplifiedChinese ? CN_UPDATE_URL : EN_UPDATE_URL, UPDATE_JSON_PATH, true)) {
+    if (!ult::downloadFile(m_isSimplifiedChinese ? CN_UPDATE_URL : EN_UPDATE_URL, UPDATE_JSON_PATH, false)) {
         info.error = "请检查网络连接";
         return info;
     }

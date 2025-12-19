@@ -29,7 +29,7 @@ GameListResult StoreData::getGameList() {
     
     std::string url = std::string(m_isSimplifiedChinese ? CN_BASE_URL : EN_BASE_URL) + GAMELIST_JSON;
     
-    if (!ult::downloadFile(url, TEMP_GAMELIST_PATH, true)) {
+    if (!ult::downloadFile(url, TEMP_GAMELIST_PATH, false)) {
         result.error = "请检查网络连接";
         return result;
     }
@@ -72,7 +72,7 @@ MacroListResult StoreData::getMacroList(const std::string& gameId) {
     
     std::string url = std::string(m_isSimplifiedChinese ? CN_BASE_URL : EN_BASE_URL) + "games/" + gameId + "/" + MACROLIST_JSON;
     
-    if (!ult::downloadFile(url, TEMP_MACROLIST_PATH, true)) {
+    if (!ult::downloadFile(url, TEMP_MACROLIST_PATH, false)) {
         result.error = "请检查网络连接";
         return result;
     }

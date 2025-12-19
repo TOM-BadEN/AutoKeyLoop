@@ -242,7 +242,6 @@ void StoreGameListGui::update() {
 }
 
 bool StoreGameListGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) {
-    if (m_loadingIndex >= 0) return true;
     if (keysDown & HidNpadButton_B) {
         ult::abortDownload = true;
         Thd::stop();
@@ -251,7 +250,8 @@ bool StoreGameListGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchSta
         tsl::goBack();
         return true;
     }
-    return false;
+    // 加载期间屏蔽其他按键，非加载期间交给框架
+    return (m_loadingIndex >= 0);
 }
 
 
