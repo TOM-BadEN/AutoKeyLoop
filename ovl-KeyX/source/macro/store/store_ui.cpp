@@ -25,6 +25,7 @@ StoreGetDataGui::StoreGetDataGui(u64 tid) : m_tid(tid) {
         Thd::start([]{ s_gameList = StoreData().getGameList(); });
     } else {
         Thd::start([tid]{ getMacroListForTid(tid); });
+        GameMonitor::getTitleIdGameName(m_tid, gameName);
     }
 }
 
@@ -33,7 +34,8 @@ StoreGetDataGui::~StoreGetDataGui() {
 }
 
 tsl::elm::Element* StoreGetDataGui::createUI() {
-    auto frame = new tsl::elm::OverlayFrame("脚本商店", "商店脚本靠大家，欢迎投稿");
+    std::string subtitle = (m_tid == 0) ? "商店脚本靠大家，欢迎投稿" : gameName;
+    auto frame = new tsl::elm::OverlayFrame("脚本商店", subtitle);
     auto list = new tsl::elm::List();
     
     auto drawer = new tsl::elm::CustomDrawer([this](tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h) {
@@ -118,9 +120,7 @@ void StoreGetDataGui::update() {
             else if (s_macroList.macros.empty()) m_state = LoadState::MacroListEmpty;
             else {
                 m_state = LoadState::Success;
-                char nameBuf[64]{};
-                GameMonitor::getTitleIdGameName(m_tid, nameBuf);
-                tsl::swapTo<StoreMacroListGui>(m_tid, nameBuf);
+                tsl::swapTo<StoreMacroListGui>(m_tid, gameName);
             }
         }
     }

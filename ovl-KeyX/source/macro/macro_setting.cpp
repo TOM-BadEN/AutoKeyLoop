@@ -160,8 +160,25 @@ tsl::elm::Element* SettingMacro::createUI() {
     });
     list->addItem(listItemView);
 
-    list->addItem(new tsl::elm::CategoryHeader(" 在线获取"));
+    list->addItem(new tsl::elm::CategoryHeader(" 录制说明"));
+    auto countdown = new tsl::elm::CustomDrawer([](tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h) {
+        s32 fontSize = 27;
+        auto textDim = r->getTextDimensions(g_recordMessage, false, fontSize);
+        while (textDim.first > w - 30) {
+            fontSize = fontSize * 9 / 10;  // 缩小 10%
+            textDim = r->getTextDimensions(g_recordMessage, false, fontSize);
+        }
+        s32 textX = x + 19;  // 与 ListItem 的 key 左对齐
+        s32 textY = y + (h + textDim.second) / 2;
+        r->drawString(g_recordMessage, false, textX, textY, fontSize, tsl::Color(0xF, 0x5, 0x5, 0xF));
+    });
+    list->addItem(countdown, 50);
 
+
+    list->addItem(new tsl::elm::CategoryHeader(" 在线获取（已安装游戏）"));
+    list->addItem(new tsl::elm::CustomDrawer([](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
+        renderer->drawString("  游戏中访问只获取当前游戏的脚本", false, x + 5, y + 20-7, 16, (tsl::highlightColor2));
+    }), 30);
     auto listItemStore = new tsl::elm::ListItem("脚本商店", ">");
     listItemStore->setClickListener([this](u64 keys) {
         if (keys & HidNpadButton_A) {
@@ -182,22 +199,6 @@ tsl::elm::Element* SettingMacro::createUI() {
         return false;
     });
     list->addItem(listItemContribute);
-
-    list->addItem(new tsl::elm::CategoryHeader(" 录制说明"));
-
-    auto countdown = new tsl::elm::CustomDrawer([](tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h) {
-        s32 fontSize = 27;
-        auto textDim = r->getTextDimensions(g_recordMessage, false, fontSize);
-        while (textDim.first > w - 30) {
-            fontSize = fontSize * 9 / 10;  // 缩小 10%
-            textDim = r->getTextDimensions(g_recordMessage, false, fontSize);
-        }
-        s32 textX = x + 19;  // 与 ListItem 的 key 左对齐
-        s32 textY = y + (h + textDim.second) / 2;
-        r->drawString(g_recordMessage, false, textX, textY, fontSize, tsl::Color(0xF, 0x5, 0x5, 0xF));
-    });
-
-    list->addItem(countdown, 80);
     
     frame->setContent(list);
     return frame;
