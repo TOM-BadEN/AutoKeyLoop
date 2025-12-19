@@ -185,15 +185,20 @@ tsl::elm::Element* MacroHotKeySettingGui::createUI() {
     auto list = new tsl::elm::List();
     auto textArea = new tsl::elm::CustomDrawer([this](tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h) {
         tsl::Color selectedColor = isHotkeyValid() ? tsl::style::color::ColorHighlight : tsl::Color(0xF, 0x5, 0x5, 0xF);
+        // 统一的提示文本样式
+        s32 tipFontSize = 18;
+        s32 tipGap = 10;
+        auto [tipW, tipH] = r->getTextDimensions("你", false, tipFontSize);
+        s32 tipLineHeight = tipH + tipGap;
+        s32 tipStartY = y + 30;
+        tsl::Color tipColor = tsl::style::color::ColorDescription;
+        
         if (m_editMode) {   // 编辑模式
             s32 rowH = h / 4; 
             s32 cellW = w / 8;
-            const char* text1 = "可选1~3个按键作为组合键";
-            auto [t1W, t1H] = r->drawString(text1, false, 0, 0, 18, tsl::Color(0,0,0,0));
-            r->drawString(text1, false, x, y + (rowH - t1H) / 2, 18, r->a(tsl::style::color::ColorHighlight));
-            const char* text2 = " 选中/取消  退出编辑";
-            auto [t2W, t2H] = r->drawString(text2, false, 0, 0, 18, tsl::Color(0,0,0,0));
-            r->drawString(text2, false, x, y + rowH + (rowH - t2H) / 2 - 5, 18, r->a(tsl::style::color::ColorHighlight));
+            r->drawString(" • 可选1~3个按键作为组合键", false, x + 20, tipStartY, tipFontSize, r->a(tipColor));
+            r->drawString(" • 光标移动到保存列表按  保存", false, x + 20, tipStartY + tipLineHeight, tipFontSize, r->a(tipColor));
+            r->drawString(" •  选中/取消  退出编辑", false, x + 20, tipStartY + tipLineHeight * 2, tipFontSize, r->a(tipColor));
             u64 currentTime_ns = armTicksToNs(armGetSystemTick());  // 计算闪烁进度
             double progress = (std::cos(2.0 * 3.14159265358979323846 * std::fmod(currentTime_ns * 0.000000001 - 0.25, 1.0)) + 1.0) * 0.5;
             tsl::Color highlightColor = tsl::Color(
@@ -214,13 +219,21 @@ tsl::elm::Element* MacroHotKeySettingGui::createUI() {
                 r->drawString(icon, false, cellX + (cellW - iconW) / 2, cellY + (rowH - iconH) / 2, 30, r->a(iconColor));
             }
         } else {    // 非编辑模式
+            // 绘制提示信息
+            r->drawString(" • 单次播放：点按快捷键", false, x + 20, tipStartY, tipFontSize, r->a(tipColor));
+            r->drawString(" • 循环播放：按住快捷键半秒松开", false, x + 20, tipStartY + tipLineHeight, tipFontSize, r->a(tipColor));
+            r->drawString(" • 打断播放：播放期间再次点按快捷键", false, x + 20, tipStartY + tipLineHeight * 2, tipFontSize, r->a(tipColor));
+            s32 tipEndY = tipStartY + tipLineHeight * 2 + tipH;  // 提示区域结束Y
+            
+            // 绘制快捷键组合（在剩余空间垂直居中）
             if (m_selectedButtons != 0) m_displayText = HidHelper::getCombinedIcons(m_selectedButtons, " + ");  
             else m_displayText = "未设置快捷键";
             s32 fontSize = 32;
-            auto [textW, textH] = r->drawString(m_displayText.c_str(), false, 0, 0, fontSize, tsl::Color(0,0,0,0));
+            auto [textW, textH] = r->getTextDimensions(m_displayText, false, fontSize);
+            s32 remainingH = (y + h) - tipEndY;  // 剩余空间高度
             s32 centerX = x + (w - textW) / 2;
-            s32 centerY = y + (h - textH) / 2 + textH - 10;
-            r->drawStringWithColoredSections(m_displayText.c_str(), false, {" + "}, centerX, centerY, fontSize, selectedColor, tsl::defaultTextColor);
+            s32 centerY = tipEndY + (remainingH - textH) / 2 + textH - 10;
+            r->drawStringWithColoredSections(m_displayText, false, {" + "}, centerX, centerY, fontSize, selectedColor, tsl::defaultTextColor);
         }
     });
     list->addItem(textArea, 290);

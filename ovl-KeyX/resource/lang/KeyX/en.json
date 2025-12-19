@@ -130,8 +130,6 @@
     "设置白名单": "Set WhiteList",
     "允许按键助手在非游戏应用生效": "Allow KeyX in Homebrew",
     "编辑脚本": "Edit Macro",
-    "可选1~3个按键作为组合键": "Select 1~3 keys as a combination key",
-    " 选中/取消  退出编辑": " Select/Cancel  Exit edit mode",
     "无动作": "No action",
     "重置动作": "Reset Action",
     "删除动作": "Delete Action",
@@ -226,5 +224,11 @@
     "阅读脚本的相关介绍": "Read macro details",
     " 限制单边手柄连发": " One-Side Turbo Restriction",
     "限制手柄": "Controls",
-    "  只允许左边或右边手柄（仅JoyCon有效）": "  Left or Right Side (Joy-Con Only)"
+    "  只允许左边或右边手柄（仅JoyCon有效）": "  Left or Right Side (Joy-Con Only)",
+    " • 可选1~3个按键作为组合键": " • Select 1-3 keys as hotkey",
+    " • 光标移动到保存列表按  保存": " • Move to Save, press  to save",
+    " •  选中/取消  退出编辑": " •  Select/Cancel  Exit",
+    " • 单次播放：点按快捷键": " • Single: Tap hotkey",
+    " • 循环播放：按住快捷键半秒松开": " • Loop: Hold 0.5s then release",
+    " • 打断播放：播放期间再次点按快捷键": " • Stop: Tap again while playing"
 }
