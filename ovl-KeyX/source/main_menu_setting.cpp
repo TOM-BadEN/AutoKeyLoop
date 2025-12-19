@@ -37,7 +37,7 @@ tsl::elm::Element* SettingMenu::createUI() {
         renderer->drawString("功能设置", false, 20, 50+2, 32, renderer->a(tsl::defaultOverlayColor));
         if (!UpdateChecker::g_hasNewVersion) renderer->drawString("选择设置项  关于插件  检查更新", false, 20, 50+23, 15, renderer->a(tsl::bannerVersionTextColor));
         else renderer->drawStringWithColoredSections("选择设置项  关于插件  有新的版本", false, {" 有新的版本"}, 20, 50+23, 15, renderer->a(tsl::bannerVersionTextColor), renderer->a(tsl::onTextColor));
-        renderer->drawString("  白名单", false, 280, 693, 23, renderer->a(tsl::style::color::ColorText));
+        renderer->drawString("  白名单", false, 270, 693, 23, renderer->a(tsl::style::color::ColorText));
     }));
 
     auto list = new tsl::elm::List();

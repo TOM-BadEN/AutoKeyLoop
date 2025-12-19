@@ -73,37 +73,37 @@ namespace {
     
     // 子菜单定义
     constexpr MenuDef INSERT_SUB[] = {
-        {MenuId::InsertBefore, "", "向前插入", "插入空动作到前面", nullptr, 0},
-        {MenuId::InsertAfter, "", "向后插入", "插入空动作到后面", nullptr, 0},
-        {MenuId::CopyBefore, "", "向前复制", "复制动作到前面", nullptr, 0},
-        {MenuId::CopyAfter, "", "向后复制", "复制动作到后面", nullptr, 0},
+        {MenuId::InsertBefore, "", "向前插入", "按  插入无动作", nullptr, 0},
+        {MenuId::InsertAfter, "", "向后插入", "按  插入无动作", nullptr, 0},
+        {MenuId::CopyBefore, "", "向前复制", "按  复制动作", nullptr, 0},
+        {MenuId::CopyAfter, "", "向后复制", "按  复制动作", nullptr, 0},
     };
     
     constexpr MenuDef DELETE_SUB[] = {
-        {MenuId::DeleteAction, "", "删除动作", "删除选中动作", nullptr, 0},
-        {MenuId::ResetAction, "", "重置动作", "重置为无动作", nullptr, 0},
+        {MenuId::DeleteAction, "", "删除动作", "按  删除整个动作", nullptr, 0},
+        {MenuId::ResetAction, "", "重置动作", "按  重置动作为无动作", nullptr, 0},
     };
     
     constexpr MenuDef STICK_SUB[] = {
-        {MenuId::StickModify, "", "修改摇杆", "修改摇杆方向", nullptr, 0},
-        {MenuId::StickDeleteAll, "", "删除摇杆", "清除所有摇杆输入", nullptr, 0},
-        {MenuId::StickDeleteL, "", "删除左摇杆", "清除左摇杆输入", nullptr, 0},
-        {MenuId::StickDeleteR, "", "删除右摇杆", "清除右摇杆输入", nullptr, 0},
+        {MenuId::StickModify, "", "修改为虚拟方向", "这会丢失摇杆精度  选中  保存  返回", nullptr, 0},
+        {MenuId::StickDeleteAll, "", "删除所有摇杆", "按  删除所有摇杆输入", nullptr, 0},
+        {MenuId::StickDeleteL, "", "删除左摇杆", "按  删除左摇杆输入", nullptr, 0},
+        {MenuId::StickDeleteR, "", "删除右摇杆", "按  删除右摇杆输入", nullptr, 0},
     };
     
     constexpr MenuDef MOVE_SUB[] = {
-        {MenuId::MoveUp, "", "向前移动", "与前一个交换", nullptr, 0},
-        {MenuId::MoveDown, "", "向后移动", "与后一个交换", nullptr, 0},
+        {MenuId::MoveUp, "", "向前移动", "按  与前一个动作交换", nullptr, 0},
+        {MenuId::MoveDown, "", "向后移动", "按  与后一个动作交换", nullptr, 0},
     };
     
     // 一级菜单
     constexpr MenuDef ROOT_MENU[] = {
-        {MenuId::Move, "", "移动", "调整位置", MOVE_SUB, 2},
-        {MenuId::Insert, "", "插入", "选择插入方式", INSERT_SUB, 4},
-        {MenuId::Delete, "", "删除", "删除或重置", DELETE_SUB, 2},
-        {MenuId::Duration, "", "时长", "修改持续时间", nullptr, 0},
-        {MenuId::Buttons, "", "按键", "修改按键", nullptr, 0},
-        {MenuId::Stick, "", "摇杆", "修改摇杆", STICK_SUB, 4},
+        {MenuId::Move, "", "移动动作", "选择移动方式", MOVE_SUB, 2},
+        {MenuId::Insert, "", "插入新动作", "选择插入方式", INSERT_SUB, 4},
+        {MenuId::Delete, "", "删除或重置", "选择删除还是重置动作", DELETE_SUB, 2},
+        {MenuId::Duration, "", "修改持续时间", "/ 切换位 / 调整  保存  取消", nullptr, 0},
+        {MenuId::Buttons, "", "修改触发按钮", " 选中/取消选中  保存  返回", nullptr, 0},
+        {MenuId::Stick, "", "修改或删除摇杆", "修改摇杆方向会丢失摇杆精度", STICK_SUB, 4},
     };
     constexpr int ROOT_MENU_COUNT = 6;
     
@@ -136,7 +136,10 @@ tsl::elm::Element* MacroEditGui::createUI() {
         // 标题（菜单模式下显示菜单项名称）
         if (m_menuMode) {
             const MenuDef* items = (m_menuLevel == 0) ? ROOT_MENU : ROOT_MENU[m_parentIndex].children;
-            r->drawString(items[m_menuIndex].title, false, 20, 50, 32, r->a(tsl::defaultOverlayColor));
+            MenuId id = getMenuId(m_menuLevel, m_parentIndex, m_menuIndex);
+            bool isStickWarning = (id == MenuId::Stick || id == MenuId::StickModify);
+            tsl::Color titleColor = isStickWarning ? tsl::Color(0xF, 0x5, 0x5, 0xF) : tsl::defaultOverlayColor;
+            r->drawString(items[m_menuIndex].title, false, 20, 50, 32, r->a(titleColor));
             r->drawString(items[m_menuIndex].tip, false, 20, 73, 15, r->a(tsl::style::color::ColorDescription));
         } else {
             r->drawString(m_gameName, false, 20, 50, 32, r->a(tsl::defaultOverlayColor));
@@ -163,7 +166,7 @@ tsl::elm::Element* MacroEditGui::createUI() {
             r->drawString(" 撤销修改", false, offsetX, 73, 15, undoColor);
         }
         const char* btnText = m_selectMode ? "  修改" : "  保存";
-        r->drawString(btnText, false, 280, 693, 23, r->a(tsl::style::color::ColorText));
+        r->drawString(btnText, false, 270, 693, 23, r->a(tsl::style::color::ColorText));
     }));
     
     auto drawer = new tsl::elm::CustomDrawer([this](tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h) {

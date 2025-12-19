@@ -83,7 +83,7 @@ tsl::elm::Element* SettingRemapConfig::createUI() {
         renderer->drawString(subtitle, false, 20, 50+23, 15, renderer->a(tsl::bannerVersionTextColor));
         
         // 绘制底部提示
-        renderer->drawString("\uE0EE  查看", false, 280, 693, 23, renderer->a(tsl::style::color::ColorText));
+        renderer->drawString("\uE0EE  查看", false, 270, 693, 23, renderer->a(tsl::style::color::ColorText));
     }));
     
     auto list = new tsl::elm::List();

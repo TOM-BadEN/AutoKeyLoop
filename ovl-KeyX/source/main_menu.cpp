@@ -169,7 +169,7 @@ tsl::elm::Element* MainMenu::createUI()
         renderer->drawString(config, false, 275, 61, 15, renderer->a(tsl::style::color::ColorHighlight));
 
         // 底部按钮（使用绝对坐标）
-        renderer->drawString("\uE0EE  设置", false, 280, 693, 23, renderer->a(tsl::style::color::ColorText));
+        renderer->drawString("\uE0EE  设置", false, 270, 693, 23, renderer->a(tsl::style::color::ColorText));
 
     }));
 

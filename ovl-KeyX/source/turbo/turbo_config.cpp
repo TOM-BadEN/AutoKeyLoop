@@ -200,7 +200,7 @@ tsl::elm::Element* SettingTurboButton::createUI() {
     frame->setHeader(new tsl::elm::CustomDrawer([subtitle](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
         renderer->drawString("连发按键", false, 20, 50+2, 32, renderer->a(tsl::defaultOverlayColor));
         renderer->drawString(subtitle, false, 20, 50+23, 15, renderer->a(tsl::bannerVersionTextColor));
-        renderer->drawString("\uE0EE  重置", false, 280, 693, 23, renderer->a(tsl::style::color::ColorText));
+        renderer->drawString("\uE0EE  重置", false, 270, 693, 23, renderer->a(tsl::style::color::ColorText));
     }));
     auto list = new tsl::elm::List();
     list->addItem(new tsl::elm::CategoryHeader("选择连发按键（可多选）"));
