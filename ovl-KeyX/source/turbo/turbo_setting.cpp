@@ -10,6 +10,7 @@ constexpr const char* CONFIG_PATH = "/config/KeyX/config.ini";
 
 SettingTurbo::SettingTurbo() {
     m_defaultAuto = IniHelper::getBool("AUTOFIRE", "defaultautoenable", false, CONFIG_PATH);
+    m_isJCRightHand = IniHelper::getBool("AUTOFIRE", "IsJCRightHand", true, CONFIG_PATH);
 }
 
 tsl::elm::Element* SettingTurbo::createUI() {
@@ -60,17 +61,24 @@ tsl::elm::Element* SettingTurbo::createUI() {
     });
     list->addItem(listItemDefaultAuto);
 
-    auto ItemWarningSetting = new tsl::elm::CategoryHeader(" 适配情况");
-    list->addItem(ItemWarningSetting);
+    list->addItem(new tsl::elm::CategoryHeader(" 限制单边手柄连发"));
     list->addItem(new tsl::elm::CustomDrawer([](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
-        renderer->drawString("  switch LITE 连发功能完美", false, x + 5, y + 20-7, 16, (tsl::highlightColor2));
+        renderer->drawString("  只允许左边或右边手柄（仅JoyCon有效）", false, x + 5, y + 20-7, 16, (tsl::highlightColor2));
     }), 30);
-    list->addItem(new tsl::elm::CustomDrawer([](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
-        renderer->drawString("  Joycon 仅右手柄按键支持连发", false, x + 5, y + 20-7, 16, (tsl::highlightColor2));
-    }), 30);
-    list->addItem(new tsl::elm::CustomDrawer([](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
-        renderer->drawString("  PRO 摇杆概率卡住，触碰后恢复", false, x + 5, y + 20-7, 16, (tsl::highlightColor2));
-    }), 30);
+    auto listRightOrLeftHand = new tsl::elm::ListItem("限制手柄", m_isJCRightHand ? "" : "");
+    listRightOrLeftHand->setValueColor(m_isJCRightHand ? tsl::Color{0xF, 0x5, 0x5, 0xF} : tsl::Color{0x00, 0xDD, 0xFF, 0xFF});
+    listRightOrLeftHand->setClickListener([listRightOrLeftHand, this](u64 keys) {
+        if (keys & HidNpadButton_A) {
+            m_isJCRightHand = !m_isJCRightHand;
+            IniHelper::setBool("AUTOFIRE", "IsJCRightHand", m_isJCRightHand, CONFIG_PATH);
+            listRightOrLeftHand->setValue(m_isJCRightHand ? "" : "");
+            listRightOrLeftHand->setValueColor(m_isJCRightHand ? tsl::Color{0xF, 0x5, 0x5, 0xF} : tsl::Color{0x00, 0xDD, 0xFF, 0xFF});
+            g_ipcManager.sendReloadAutoFireCommand();
+            return true;
+        }
+        return false;
+    });
+    list->addItem(listRightOrLeftHand);
     
     frame->setContent(list);
     return frame;

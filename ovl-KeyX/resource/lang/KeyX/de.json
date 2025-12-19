@@ -62,9 +62,6 @@
     " 调整连发参数配置": "  Turbo Taste einstellen",
     "  自动启用连发（仅全局配置）": "  Turbo automatisch aktivieren (nur Global)",
     "默认连发": "Auto-Turbo",
-    "  PRO 摇杆概率卡住，触碰后恢复": "  PRO-Stick friert evtl. ein, antippen",
-    "  switch LITE 连发功能完美": "  Switch LITE Turbo funktioniert einwandfrei",
-    "  Joycon 仅右手柄按键支持连发": "  Nur rechte JoyCon unterstützt Turbo",
     "设置全局默认连发参数": "Globale Turbo Taste setzen",
     " 连发参数配置": "  Turbo Taste justieren",
     "连发按键": "Turbo Taste",
@@ -124,9 +121,6 @@
     "保存按键": "speichern",
     "删除按键": "löschen",
     "选择按键": "Wähle Taste",
-    "选择第1号按键": "Wähle Taste 1",
-    "选择第2号按键": "Wähle Taste 2",
-    "选择第3号按键": "Wähle Taste 3",
     "  删除": "  zum löschen",
     " 选择要使用的快捷键": "Wähle Taste",
     "连发速度": "Turbo Geschwindigkeit",
@@ -203,7 +197,6 @@
     "取消成功": "Abgebrochen",
     " 恢复备份": " Backup laden",
     " 撤销修改": " Rückgängig",
-    " 适配情况": " Kampatibilität",
     "移动动作": "Aktion verschieben",
     "选择移动方式": "Richtung wählen",
     "插入新动作": "Aktion einfügen",
@@ -233,6 +226,9 @@
     "  脚本介绍": "  Details",
     "文件位置:": "Dateipfad:",
     " • 暂无使用说明": " • Keine Infos",
-    "阅读脚本的相关介绍": "Makro-Details lesen"
+    "阅读脚本的相关介绍": "Makro-Details lesen",
+    " 限制单边手柄连发": " Einseitige Turbo-Eingabe begrenzen",
+    "限制手柄": "Steuerung",
+    "  只允许左边或右边手柄（仅JoyCon有效）": "  Nur eine Seite (nur Joy-Con)"
 }
 

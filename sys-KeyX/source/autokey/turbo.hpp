@@ -11,12 +11,17 @@ public:
     void LoadConfig(const char* config_path);
     
     // 核心函数：处理输入，填充处理结果（事件+按键数据）
-    void Process(ProcessResult& result);
+    void Process(ProcessResult& result, bool isJoyCon);
     
     // 重置连发状态（用于暂停时清理）
     void TurboFinishing();
 
+    // 获取只允许左边还是右边的手柄联发
+    bool IsJCRightHand();
+
 private:
+
+    bool m_isJCRightHand = true;
     // 配置参数
     u64 m_ButtonMask;           // 连发按键白名单
     u64 m_PressDurationNs;      // 按下持续时间（纳秒）

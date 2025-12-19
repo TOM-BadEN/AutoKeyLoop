@@ -2,6 +2,22 @@
 #include <minIni.h>
 #include <cstdlib>
 
+
+namespace {
+    // 左 JoyCon 按键掩码（十字键、左肩键、左摇杆、SELECT）
+    constexpr u64 LEFT_JOYCON_BUTTONS = 
+        HidNpadButton_Left | HidNpadButton_Right | HidNpadButton_Up | HidNpadButton_Down |
+        HidNpadButton_L | HidNpadButton_ZL | HidNpadButton_StickL |
+        HidNpadButton_Minus;
+    
+    // 右 JoyCon 按键掩码（面键、右肩键、右摇杆、START）
+    constexpr u64 RIGHT_JOYCON_BUTTONS = 
+        HidNpadButton_A | HidNpadButton_B | HidNpadButton_X | HidNpadButton_Y |
+        HidNpadButton_R | HidNpadButton_ZR | HidNpadButton_StickR |
+        HidNpadButton_Plus;
+}
+
+
 // 构造函数
 Turbo::Turbo(const char* config_path) {
     m_ButtonMask = 0;
@@ -28,14 +44,23 @@ void Turbo::LoadConfig(const char* config_path) {
     m_ReleaseDurationNs = (u64)release_ms * 1000000ULL;
     // 读取防止误触开关
     m_DelayStart = ini_getbool("AUTOFIRE", "delaystart", 1, config_path);
+    m_isJCRightHand = ini_getbool("AUTOFIRE", "IsJCRightHand", 1, "/config/KeyX/config.ini");
 
 }
 
+// 获取只允许左边还是右边的手柄联发
+bool Turbo::IsJCRightHand() {
+    return m_isJCRightHand;
+}
+
 // 核心函数：处理输入
-void Turbo::Process(ProcessResult& result) {
+void Turbo::Process(ProcessResult& result, bool isJoyCon) {
+    u64 jcWhitelistMask = m_ButtonMask;
+    if (isJoyCon) jcWhitelistMask &= m_isJCRightHand ? RIGHT_JOYCON_BUTTONS : LEFT_JOYCON_BUTTONS;
+
     // 分类按键
-    u64 autokey_buttons = result.buttons & m_ButtonMask;
-    u64 normal_buttons = result.buttons & ~m_ButtonMask;
+    u64 autokey_buttons = result.buttons & jcWhitelistMask;
+    u64 normal_buttons = result.buttons & ~jcWhitelistMask;
     result.event = DetermineEvent(autokey_buttons);
     switch (result.event) {
         case FeatureEvent::IDLE:

@@ -35,6 +35,15 @@ namespace {
                type == HidDeviceType_LarkNesRight;
     }
 
+    // 检测是否为物理连接的JoyCon（通过导轨连接）
+    bool isPhysicalJoyCon() {
+        u8 interfaceType;
+        if (R_SUCCEEDED(hidGetNpadInterfaceType(HidNpadIdType_Handheld, &interfaceType))) {
+            return interfaceType == HidNpadInterfaceType_Rail;
+        }
+        return false;
+    }
+
     // 更新间隔
     constexpr u64 UPDATE_INTERVAL_NS = 1000000ULL;  // 1ms
     constexpr const char* button_names[] = {
@@ -83,7 +92,10 @@ AutoKeyLoop::AutoKeyLoop(const char* config_path, const char* macroCfgPath, bool
     m_EnableTurbo = enable_turbo;
     m_EnableMacro = enable_macro;
     // 根据开关创建功能模块
-    if (m_EnableTurbo) m_Turbo = std::make_unique<Turbo>(config_path);
+    if (m_EnableTurbo) {
+        m_Turbo = std::make_unique<Turbo>(config_path);
+        m_isJCRightHand = m_Turbo->IsJCRightHand();
+    }
     if (m_EnableMacro) m_Macro = std::make_unique<Macro>(macroCfgPath);
     
     // 初始化手柄类型
@@ -175,7 +187,7 @@ void AutoKeyLoop::DetermineEvent(ProcessResult& result) {
         if (result.event != FeatureEvent::IDLE) return;
     }
     if (m_Turbo) {
-        m_Turbo->Process(result);
+        m_Turbo->Process(result, m_isJoyCon);
         return;
     }
     result.event = FeatureEvent::IDLE;
@@ -196,9 +208,15 @@ void AutoKeyLoop::Resume() {
 
 // 更新连发功能
 void AutoKeyLoop::UpdateTurboFeature(bool enable, const char* config_path) {
-    if (m_EnableTurbo && enable && m_Turbo) m_Turbo->LoadConfig(config_path);
+    if (m_EnableTurbo && enable && m_Turbo) {
+        m_Turbo->LoadConfig(config_path);
+        m_isJCRightHand = m_Turbo->IsJCRightHand();
+    }
     else if (m_EnableTurbo && !enable && m_Turbo) m_Turbo.reset();
-    else if (!m_EnableTurbo && enable) m_Turbo = std::make_unique<Turbo>(config_path);
+    else if (!m_EnableTurbo && enable) {
+        m_Turbo = std::make_unique<Turbo>(config_path);
+        m_isJCRightHand = m_Turbo->IsJCRightHand();
+    }
     m_EnableTurbo = enable;
 }
 
@@ -258,6 +276,8 @@ void AutoKeyLoop::UpdateButtonMappings(const char* config_path) {
 }
 
 // 应用逆映射到按键（两阶段处理：先收集，后应用）
+// 只有lite需要这个，不然映射后连发按键错乱
+// 别问为什么
 void AutoKeyLoop::ApplyReverseMapping(u64& buttons) const {
     if (m_MappingCount == 0 || buttons == 0) return;
     u64 to_clear = 0;  // 要清除的按键掩码
@@ -277,6 +297,7 @@ void AutoKeyLoop::ApplyReverseMapping(u64& buttons) const {
 
 // 读取物理输入
 void AutoKeyLoop::ReadPhysicalInput(ProcessResult& result) {
+    m_isJoyCon = false;
     // 先确认手柄类型
     HidNpadIdType npad_id = HidNpadIdType_No1;
     u32 style_set = hidGetNpadStyleSet(npad_id);
@@ -286,7 +307,11 @@ void AutoKeyLoop::ReadPhysicalInput(ProcessResult& result) {
     if (style_set & HidNpadStyleTag_NpadFullKey) m_ControllerType = ControllerType::C_PRO;
     else if (style_set & HidNpadStyleTag_NpadJoyDual) m_ControllerType = ControllerType::C_JOYDUAL;
     else if (style_set & HidNpadStyleTag_NpadSystemExt) m_ControllerType = ControllerType::C_SYSTEMEXT;
-    else if (handheld_style & HidNpadStyleTag_NpadHandheld) m_ControllerType = ControllerType::C_HANDHELD;
+    else if (handheld_style & HidNpadStyleTag_NpadHandheld){
+        m_isJoyCon = isPhysicalJoyCon();
+        if (m_isJoyCon) m_ControllerType = ControllerType::C_JOYCON;
+        else m_ControllerType = ControllerType::C_LITE;
+    }
     // 根据类型读取按键数据
     switch (m_ControllerType) {
         case ControllerType::C_PRO:
@@ -298,7 +323,8 @@ void AutoKeyLoop::ReadPhysicalInput(ProcessResult& result) {
         case ControllerType::C_SYSTEMEXT:
             READ_NPAD_STATE(HidNpadSystemExtState, hidGetNpadStatesSystemExt, npad_id);
             break;
-        case ControllerType::C_HANDHELD:
+        case ControllerType::C_JOYCON:
+        case ControllerType::C_LITE:
             READ_NPAD_STATE(HidNpadHandheldState, hidGetNpadStatesHandheld, HidNpadIdType_Handheld);
             break;
         default:
@@ -316,8 +342,11 @@ void AutoKeyLoop::ApplyHdlsState(ProcessResult& result) {
         case ControllerType::C_JOYDUAL:
             InjectJoyDual(result);
             break;
-        case ControllerType::C_HANDHELD:
-            InjectHandheld(result);
+        case ControllerType::C_JOYCON:
+            InjectJoyCon(result);
+            break;
+        case ControllerType::C_LITE:
+            InjectLite(result);
             break;
         default:
             break;
@@ -350,13 +379,14 @@ void AutoKeyLoop::InjectJoyDual(ProcessResult& result) {
         memset(&state, 0, sizeof(HiddbgHdlsState));
         if (device_type == HidDeviceType_JoyLeft2) {
             found_count++;
-            if (result.event != FeatureEvent::Macro_EXECUTING) continue;
+            if (result.event == FeatureEvent::Turbo_EXECUTING && !m_isJCRightHand) continue;
             state.buttons = result.OtherButtons & LEFT_JOYCON_BUTTONS;
             state.analog_stick_l = result.analog_stick_l;
             hiddbgSetHdlsState(m_StateList.entries[i].handle, &state);
         }
         else if (device_type == HidDeviceType_JoyRight1) {
             found_count++;
+            if (result.event == FeatureEvent::Turbo_EXECUTING && !m_isJCRightHand) continue;
             state.buttons = result.OtherButtons & RIGHT_JOYCON_BUTTONS;
             state.analog_stick_r = result.analog_stick_r;
             hiddbgSetHdlsState(m_StateList.entries[i].handle, &state);
@@ -366,8 +396,24 @@ void AutoKeyLoop::InjectJoyDual(ProcessResult& result) {
 }
 
 
-// 掌机模式注入
-void AutoKeyLoop::InjectHandheld(ProcessResult& result) {
+// LITE注入
+void AutoKeyLoop::InjectLite(ProcessResult& result) {
+    for (int i = 0; i < m_StateList.total_entries; i++) {
+        HidDeviceType device_type = (HidDeviceType)m_StateList.entries[i].device.deviceType;
+        HiddbgHdlsState state;
+        memset(&state, 0, sizeof(HiddbgHdlsState));
+        if (device_type == HidDeviceType_DebugPad) {
+            ApplyReverseMapping(result.OtherButtons);
+            state.buttons = result.OtherButtons;
+            state.analog_stick_l = result.analog_stick_l;
+            state.analog_stick_r = result.analog_stick_r;
+            hiddbgSetHdlsState(m_StateList.entries[i].handle, &state);
+            break;
+        }
+    }
+}
+
+void AutoKeyLoop::InjectJoyCon(ProcessResult& result) {
     int found_count = 0;
     for (int i = 0; i < m_StateList.total_entries; i++) {
         HidDeviceType device_type = (HidDeviceType)m_StateList.entries[i].device.deviceType;
@@ -375,23 +421,17 @@ void AutoKeyLoop::InjectHandheld(ProcessResult& result) {
         memset(&state, 0, sizeof(HiddbgHdlsState));
         if (device_type == HidDeviceType_JoyLeft2) {
             found_count++;
-            if (result.event != FeatureEvent::Macro_EXECUTING) continue;
+            if (result.event == FeatureEvent::Turbo_EXECUTING && m_isJCRightHand) continue;
             state.buttons = result.OtherButtons & LEFT_JOYCON_BUTTONS;
             state.analog_stick_l = result.analog_stick_l;
             hiddbgSetHdlsState(m_StateList.entries[i].handle, &state);
         }
         else if (device_type == HidDeviceType_JoyRight1) {
             found_count++;
+            if (result.event == FeatureEvent::Turbo_EXECUTING && !m_isJCRightHand) continue;
             state.buttons = result.OtherButtons & RIGHT_JOYCON_BUTTONS;
             state.analog_stick_r = result.analog_stick_r;
             hiddbgSetHdlsState(m_StateList.entries[i].handle, &state);
-        } else if (device_type == HidDeviceType_DebugPad) {
-            ApplyReverseMapping(result.OtherButtons);
-            state.buttons = result.OtherButtons;
-            state.analog_stick_l = result.analog_stick_l;
-            state.analog_stick_r = result.analog_stick_r;
-            hiddbgSetHdlsState(m_StateList.entries[i].handle, &state);
-            break;
         }
         if (found_count == 2) break;
     }
@@ -404,12 +444,13 @@ void AutoKeyLoop::InjectAll(ProcessResult& result) {
         memset(&m_StateList.entries[i].state, 0, sizeof(HiddbgHdlsState));
         HidDeviceType device_type = (HidDeviceType)m_StateList.entries[i].device.deviceType;
         if (IsLeftController(device_type)) {    
-            m_StateList.entries[i].state.buttons = result.OtherButtons;
+            m_StateList.entries[i].state.buttons = result.OtherButtons & LEFT_JOYCON_BUTTONS;
             m_StateList.entries[i].state.analog_stick_l = result.analog_stick_l;
         } else if (IsRightController(device_type)) { 
-            m_StateList.entries[i].state.buttons = result.OtherButtons;
+            m_StateList.entries[i].state.buttons = result.OtherButtons & RIGHT_JOYCON_BUTTONS;;
             m_StateList.entries[i].state.analog_stick_r = result.analog_stick_r;
         } else {  
+            ApplyReverseMapping(result.OtherButtons);
             m_StateList.entries[i].state.buttons = result.OtherButtons;
             m_StateList.entries[i].state.analog_stick_l = result.analog_stick_l;
             m_StateList.entries[i].state.analog_stick_r = result.analog_stick_r;

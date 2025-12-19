@@ -34,8 +34,13 @@ private:
         C_PRO,
         C_JOYDUAL,
         C_SYSTEMEXT,
-        C_HANDHELD
+        C_JOYCON,
+        C_LITE
     };
+
+    // 默认是采用右手连发
+    bool m_isJCRightHand = true;
+    bool m_isJoyCon = false;
 
     // 当前手柄类型
     ControllerType m_ControllerType;
@@ -88,7 +93,8 @@ private:
     // 各类型手柄的注入实现
     void InjectPro(ProcessResult& result);
     void InjectJoyDual(ProcessResult& result);
-    void InjectHandheld(ProcessResult& result);
+    void InjectLite(ProcessResult& result);
+    void InjectJoyCon(ProcessResult& result);
     void InjectAll(ProcessResult& result);
 
     // 逆映射相关辅助方法

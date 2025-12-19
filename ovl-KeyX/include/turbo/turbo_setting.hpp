@@ -10,6 +10,7 @@ public:
 
 private:
     bool m_defaultAuto = false;
+    bool m_isJCRightHand = true;
     tsl::elm::ListItem* m_listIndependentSetting = nullptr;
 };
 
