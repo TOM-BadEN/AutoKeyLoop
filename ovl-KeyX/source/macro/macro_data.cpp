@@ -134,10 +134,6 @@ bool MacroData::saveForEdit() {
 
 // V1: 保存帧数据
 void MacroData::saveForEditV1(FILE* fp) {
-    if (!s_frames.empty()) {
-        auto& f = s_frames.back();
-        if (f.keysHeld | f.leftX | f.leftY | f.rightX | f.rightY) s_frames.insert(s_frames.end(), 2, {});
-    }
     s_header.frameCount = s_frames.size();
     fwrite(&s_header, sizeof(MacroHeader), 1, fp);
     fwrite(s_frames.data(), sizeof(MacroFrame), s_frames.size(), fp);
@@ -158,12 +154,6 @@ void MacroData::saveForEditV2(FILE* fp) {
         } else {
             i++;
         }
-    }
-    
-    // 确保最后有空帧释放所有输入
-    if (!s_framesV2.empty()) {
-        auto& f = s_framesV2.back();
-        if (f.keysHeld | f.leftX | f.leftY | f.rightX | f.rightY) s_framesV2.push_back({33, 0, 0, 0, 0, 0});
     }
     s_header.frameCount = s_framesV2.size();
     fwrite(&s_header, sizeof(MacroHeader), 1, fp);
