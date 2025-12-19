@@ -131,6 +131,13 @@ bool MacroSampler::Save(u64 titleId, u64 comboMask) {
     if (s_frames.empty()) return false;
     // 移除末尾快捷键帧
     while (!s_frames.empty() && (s_frames.back().keysHeld & comboMask)) s_frames.pop_back();
+    // 移除末尾无动作帧
+    while (!s_frames.empty()) {
+        auto& f = s_frames.back();
+        if (f.keysHeld == 0 && f.leftX == 0 && f.leftY == 0 && f.rightX == 0 && f.rightY == 0) s_frames.pop_back();
+        else break;
+    }
+    if (s_frames.empty()) return false;
     
     // 构造文件头
     MacroHeader header;
