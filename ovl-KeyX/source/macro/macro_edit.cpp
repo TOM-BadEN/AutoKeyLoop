@@ -263,27 +263,38 @@ void MacroEditGui::drawActionList(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s3
             
             std::string text = getActionText(actions[i]);
             std::string duration = std::to_string(actions[i].duration) + "ms";
-            std::string fullText = std::to_string(i + 1) + ". " + text;
+            std::string indexStr = std::to_string(i + 1) + ". ";
             
-            tsl::Color textColor = tsl::defaultTextColor;
-            if (actions[i].stickMergedVirtual) {
-                // 虚拟合并摇杆：红色（最高优先级）
-                textColor = tsl::Color(0xF, 0x5, 0x5, 0xF);
-            } else {
-                bool inSelectRange = false;
-                if (m_selectMode && m_selectAnchor >= 0) {
-                    s32 selStart = std::min(m_selectAnchor, m_selectedIndex);
-                    s32 selEnd = std::max(m_selectAnchor, m_selectedIndex);
-                    inSelectRange = ((s32)i >= selStart && (s32)i <= selEnd);
-                }
-                if (inSelectRange) textColor = tsl::Color(0xF, 0xD, 0x0, 0xF);
-                else if (actions[i].modified) textColor = tsl::Color(0xF, 0xA, 0xC, 0xF);
+            // 判断是否在多选范围内
+            bool inSelectRange = false;
+            if (m_selectMode && m_selectAnchor >= 0) {
+                s32 selStart = std::min(m_selectAnchor, m_selectedIndex);
+                s32 selEnd = std::max(m_selectAnchor, m_selectedIndex);
+                inSelectRange = ((s32)i >= selStart && (s32)i <= selEnd);
             }
             
-            auto [durW, durH] = r->drawString(duration.c_str(), false, 0, 0, 20, tsl::Color(0,0,0,0));
-            s32 maxTextWidth = w - 19 - durW - 25;
-            std::string truncatedText = r->limitStringLength(fullText, false, 23, maxTextWidth);
-            r->drawString(truncatedText.c_str(), false, x + 19, itemY + 45, 23, r->a(textColor));
+            // 序号颜色：多选范围内黄色，否则白色
+            tsl::Color indexColor = inSelectRange ? tsl::Color(0xF, 0xD, 0x0, 0xF) : tsl::defaultTextColor;
+            
+            // 动作内容颜色（多选不影响）
+            tsl::Color textColor = tsl::defaultTextColor;
+            if (actions[i].stickMergedVirtual) {
+                textColor = tsl::Color(0xF, 0x5, 0x5, 0xF);  // 虚拟合并：红色
+            } else if (actions[i].modified) {
+                textColor = tsl::Color(0xF, 0xA, 0xC, 0xF);  // 已修改：粉色
+            }
+            
+            // 获取序号宽度
+            auto [indexW, indexH] = r->getTextDimensions(indexStr.c_str(), false, 23);
+            auto [durW, durH] = r->getTextDimensions(duration.c_str(), false, 20);
+            
+            // 截断动作文本
+            s32 maxTextWidth = w - 19 - indexW - durW - 25;
+            std::string truncatedText = r->limitStringLength(text, false, 23, maxTextWidth);
+            
+            // 分别绘制序号和动作内容
+            r->drawString(indexStr.c_str(), false, x + 19, itemY + 45, 23, r->a(indexColor));
+            r->drawString(truncatedText.c_str(), false, x + 19 + indexW, itemY + 45, 23, r->a(textColor));
             r->drawString(duration.c_str(), false, x + w - 15 - durW, itemY + 45, 20, r->a(tsl::onTextColor));
         }
     }
