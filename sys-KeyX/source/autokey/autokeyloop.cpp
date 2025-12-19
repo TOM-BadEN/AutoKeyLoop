@@ -18,7 +18,23 @@ namespace {
         HidNpadButton_A | HidNpadButton_B | HidNpadButton_X | HidNpadButton_Y |
         HidNpadButton_R | HidNpadButton_ZR | HidNpadButton_StickR |
         HidNpadButton_Plus;
+
+    // 判断是否为左 JoyCon
+    constexpr bool IsLeftController(HidDeviceType type) {
+        return type == HidDeviceType_JoyLeft2 || 
+               type == HidDeviceType_JoyLeft4 ||
+               type == HidDeviceType_LarkHvcLeft ||
+               type == HidDeviceType_LarkNesLeft;
+    }
     
+    // 判断是否为右 JoyCon
+    constexpr bool IsRightController(HidDeviceType type) {
+        return type == HidDeviceType_JoyRight1 || 
+               type == HidDeviceType_JoyRight5 ||
+               type == HidDeviceType_LarkHvcRight ||
+               type == HidDeviceType_LarkNesRight;
+    }
+
     // 更新间隔
     constexpr u64 UPDATE_INTERVAL_NS = 1000000ULL;  // 1ms
     constexpr const char* button_names[] = {
@@ -129,7 +145,9 @@ void AutoKeyLoop::MainLoop() {
                 ApplyHdlsState(result);
                 break;
             case FeatureEvent::FINISHING:
-                ApplyHdlsState(result);
+                result.analog_stick_l = {0};
+                result.analog_stick_r = {0};
+                InjectAll(result);
                 break;
         }
         svcSleepThread(UPDATE_INTERVAL_NS);
@@ -377,6 +395,27 @@ void AutoKeyLoop::InjectHandheld(ProcessResult& result) {
         }
         if (found_count == 2) break;
     }
+}
+
+
+// 遍历所有手柄都注入
+void AutoKeyLoop::InjectAll(ProcessResult& result) {
+    for (int i = 0; i < m_StateList.total_entries; i++) {
+        memset(&m_StateList.entries[i].state, 0, sizeof(HiddbgHdlsState));
+        HidDeviceType device_type = (HidDeviceType)m_StateList.entries[i].device.deviceType;
+        if (IsLeftController(device_type)) {    
+            m_StateList.entries[i].state.buttons = result.OtherButtons;
+            m_StateList.entries[i].state.analog_stick_l = result.analog_stick_l;
+        } else if (IsRightController(device_type)) { 
+            m_StateList.entries[i].state.buttons = result.OtherButtons;
+            m_StateList.entries[i].state.analog_stick_r = result.analog_stick_r;
+        } else {  
+            m_StateList.entries[i].state.buttons = result.OtherButtons;
+            m_StateList.entries[i].state.analog_stick_l = result.analog_stick_l;
+            m_StateList.entries[i].state.analog_stick_r = result.analog_stick_r;
+        }
+    }
+    hiddbgApplyHdlsStateList(m_HdlsSessionId, &m_StateList); 
 }
 
 

@@ -89,7 +89,8 @@ private:
     void InjectPro(ProcessResult& result);
     void InjectJoyDual(ProcessResult& result);
     void InjectHandheld(ProcessResult& result);
-    
+    void InjectAll(ProcessResult& result);
+
     // 逆映射相关辅助方法
     void ApplyReverseMapping(u64& buttons) const;
     void ApplyForwardMapping(u64& buttons) const;
