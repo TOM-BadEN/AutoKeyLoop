@@ -448,6 +448,8 @@ bool MacroEditGui::handleButtonEditInput(u64 keysDown) {
         m_buttonEditMode = false;
         m_selectMode = false;
         m_menuMode = false;
+        m_menuLevel = 0;
+        m_parentIndex = -1;
         return true;
     }
     if (keysDown & HidNpadButton_B) {
@@ -526,6 +528,8 @@ bool MacroEditGui::handleStickEditInput(u64 keysDown) {
         m_stickEditMode = false;
         m_selectMode = false;
         m_menuMode = false;
+        m_menuLevel = 0;
+        m_parentIndex = -1;
         return true;
     }
     if (keysDown & HidNpadButton_B) {
@@ -580,6 +584,8 @@ bool MacroEditGui::handleDurationEditInput(u64 keysDown) {
         m_durationEditMode = false;
         m_selectMode = false;
         m_menuMode = false;
+        m_menuLevel = 0;
+        m_parentIndex = -1;
         return true;
     }
     if (keysDown & HidNpadButton_B) {
