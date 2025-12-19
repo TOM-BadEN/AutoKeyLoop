@@ -19,6 +19,17 @@ SUPPORTED LANGUAGES:
   - ru.json       (Russian)
   - nl.json       (Dutch)
 
+================================================================================
+            IMPORTANT            IMPORTANT            IMPORTANT
+================================================================================
+
+- Due to the limited horizontal space of the overlay UI, the available area for displaying text is very constrained.
+- The UI of this project was originally designed based on Chinese, which has a relatively high information density.
+- In addition, as the software provides a large number of features, the overall UI layout is quite compact.
+- As a result, when translating into other languages, the text length may increase significantly and may be truncated in some parts of the interface.
+- While preserving the original meaning, we kindly ask you to keep the translations as concise as possible to fit the existing UI layout.
+- Thank you for your understanding and support.
+
 HOW TO ADD A NEW LANGUAGE:
   1. Copy en.json and rename it to your language code (e.g., ja.json for Japanese)
   2. Translate the values (NOT the keys) in the JSON file

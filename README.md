@@ -111,6 +111,7 @@ Nintendo Switch 按键助手，支持连发、按键重新分配、按键宏三�
 - 按住对应快捷键为循环播放
 - 播放期间再次按下快捷键取消播放
 - 精巧美观的宏编辑器
+- 支持在线下载宏的功能，欢迎投稿
 
 ## 内存占用
 
@@ -272,11 +273,12 @@ The complete plugin consists of Tesla overlay and system module.
 - Auto-remembers macro function on/off state
 - Both stick and button states are recorded
 - Maximum recording duration: 30 seconds
-- Recording frame rate: 60 FPS
+- Recording frame rate: 120 FPS
 - Press shortcut key once for single playback
 - Hold shortcut key for loop playback
 - Press shortcut key again during playback to cancel
-- Beautiful macro editor
+- beautiful macro editor
+- Online macro download supported, contributions welcome
 
 ## Memory Usage
 
@@ -300,6 +302,12 @@ Copy files to SD card root:
 - I used AI to translate the English language file
 - I don't understand other languages, and AI is even worse at it
 - You can refer to en.json to add support for other languages
+- **Due to the limited horizontal space of the overlay UI, the available area for displaying text is very constrained.**
+- **The UI of this project was originally designed based on Chinese, which has a relatively high information density.**
+- **In addition, as the software provides a large number of features, the overall UI layout is quite compact.**
+- **As a result, when translating into other languages, the text length may increase significantly and may be truncated in some parts of the interface.**
+- **While preserving the original meaning, we kindly ask you to keep the translations as concise as possible to fit the existing UI layout.**
+- **Thank you for your understanding and support.**
 
 ```
 SUPPORTED LANGUAGES:
