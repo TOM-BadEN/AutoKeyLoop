@@ -68,6 +68,7 @@ private:
     u64 m_LastFinishTime = 0;               // 上次停止的时间
     bool m_JustStopped = false;             // 刚停止，等待冷静期
     u64 m_AccumulatedMs = 0;                // V2 播放累加时间
+    bool m_MacroHasStick = false;           // 当前宏是否包含摇杆操作
 
     FeatureEvent DetermineEvent(u64 buttons);         // 判定事件
     FeatureEvent HandlePlayingState(u64 buttons);     // 处理播放中状态

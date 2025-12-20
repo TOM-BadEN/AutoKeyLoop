@@ -226,8 +226,22 @@ void Macro::MacroExecuting(ProcessResult& result) {
         }
     }
     
+    // 动态检测是否有摇杆操作
+    if (!m_MacroHasStick && (leftX != 0 || leftY != 0 || rightX != 0 || rightY != 0)) {
+        m_MacroHasStick = true;
+    }
+    
     // 应用按键和摇杆数据
     result.OtherButtons = keysHeld;
+
+    if (m_MacroHasStick) {
+        result.analog_stick_l.x = leftX;
+        result.analog_stick_l.y = leftY;
+        result.analog_stick_r.x = rightX;
+        result.analog_stick_r.y = rightY;
+        return;
+    } 
+
     if (leftX != 0) result.analog_stick_l.x = leftX;
     if (leftY != 0) result.analog_stick_l.y = leftY;
     if (rightX != 0) result.analog_stick_r.x = rightX;
@@ -246,5 +260,6 @@ void Macro::MacroFinishing() {
     m_RepeatMode = false;
     m_LastFinishTime = armGetSystemTick();
     m_JustStopped = true;  // 标记刚停止，需要等待冷静期
+    m_MacroHasStick = false;
 }
 
