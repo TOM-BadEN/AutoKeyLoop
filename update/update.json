@@ -1,17 +1,22 @@
 {
-    "version": "v1.4.3",
+    "version": "v1.5.3",
     "changelog": {
         "CN": [
-            "此版本为修复1.4.2版本临时发布",
-            "1.4.2版本引入了网络功能，如果特斯拉的ovlloader内存设置为4MB，会因为内存不足引发崩溃",
-            "更新libultrahand库为最新版本",
-            "微调了脚本设置界面的UI"
+            "彻底解决joycon与pro手柄播放宏可能导致卡住摇杆的Bug",
+            "新增了宏商店功能，一键下载宏到switch上",
+            "重写了编辑器数据处理代码，现在对宏文件数据的处理将更精确",
+            "编辑器新增了向前向后复制、向前向后移动、修改摇杆、删除摇杆等编辑功能",
+            "现在若你播放的宏中有摇杆数据，将禁止透传用户其他操作",
+            "新增德文支持，感谢@HeikesFootSlave提供的德文翻译文本",
+            "更多更新内容，请访问 GITHUB 查看"
         ],
         "EN": [
-            "This version is a hotfix for v1.4.2",
-            "v1.4.2 introduced network feature, if Ultrahand ovlloader memory is set to 4MB, it causes crash due to insufficient memory",
-            "Updated libultrahand library to latest version",
-            "Minor UI adjustments in macro settings"
+            "Completely solved the bug where playing macros with joycon and pro controller may cause the joystick to freeze",
+            "Added macro store function, one-click download macros to switch",
+            "Rewrote editor data processing code, now processing of macro file data will be more accurate",
+            "Editor added copy forward/backward, move forward/backward, modify joystick, delete joystick and other editing functions",
+            "Now, when playing a macro that contains joystick data, user inputs will not be applied to the joystick",
+            "Added German support, thanks to @HeikesFootSlave for providing German translation text"
         ]
     }
 }
