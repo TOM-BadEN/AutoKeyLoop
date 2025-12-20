@@ -250,15 +250,15 @@ tsl::elm::Element* SettingMacro::createUI() {
     });
     list->addItem(listItemContribute);
 
-    auto listItemUploadTest = new tsl::elm::ListItem("点我上传", ">");
-    listItemUploadTest->setClickListener([this](u64 keys) {
-        if (keys & HidNpadButton_A) {
-            tsl::changeTo<UploadTestGui>();
-            return true;
-        }
-        return false;
-    });
-    list->addItem(listItemUploadTest);
+    // auto listItemUploadTest = new tsl::elm::ListItem("点我上传", ">");
+    // listItemUploadTest->setClickListener([this](u64 keys) {
+    //     if (keys & HidNpadButton_A) {
+    //         tsl::changeTo<UploadTestGui>();
+    //         return true;
+    //     }
+    //     return false;
+    // });
+    // list->addItem(listItemUploadTest);
     
     frame->setContent(list);
     return frame;
