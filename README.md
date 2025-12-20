@@ -53,7 +53,7 @@ https://github.com/user-attachments/assets/d7f530b9-baed-455c-9887-5b7a96a9dadf
 </table> 
 
 **说明：**
-- ① 仅右手柄支持连发。因为未知原因，若两侧都支持连发的话，会出现完全停止按键后，摇杆无法自动归0，需要手动碰一下才能恢复正常。
+- ① 仅允许单边的手柄进行连发。因为未知原因，若两侧都支持连发的话，会出现完全停止按键后，摇杆无法自动归0，需要手动碰一下才能恢复正常。
 - ② 小概率完全停止按键后，摇杆无法自动归0，需要手动碰一下才能恢复正常。
 - ③ 理论上与八爪鱼效果一致，但是我没有PRO手柄，所以只能说理论
  
@@ -220,7 +220,7 @@ cd KeyX && make
 </table> 
 
 **Notes:**
-- ① Only the right Joy-Con supports turbo. For unknown reasons, if both sides support turbo, the joystick may fail to auto-reset after completely stopping button presses, requiring manual touch to restore.
+- ① Only one side of the controller is allowed to use turbo mode. For unknown reasons, if both sides support turbo, the joystick may fail to auto-reset after completely stopping button presses, requiring manual touch to restore.
 - ② Low probability that after completely stopping button presses, the joystick may fail to auto-reset, requiring manual touch to restore.
 - ③ Theoretically the same effect as Octopus, but I don't have a PRO controller, so it's just theoretical.
 
