@@ -21,7 +21,7 @@ https://github.com/user-attachments/assets/d7f530b9-baed-455c-9887-5b7a96a9dadf
 |:------------:|:--------:|:------:|:------:|:------:|:------:|:------:|
 | 按键连发 | 完美 ① | 完美 ① |不可用 | 完美 | 可用 ② | 未测试 ③ |
 | 按键映射 | 完美 | 完美 | 完美 | 完美 | 完美 | 完美 |
-| 按键宏 | 可用 ④ | 可用 ④ | 不可用 | 完美 | 可用 ④ | 未测试 ③ |
+| 按键宏 | 完美  | 完美  | 不可用 | 完美 | 完美  | 未测试 ③ |
 
 <table>
   <tr>
@@ -56,7 +56,6 @@ https://github.com/user-attachments/assets/d7f530b9-baed-455c-9887-5b7a96a9dadf
 - ① 仅右手柄支持连发。因为未知原因，若两侧都支持连发的话，会出现完全停止按键后，摇杆无法自动归0，需要手动碰一下才能恢复正常。
 - ② 小概率完全停止按键后，摇杆无法自动归0，需要手动碰一下才能恢复正常。
 - ③ 理论上与八爪鱼效果一致，但是我没有PRO手柄，所以只能说理论
-- ④ 宏结束，有概率摇杆无法自动归0，需要手动碰一下才能恢复正常。
 
 
 # KeyX 按键助手
@@ -189,7 +188,7 @@ cd KeyX && make
 |:------------:|:--------:|:------:|:------:|:------:|:------:|:------:|
 | Turbo | Perfect ① | Perfect ① | Not Available | Perfect | Available ② | Not Tested ③ |
 | Key Mapping | Perfect | Perfect | Perfect | Perfect | Perfect | Perfect |
-| Macro | Available ④ | Available ④ | Not Available | Perfect | Available ④ | Not Tested ③ |
+| Macro | Perfect | Perfect | Not Available | Perfect | Perfect | Not Tested ③ |
 
 <table>
   <tr>
@@ -224,7 +223,6 @@ cd KeyX && make
 - ① Only the right Joy-Con supports turbo. For unknown reasons, if both sides support turbo, the joystick may fail to auto-reset after completely stopping button presses, requiring manual touch to restore.
 - ② Low probability that after completely stopping button presses, the joystick may fail to auto-reset, requiring manual touch to restore.
 - ③ Theoretically the same effect as Octopus, but I don't have a PRO controller, so it's just theoretical.
-- ④ After macro ends, there's a probability the joystick may fail to auto-reset, requiring manual touch to restore.
 
 # KeyX Button Assistant
 
