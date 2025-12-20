@@ -473,12 +473,12 @@ tsl::elm::Element* MacroDescGui::createUI() {
             r->drawString("使用说明:", false, textX, currentY, 20, r->a(tsl::defaultTextColor));
             currentY += 28;
             
-            // 按 \n 分割描述文本
+            // 按 \\n 分割描述文本
             std::string desc = m_meta.desc;
             size_t pos = 0;
-            while ((pos = desc.find('\n')) != std::string::npos) {
+            while ((pos = desc.find("\\n")) != std::string::npos) {
                 drawWrappedText(desc.substr(0, pos), " • ");
-                desc = desc.substr(pos + 1);
+                desc = desc.substr(pos + 2);
             }
             if (!desc.empty()) {
                 drawWrappedText(desc, " • ");

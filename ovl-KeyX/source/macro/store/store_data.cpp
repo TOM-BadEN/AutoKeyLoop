@@ -188,5 +188,12 @@ void StoreData::saveMacroMetadataInfo(const std::string& gameId, const StoreMacr
     std::string iniPath = std::string(MACROS_DIR) + gameId + "/macroMetadata.ini";
     IniHelper::setString(macro.file, "name", macro.name, iniPath);
     IniHelper::setString(macro.file, "author", macro.author, iniPath);
-    IniHelper::setString(macro.file, "desc", macro.desc, iniPath);
+    // 转义换行符，防止 INI 格式被破坏
+    std::string escapedDesc = macro.desc;
+    size_t pos = 0;
+    while ((pos = escapedDesc.find('\n', pos)) != std::string::npos) {
+        escapedDesc.replace(pos, 1, "\\n");
+        pos += 2;
+    }
+    IniHelper::setString(macro.file, "desc", escapedDesc, iniPath);
 }
