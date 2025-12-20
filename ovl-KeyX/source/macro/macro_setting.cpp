@@ -9,6 +9,7 @@
 #include "macro_sampler.hpp"
 #include "contribute_ui.hpp"
 #include "store_ui.hpp"
+// #include "store_data.hpp"
 
 // 录制消息全局变量
 std::string g_recordMessage = "";
@@ -127,6 +128,54 @@ bool CountdownGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &
 }
 
 
+// // 上传测试界面（测试代码）
+// class UploadTestGui : public tsl::Gui {
+// private:
+//     std::string m_filePath;
+//     std::string m_fileName;
+//     std::string m_response;
+//     tsl::elm::ListItem* m_resultItem = nullptr;
+
+// public:
+//     UploadTestGui() {
+//         // 测试用固定路径，可根据需要修改
+//         m_filePath = "sdmc:/config/KeyX/macros/01007EF00011E000/m_135936.macro";
+//         // 从路径提取文件名
+//         size_t pos = m_filePath.rfind('/');
+//         m_fileName = (pos != std::string::npos) ? m_filePath.substr(pos + 1) : m_filePath;
+//     }
+
+//     tsl::elm::Element* createUI() override {
+//         auto frame = new tsl::elm::OverlayFrame("上传测试", "测试代码");
+//         auto list = new tsl::elm::List();
+
+//         list->addItem(new tsl::elm::CategoryHeader("文件信息"));
+//         list->addItem(new tsl::elm::ListItem("路径", m_filePath.c_str()));
+//         list->addItem(new tsl::elm::ListItem("文件名", m_fileName.c_str()));
+
+//         list->addItem(new tsl::elm::CategoryHeader("操作"));
+
+//         auto uploadBtn = new tsl::elm::ListItem("开始上传");
+//         uploadBtn->setClickListener([this](u64 keys) {
+//             if (keys & HidNpadButton_A) {
+//                 if (m_resultItem) m_resultItem->setValue("上传中...");
+//                 m_response = StoreData::uploadMacro(m_filePath, 0x01007EF00011E000);
+//                 if (m_resultItem) m_resultItem->setValue(m_response.c_str());
+//                 return true;
+//             }
+//             return false;
+//         });
+//         list->addItem(uploadBtn);
+
+//         list->addItem(new tsl::elm::CategoryHeader("结果"));
+//         m_resultItem = new tsl::elm::ListItem("响应", "未上传");
+//         list->addItem(m_resultItem);
+
+//         frame->setContent(list);
+//         return frame;
+//     }
+// };
+
 // 设置界面类
 SettingMacro::SettingMacro()
 {
@@ -200,6 +249,16 @@ tsl::elm::Element* SettingMacro::createUI() {
         return false;
     });
     list->addItem(listItemContribute);
+
+    auto listItemUploadTest = new tsl::elm::ListItem("点我上传", ">");
+    listItemUploadTest->setClickListener([this](u64 keys) {
+        if (keys & HidNpadButton_A) {
+            tsl::changeTo<UploadTestGui>();
+            return true;
+        }
+        return false;
+    });
+    list->addItem(listItemUploadTest);
     
     frame->setContent(list);
     return frame;
@@ -226,8 +285,3 @@ bool SettingMacro::HandleRecordClick() {
     tsl::changeTo<interlayerGui>();
     return true;
 }
-
-
-
-
-

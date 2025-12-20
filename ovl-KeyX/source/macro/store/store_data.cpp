@@ -5,6 +5,7 @@
 #include <download_funcs.hpp>
 #include <json_funcs.hpp>
 #include <cJSON.h>
+// #include <curl/curl.h>
 #include <unordered_set>
 
 namespace {
@@ -126,6 +127,62 @@ bool StoreData::downloadMacro(const std::string& gameId, const std::string& file
     if (!success) ult::deleteFileOrDirectory(localPath);
     return success;
 }
+
+// std::string StoreData::uploadMacro(const std::string& filePath, u64 titleId) {
+//     // 检查文件是否存在
+//     FILE* fp = fopen(filePath.c_str(), "rb");
+//     if (!fp) {
+//         return "文件不存在: " + filePath;
+//     }
+//     fclose(fp);
+    
+//     CURL* curl = curl_easy_init();
+//     if (!curl) return "CURL初始化失败";
+    
+//     std::string response;
+    
+//     // 响应写入回调
+//     auto writeCallback = [](char* ptr, size_t size, size_t nmemb, void* userdata) -> size_t {
+//         auto* resp = static_cast<std::string*>(userdata);
+//         resp->append(ptr, size * nmemb);
+//         return size * nmemb;
+//     };
+    
+//     // 构建 multipart form
+//     curl_mime* mime = curl_mime_init(curl);
+    
+//     // 添加文件字段
+//     curl_mimepart* filePart = curl_mime_addpart(mime);
+//     curl_mime_name(filePart, "macro");
+//     curl_mime_filedata(filePart, filePath.c_str());
+    
+//     // 添加 titleId 字段
+//     char tidStr[32];
+//     snprintf(tidStr, sizeof(tidStr), "%016lX", titleId);
+//     curl_mimepart* tidPart = curl_mime_addpart(mime);
+//     curl_mime_name(tidPart, "titleid");
+//     curl_mime_data(tidPart, tidStr, CURL_ZERO_TERMINATED);
+    
+//     // 设置请求
+//     curl_easy_setopt(curl, CURLOPT_URL, "https://macro.dokiss.cn/upload.php");
+//     curl_easy_setopt(curl, CURLOPT_MIMEPOST, mime);
+//     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
+//     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+//     curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 10L);
+//     curl_easy_setopt(curl, CURLOPT_TIMEOUT, 60L);
+//     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, +writeCallback);
+//     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+    
+//     CURLcode res = curl_easy_perform(curl);
+    
+//     curl_mime_free(mime);
+//     curl_easy_cleanup(curl);
+    
+//     if (res != CURLE_OK) {
+//         return std::string("CURL错误: ") + curl_easy_strerror(res);
+//     }
+//     return response.empty() ? "服务器无返回" : response;
+// }
 
 void StoreData::saveMacroMetadataInfo(const std::string& gameId, const StoreMacroEntry& macro) {
     std::string iniPath = std::string(MACROS_DIR) + gameId + "/macroMetadata.ini";
