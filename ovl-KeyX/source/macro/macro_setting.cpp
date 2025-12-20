@@ -119,6 +119,7 @@ bool CountdownGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &
         g_recordMessage = "已取消录制";
         MacroSampler::Cancel();
         tsl::gfx::Renderer::get().setLayerPos(0, 0);
+        tsl::disableHiding = false;
         tsl::goBack();
         return true;
     }
