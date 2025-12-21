@@ -54,17 +54,3 @@ private:
     tsl::elm::ListItem* m_HotKeySave = nullptr;
     tsl::elm::ListItem* m_HotKeyDelete = nullptr;
 };
-
-
-// 使用说明界面
-class MacroDescGui : public tsl::Gui {
-public:
-    MacroDescGui(const char* macroFilePath, const char* gameName);
-    virtual tsl::elm::Element* createUI() override;
-    virtual bool handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) override;
-
-private:
-    char m_gameName[64];
-    char m_filePath[96];
-    MacroUtil::MacroMetadata m_meta;
-};
