@@ -9,8 +9,7 @@
 #include <unordered_set>
 
 namespace {
-    constexpr const char* CN_BASE_URL = "https://gitee.com/TOM-BadEN/KeyX-Macro-Repo/raw/main/";
-    constexpr const char* EN_BASE_URL = "https://raw.githubusercontent.com/TOM-BadEN/KeyX-Macro-Repo/main/";
+    constexpr const char* CN_BASE_URL = "https://macro.dokiss.cn/data/";
     constexpr const char* GAMELIST_JSON = "gamelist.json";
     constexpr const char* MACROLIST_JSON = "macrolist.json";
     constexpr const char* TEMP_GAMELIST_PATH = "sdmc:/config/KeyX/store/gamelist.json";
@@ -28,7 +27,7 @@ StoreData::~StoreData() {
 GameListResult StoreData::getGameList() {
     GameListResult result{};
     
-    std::string url = std::string(m_isSimplifiedChinese ? CN_BASE_URL : EN_BASE_URL) + GAMELIST_JSON;
+    std::string url = std::string(CN_BASE_URL) + GAMELIST_JSON;
     
     if (!ult::downloadFile(url, TEMP_GAMELIST_PATH, false)) {
         result.error = "请检查网络连接";
@@ -71,7 +70,7 @@ GameListResult StoreData::getGameList() {
 MacroListResult StoreData::getMacroList(const std::string& gameId) {
     MacroListResult result{};
     
-    std::string url = std::string(m_isSimplifiedChinese ? CN_BASE_URL : EN_BASE_URL) + "games/" + gameId + "/" + MACROLIST_JSON;
+    std::string url = std::string(CN_BASE_URL) + "games/" + gameId + "/" + MACROLIST_JSON;
     
     if (!ult::downloadFile(url, TEMP_MACROLIST_PATH, false)) {
         result.error = "请检查网络连接";
@@ -122,7 +121,7 @@ MacroListResult StoreData::getMacroList(const std::string& gameId) {
 }
 
 bool StoreData::downloadMacro(const std::string& gameId, const std::string& fileName, const std::string& localPath) {
-    std::string url = std::string(m_isSimplifiedChinese ? CN_BASE_URL : EN_BASE_URL) + "games/" + gameId + "/" + fileName;
+    std::string url = std::string(CN_BASE_URL) + "games/" + gameId + "/" + fileName;
     bool success = ult::downloadFile(url, localPath, false);
     if (!success) ult::deleteFileOrDirectory(localPath);
     return success;

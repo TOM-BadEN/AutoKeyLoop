@@ -218,7 +218,7 @@
     "按  与前一个动作交换": "Press  Swap with previous action",
     "向后移动": "Move Down",
     "按  与后一个动作交换": "Press  Swap with next action",
-    "  脚本介绍": "  Details",
+    "  上传": "  Upload",
     "文件位置:": "File Path:",
     " • 暂无使用说明": " • No usage info",
     "阅读脚本的相关介绍": "Read macro details",
@@ -230,5 +230,6 @@
     " •  选中/取消  退出编辑": " •  Select/Cancel  Exit",
     " • 单次播放：点按快捷键": " • Single: Tap hotkey",
     " • 循环播放：按住快捷键半秒松开": " • Loop: Hold 0.5s then release",
-    " • 打断播放：播放期间再次点按快捷键": " • Stop: Tap again while playing"
+    " • 打断播放：播放期间再次点按快捷键": " • Stop: Tap again while playing",
+    "按  查看": "Press  to view"
 }

@@ -53,24 +53,23 @@ tsl::elm::Element* MacroViewGui::createUI() {
     frame->setHeader(new tsl::elm::CustomDrawer([this](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
         renderer->drawString(m_gameName, false, 20, 50+2, 32, renderer->a(tsl::defaultOverlayColor));
         renderer->drawString("管理录制的脚本", false, 20, 50+23, 15, renderer->a(tsl::bannerVersionTextColor));
-        renderer->drawString("  脚本介绍", false, 270, 693, 23, renderer->a(tsl::style::color::ColorText));
+        renderer->drawString("  上传", false, 270, 693, 23, renderer->a(tsl::style::color::ColorText));
     }));
     auto list = new tsl::elm::List();
     auto textArea = new tsl::elm::CustomDrawer([this](tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h) {
         const auto& info = MacroData::getBasicInfo();
-        char titleId[17], fileSize[16], duration[16], fps[16], frames[16], fileName[80];
+        char titleId[17], fileSize[16], fps[16], frames[32], fileName[80];
         snprintf(titleId, sizeof(titleId), "%016lX", info.titleId);
         snprintf(fileName, sizeof(fileName), "%s", info.fileName);
         snprintf(fileSize, sizeof(fileSize), "%u KB (V%u)", (info.fileSize + 1023) / 1024, info.version);
-        snprintf(duration, sizeof(duration), "%u s", info.durationMs / 1000);
         snprintf(fps, sizeof(fps), "%u FPS", info.frameRate);
-        snprintf(frames, sizeof(frames), "%u", info.frameCount);
+        snprintf(frames, sizeof(frames), "%u (%us)", info.frameCount, info.durationMs / 1000);
         
         constexpr const char* kLabels[] = {
-            "游戏编号：", "脚本名称：",
-            "脚本大小：", "录制时间：", "录制帧率：", "录制帧数："
+            "游戏编号：", "脚本名称：", "使用方法：",
+            "脚本大小：", "录制帧率：", "录制帧数："
         };
-        const char* values[] = { titleId, fileName, fileSize, duration, fps, frames };
+        const char* values[] = { titleId, fileName, "按  查看", fileSize, fps, frames };
         
         char line[64];
         constexpr const u32 fontSize = 20;
@@ -79,7 +78,7 @@ tsl::elm::Element* MacroViewGui::createUI() {
         s32 totalHeight = lineHeight * static_cast<s32>(std::size(kLabels));
         s32 startY = y + (h - totalHeight) / 2 - 20;
         for (size_t i = 0; i < std::size(kLabels); ++i) {
-            snprintf(line, sizeof(line), "%s%s", i18n(kLabels[i]).c_str(), values[i]);
+            snprintf(line, sizeof(line), "%s%s", i18n(kLabels[i]).c_str(), i18n(values[i]).c_str());
             r->drawStringWithColoredSections(
                 line,
                 false,

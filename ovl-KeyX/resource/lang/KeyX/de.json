@@ -222,7 +222,7 @@
     "按  与前一个动作交换": "Drücke  Mit vorheriger tauschen",
     "向后移动": "Nach Unten",
     "按  与后一个动作交换": "Drücke  Mit nächster tauschen",
-    "  脚本介绍": "  Details",
+    "  上传": "  Hochladen",
     "文件位置:": "Dateipfad:",
     " • 暂无使用说明": " • Keine Infos",
     "阅读脚本的相关介绍": "Makro-Details lesen",
@@ -234,6 +234,7 @@
     " •  选中/取消  退出编辑": " •  Wählen/Abbr.  Beenden",
     " • 单次播放：点按快捷键": " • Einmal: Hotkey tippen",
     " • 循环播放：按住快捷键半秒松开": " • Schleife: 0,5s halten, loslassen",
-    " • 打断播放：播放期间再次点按快捷键": " • Stopp: Erneut tippen"
+    " • 打断播放：播放期间再次点按快捷键": " • Stopp: Erneut tippen",
+    "按  查看": "  zum Anzeigen"
 }
 
