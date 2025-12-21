@@ -97,5 +97,6 @@ public:
 
 // 程序入口点
 int main(int argc, char **argv) {
+    rename("sdmc:/config/KeyX/Macros", "sdmc:/config/KeyX/macros");
     return tsl::loop<KeyXOverlay>(argc, argv);
 }
