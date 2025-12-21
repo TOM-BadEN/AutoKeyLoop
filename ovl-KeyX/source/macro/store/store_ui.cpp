@@ -296,7 +296,7 @@ StoreMacroViewGui::StoreMacroViewGui(u64 tid, const std::string& gameName)
     // 计算下载路径
     char tidStr[17];
     snprintf(tidStr, sizeof(tidStr), "%016lX", tid);
-    std::string dirPath = "sdmc:/config/KeyX/Macros/" + std::string(tidStr) + "/";
+    std::string dirPath = "sdmc:/config/KeyX/macros/" + std::string(tidStr) + "/";
     std::string fileName = s_selectedMacro.file;
     std::string baseName = fileName.substr(0, fileName.size() - 6);
     m_localPath = dirPath + fileName;

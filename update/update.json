@@ -1,22 +1,13 @@
 {
-    "version": "v1.5.3",
+    "version": "v1.5.4",
     "changelog": {
         "CN": [
-            "彻底解决joycon与pro手柄播放宏可能导致卡住摇杆的Bug",
-            "新增了宏商店功能，一键下载宏到switch上",
-            "重写了编辑器数据处理代码，现在对宏文件数据的处理将更精确",
-            "编辑器新增了向前向后复制、向前向后移动、修改摇杆、删除摇杆等编辑功能",
-            "现在若你播放的宏中有摇杆数据，将禁止透传用户其他操作",
-            "新增德文支持，感谢@HeikesFootSlave提供的德文翻译文本",
-            "更多更新内容，请访问 GITHUB 查看"
+            "修复1.5.3版本下载的宏，宏列表里看不见的问题",
+            "更新后如果之前因为异常看不见的宏，现在看不到本地化名字，可以删掉重下"
         ],
         "EN": [
-            "Completely solved the bug where playing macros with joycon and pro controller may cause the joystick to freeze",
-            "Added macro store function, one-click download macros to switch",
-            "Rewrote editor data processing code, now processing of macro file data will be more accurate",
-            "Editor added copy forward/backward, move forward/backward, modify joystick, delete joystick and other editing functions",
-            "Now, when playing a macro that contains joystick data, user inputs will not be applied to the joystick",
-            "Added German support, thanks to @HeikesFootSlave for providing German translation text"
+            "Fixed the issue where macros downloaded in v1.5.3 were not visible in the macro list",
+            "After updating, previously invisible macros may not show localized names. You can delete and re-download them to fix this"
         ]
     }
 }
