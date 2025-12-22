@@ -17,7 +17,6 @@ private:
     char m_macroFilePath[128];
     bool m_isRecord;
     u64 m_Hotkey = 0;
-    tsl::elm::ListItem* m_deleteItem = nullptr;
     tsl::elm::ListItem* m_listButton = nullptr;
 
     void getHotkey();

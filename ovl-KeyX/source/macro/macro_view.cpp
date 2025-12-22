@@ -55,28 +55,26 @@ tsl::elm::Element* MacroViewGui::createUI() {
     frame->setHeader(new tsl::elm::CustomDrawer([this](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
         renderer->drawString(m_gameName, false, 20, 50+2, 32, renderer->a(tsl::defaultOverlayColor));
         renderer->drawString("管理录制的脚本", false, 20, 50+23, 15, renderer->a(tsl::bannerVersionTextColor));
-        renderer->drawString("  投稿", false, 270, 693, 23, renderer->a(tsl::style::color::ColorText));
+        renderer->drawString("  删除", false, 270, 693, 23, renderer->a(tsl::style::color::ColorText));
     }));
     auto list = new tsl::elm::List();
     auto textArea = new tsl::elm::CustomDrawer([this](tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h) {
         const auto& info = MacroData::getBasicInfo();
-        char titleId[17], fileSize[16], fps[16], frames[32], fileName[64];
+        char titleId[17], fileName[64], params[64];
         snprintf(titleId, sizeof(titleId), "%016lX", info.titleId);
         snprintf(fileName, sizeof(fileName), "%s", info.fileName);
-        snprintf(fileSize, sizeof(fileSize), "%u KB (V%u)", (info.fileSize + 1023) / 1024, info.version);
-        snprintf(fps, sizeof(fps), "%u FPS", info.frameRate);
-        snprintf(frames, sizeof(frames), "%u (%us)", info.frameCount, info.durationMs / 1000);
+        snprintf(params, sizeof(params), "%uF  %uS  %u KB", 
+            info.frameCount, info.durationMs / 1000, (info.fileSize + 1023) / 1024);
         
         constexpr const char* kLabels[] = {
-            "游戏编号：", "脚本名称：", "使用方法：",
-            "脚本大小：", "录制帧率：", "录制帧数："
+            "脚本名称：", "游戏编号：", "基本参数："
         };
-        const char* values[] = { titleId, fileName, "按  查看", fileSize, fps, frames };
+        const char* values[] = { fileName, titleId, params };
         
         char line[96];
         constexpr const u32 fontSize = 20;
         const s32 startX = x + 26;
-        s32 lineHeight = r->getTextDimensions("你", false, fontSize).second + 15;
+        s32 lineHeight = r->getTextDimensions("你", false, fontSize).second + 20;
         s32 totalHeight = lineHeight * static_cast<s32>(std::size(kLabels));
         s32 startY = y + (h - totalHeight) / 2 - 20;
         for (size_t i = 0; i < std::size(kLabels); ++i) {
@@ -94,7 +92,7 @@ tsl::elm::Element* MacroViewGui::createUI() {
             startY += lineHeight;
         }
     });
-    list->addItem(textArea, 240);
+    list->addItem(textArea, 165);
 
     m_listButton = new tsl::elm::ListItem("分配按键", m_Hotkey ? HidHelper::getCombinedIcons(m_Hotkey) : ">");
     m_listButton->setClickListener([this](u64 keys) {
@@ -126,9 +124,24 @@ tsl::elm::Element* MacroViewGui::createUI() {
     });  
     list->addItem(listEditMacro);
 
+    auto listMacroDes = new tsl::elm::ListItem("使用方法", ">");
+    listMacroDes->setClickListener([this](u64 keys) {
+        if (keys & HidNpadButton_A) {
+            tsl::changeTo<MacroDetailGui>(m_macroFilePath, m_gameName);
+            return true;
+        }   
+        return false;
+    });  
+    list->addItem(listMacroDes);
 
-    m_deleteItem = new tsl::elm::ListItem("删除脚本","按  删除");
-    list->addItem(m_deleteItem);
+    auto listUploadMacro = new tsl::elm::ListItem("我要投稿", ">");
+    listUploadMacro->setClickListener([this](u64 keys) {
+        if (keys & HidNpadButton_A) {
+            return true;
+        }   
+        return false;
+    });  
+    list->addItem(listUploadMacro);
 
     frame->setContent(list);
     return frame;
@@ -147,19 +160,13 @@ bool MacroViewGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &
         tsl::goBack();
         return true;
     }
-    if (keysDown & HidNpadButton_Right) {
-        tsl::changeTo<MacroDetailGui>(m_macroFilePath, m_gameName);
+    if (keysDown & HidNpadButton_Minus) {
+        u64 titleId = MacroData::getBasicInfo().titleId;
+        if (MacroUtil::deleteMacro(titleId, m_macroFilePath)) g_ipcManager.sendReloadMacroCommand();
+        Refresh::RefrRequest(Refresh::MacroGameList);
+        MacroData::allCleanup();
+        tsl::goBack();
         return true;
-    }
-    if ((keysDown & HidNpadButton_Minus) && m_deleteItem) {
-        if (getFocusedElement() == m_deleteItem) {
-            u64 titleId = MacroData::getBasicInfo().titleId;
-            if (MacroUtil::deleteMacro(titleId, m_macroFilePath)) g_ipcManager.sendReloadMacroCommand();
-            Refresh::RefrRequest(Refresh::MacroGameList);
-            MacroData::allCleanup();
-            tsl::goBack();
-            return true;
-        }
     } 
 
     return false;
