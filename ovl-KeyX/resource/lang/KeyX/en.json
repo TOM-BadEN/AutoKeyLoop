@@ -221,7 +221,7 @@
     "  上传": "  Upload",
     "文件位置:": "File Path:",
     " • 暂无使用说明": " • No usage info",
-    "阅读脚本的相关介绍": "Read macro details",
+    "脚本的相关介绍与上传": "Macro details and Upload",
     " 限制单边手柄连发": " One-Side Turbo Restriction",
     "限制手柄": "Controls",
     "  只允许左边或右边手柄（仅JoyCon有效）": "  Left or Right Side (Joy-Con Only)",
@@ -231,5 +231,14 @@
     " • 单次播放：点按快捷键": " • Single: Tap hotkey",
     " • 循环播放：按住快捷键半秒松开": " • Loop: Hold 0.5s then release",
     " • 打断播放：播放期间再次点按快捷键": " • Stop: Tap again while playing",
-    "按  查看": "Press  to view"
+    "按  查看": "Press  to view",
+    "我要上传": "投稿",
+    "上传失败": "失敗",
+    "按  上传": " 投稿",
+    "最后一步了~": "最後のステップ～",
+    "脚本代码:": "コード：",
+    "填写信息:": "情報を入力：",
+    " • 扫描二维码，填写宏的相关信息": " • 二次元コードをスキャンして情報を入力",
+    " • 待审核通过自动上架商店": " • 承認後、自動的に公開されます",
+    "感谢您的热情分享！": "共有ありがとうございます！"
 }

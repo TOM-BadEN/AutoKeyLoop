@@ -225,7 +225,7 @@
     "  上传": "  Hochladen",
     "文件位置:": "Dateipfad:",
     " • 暂无使用说明": " • Keine Infos",
-    "阅读脚本的相关介绍": "Makro-Details lesen",
+    "脚本的相关介绍与上传": "Makro-Details und Upload",
     " 限制单边手柄连发": " Einseitige Turbo-Eingabe begrenzen",
     "限制手柄": "Steuerung",
     "  只允许左边或右边手柄（仅JoyCon有效）": "  Linke od. Rechte (JoyCon)",
@@ -235,6 +235,15 @@
     " • 单次播放：点按快捷键": " • Einmal: Hotkey tippen",
     " • 循环播放：按住快捷键半秒松开": " • Schleife: 0,5s halten, loslassen",
     " • 打断播放：播放期间再次点按快捷键": " • Stopp: Erneut tippen",
-    "按  查看": "  zum Anzeigen"
+    "按  查看": "  zum Anzeigen",
+    "我要上传": "Upload",
+    "上传失败": "Fehler",
+    "按  上传": " Hochladen",
+    "最后一步了~": "Letzter Schritt~",
+    "脚本代码:": "Code:",
+    "填写信息:": "Info ausfüllen:",
+    " • 扫描二维码，填写宏的相关信息": " • QR-Code scannen, Makro-Info eingeben",
+    " • 待审核通过自动上架商店": " • Nach Freigabe automatisch online",
+    "感谢您的热情分享！": "Vielen Dank fürs Teilen!"
 }
 

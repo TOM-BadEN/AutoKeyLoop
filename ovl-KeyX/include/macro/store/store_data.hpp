@@ -31,8 +31,16 @@ struct MacroListResult {
     std::vector<StoreMacroEntry> macros;
 };
 
+
+struct UploadResult {
+    bool success;
+    std::string response;
+};
+
 class StoreData {
+    
 public:
+
     StoreData();
     ~StoreData();
 
@@ -45,8 +53,8 @@ public:
     // 下载宏文件到本地
     bool downloadMacro(const std::string& gameId, const std::string& fileName, const std::string& localPath);
     
-    // // 上传宏文件到服务器，返回服务器响应（失败返回空字符串）
-    // static std::string uploadMacro(const std::string& filePath, u64 titleId);
+    // 上传宏文件到服务器
+    static UploadResult uploadMacro(const char* filePath, u64 titleId, const char* gameName);
     
     // 保存宏元数据到 macrosMetadata.ini
     static void saveMacroMetadataInfo(const std::string& gameId, const StoreMacroEntry& macro);
