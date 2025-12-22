@@ -55,7 +55,7 @@ tsl::elm::Element* MacroViewGui::createUI() {
     frame->setHeader(new tsl::elm::CustomDrawer([this](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
         renderer->drawString(m_gameName, false, 20, 50+2, 32, renderer->a(tsl::defaultOverlayColor));
         renderer->drawString("管理录制的脚本", false, 20, 50+23, 15, renderer->a(tsl::bannerVersionTextColor));
-        renderer->drawString("  上传", false, 270, 693, 23, renderer->a(tsl::style::color::ColorText));
+        renderer->drawString("  投稿", false, 270, 693, 23, renderer->a(tsl::style::color::ColorText));
     }));
     auto list = new tsl::elm::List();
     auto textArea = new tsl::elm::CustomDrawer([this](tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h) {
