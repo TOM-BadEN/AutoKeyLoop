@@ -54,7 +54,7 @@ public:
     bool downloadMacro(const std::string& gameId, const std::string& fileName, const std::string& localPath);
     
     // 上传宏文件到服务器
-    static UploadResult uploadMacro(const char* filePath, u64 titleId, const char* gameName);
+    static UploadResult uploadMacro(const std::string& filePath, u64 titleId, const std::string& gameName);
     
     // 保存宏元数据到 macrosMetadata.ini
     static void saveMacroMetadataInfo(const std::string& gameId, const StoreMacroEntry& macro);

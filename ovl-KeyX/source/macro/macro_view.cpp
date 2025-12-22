@@ -11,6 +11,7 @@
 #include "macro_edit.hpp"
 #include "i18n.hpp"
 #include "macro_upload.hpp"
+#include "macro_detail.hpp"
 
 namespace {
     constexpr const u64 buttons[] = {
@@ -137,6 +138,7 @@ tsl::elm::Element* MacroViewGui::createUI() {
     auto listUploadMacro = new tsl::elm::ListItem("我要投稿", ">");
     listUploadMacro->setClickListener([this](u64 keys) {
         if (keys & HidNpadButton_A) {
+            tsl::changeTo<MacroUploadGui>(m_macroFilePath, m_gameName);
             return true;
         }   
         return false;

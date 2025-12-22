@@ -74,7 +74,7 @@ void MacroInfoEditGui::drawQrCode(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s3
     currentY += lineHeight + 20;
     
     r->drawString("感谢您的热情修改！", false, textX, currentY, 20, r->a(tsl::defaultTextColor));
-    currentY += 25;
+    currentY += 37;
     
     // 生成二维码（只执行一次）
     if (m_qrSize == 0) {
@@ -110,7 +110,7 @@ void MacroInfoEditGui::drawQrCode(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s3
 }
 
 tsl::elm::Element* MacroInfoEditGui::createUI() {
-    auto frame = new tsl::elm::OverlayFrame("编辑信息", "编辑商店的脚本信息");
+    auto frame = new tsl::elm::OverlayFrame("修改描述内容", "编修改商店的脚本的描述内容");
     auto list = new tsl::elm::List();
     auto drawer = new tsl::elm::CustomDrawer([this](tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h) {
         if (m_isStoreMacro) drawQrCode(r, x, y, w, h);

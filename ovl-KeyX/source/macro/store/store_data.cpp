@@ -131,7 +131,7 @@ bool StoreData::downloadMacro(const std::string& gameId, const std::string& file
     return success;
 }
 
-UploadResult StoreData::uploadMacro(const char* filePath, u64 titleId, const char* gameName) {
+UploadResult StoreData::uploadMacro(const std::string& filePath, u64 titleId, const std::string& gameName) {
     
     // 进度回调（用于支持中断）
     auto progressCallback = [](void*, curl_off_t, curl_off_t, curl_off_t, curl_off_t) -> int {
@@ -161,7 +161,7 @@ UploadResult StoreData::uploadMacro(const char* filePath, u64 titleId, const cha
     // 添加文件字段
     curl_mimepart* filePart = curl_mime_addpart(mime);
     curl_mime_name(filePart, "macro");
-    curl_mime_filedata(filePart, filePath);
+    curl_mime_filedata(filePart, filePath.c_str());
     
     // 添加 titleId 字段
     char tidStr[17];
@@ -173,7 +173,7 @@ UploadResult StoreData::uploadMacro(const char* filePath, u64 titleId, const cha
     // 添加 gamename 字段
     curl_mimepart* namePart = curl_mime_addpart(mime);
     curl_mime_name(namePart, "gamename");
-    curl_mime_data(namePart, gameName, CURL_ZERO_TERMINATED);
+    curl_mime_data(namePart, gameName.c_str(), CURL_ZERO_TERMINATED);
     
     // 设置请求
     curl_easy_setopt(curl, CURLOPT_URL, "https://macro.dokiss.cn/upload.php");

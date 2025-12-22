@@ -1,17 +1,14 @@
-#include "macro_upload.hpp"
+#include "macro_detail.hpp"
 #include <ultra.hpp>
 #include <cmath>
-#include "Tthread.hpp"
-#include "qrcodegen.hpp"
 #include "language.hpp"
 #include "info_edit.hpp"
 
-using qrcodegen::QrCode;
-using qrcodegen::QrSegment;
-
 namespace {
-    constexpr const char* refreshIcon[] = {"", "", "", "", "", "", "", ""};
     constexpr s32 ITEM_HEIGHT = 70;
+    
+    constexpr const char* EDIT_URL = "https://macro.dokiss.cn/edit_prop.php?tid=%s&file=%s&lang=%s";
+    constexpr const char* langParam[] = {"zh", "zhh", "en"};
     
     double calcBlinkProgress() {
         u64 ns = armTicksToNs(armGetSystemTick());
@@ -24,42 +21,24 @@ namespace {
             static_cast<u8>(c2.g + (c1.g - c2.g) * progress),
             static_cast<u8>(c2.b + (c1.b - c2.b) * progress), 0xF);
     }
-
-    constexpr const char* UPLOAD_URL = "https://macro.dokiss.cn/edit.php?code=%s&lang=%s";
-    constexpr const char* EDIT_URL = "https://macro.dokiss.cn/edit_prop.php?tid=%s&file=%s&lang=%s";
-
-    constexpr const char* langParam[] = {"zh", "zhh", "en"};
 }
 
 // 脚本详情界面
-MacroDetailGui::MacroDetailGui(const char* macroFilePath, const char* gameName) {
-    strncpy(m_gameName, gameName, sizeof(m_gameName) - 1);
-    m_gameName[sizeof(m_gameName) - 1] = '\0';
-    strcpy(m_filePath, macroFilePath);
-    m_meta = MacroUtil::getMetadata(macroFilePath);
-    int langIndex = LanguageManager::getZhcnOrZhtwOrEnIndex();
-    strcpy(m_langCode, langParam[langIndex]);
+MacroDetailGui::MacroDetailGui(const std::string& macroFilePath, const std::string& gameName)
+ : m_filePath(macroFilePath), m_gameName(gameName)
+{
+    m_meta = MacroUtil::getMetadata(macroFilePath.c_str());
 }
 
 tsl::elm::Element* MacroDetailGui::createUI() {
     auto frame = new tsl::elm::HeaderOverlayFrame(97);
     frame->setHeader(new tsl::elm::CustomDrawer([this](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
         renderer->drawString(m_gameName, false, 20, 50+2, 32, renderer->a(tsl::defaultOverlayColor));
-        renderer->drawString("脚本的相关介绍与上传", false, 20, 50+23, 15, renderer->a(tsl::bannerVersionTextColor));
-        if (m_state == UploadState::None || m_state == UploadState::UploadFailed || m_state == UploadState::Cancelled) {
-            renderer->drawString("  编辑", false, 270, 693, 23, renderer->a(tsl::style::color::ColorText));
-        }
+        renderer->drawString("脚本的相关介绍", false, 20, 50+23, 15, renderer->a(tsl::bannerVersionTextColor));
     }));
     auto list = new tsl::elm::List();
     auto drawer = new tsl::elm::CustomDrawer([this](tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h) {
-        switch (m_state) {
-            case UploadState::UploadSuccess:
-                drawUploadSuccess(r, x, y, w, h);
-                break;
-            default:
-                drawDetail(r, x, y, w, h);
-                break;
-        }
+        drawDetail(r, x, y, w, h);
     });
     list->addItem(drawer, 520);
     frame->setContent(list);
@@ -184,36 +163,14 @@ void MacroDetailGui::drawDetail(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 
     }
     
     // ========== 底部按钮 ==========
-    // 绘制选中框
     double progress = calcBlinkProgress();
     tsl::Color hlColor = calcBlinkColor(tsl::highlightColor1, tsl::highlightColor2, progress);
     r->drawBorderedRoundedRect(x, listY, w + 4, ITEM_HEIGHT, 5, 5, r->a(hlColor));
     
-    // 根据状态显示不同内容
     s32 keyFont = 23;
     s32 valFont = 20;
-    std::string keyText, valText;
-    tsl::Color keyColor = tsl::defaultTextColor;
-    
-    switch (m_state) {
-        case UploadState::Uploading:
-            keyText = "我要上传";
-            valText = refreshIcon[m_frameIndex];
-            break;
-        case UploadState::UploadFailed:
-            keyText = "上传失败";
-            valText = "按  上传";
-            keyColor = tsl::Color(0xF, 0x5, 0x5, 0xF);  // 红色
-            break;
-        case UploadState::Cancelled:
-            keyText = "取消成功";
-            valText = "按  上传";
-            break;
-        default:  // None
-            keyText = "我要上传";
-            valText = "按  上传";
-            break;
-    }
+    std::string keyText = "修改描述";
+    std::string valText = "按  编辑";
     
     auto keyDim = r->getTextDimensions(keyText, false, keyFont);
     auto valDim = r->getTextDimensions(valText, false, valFont);
@@ -221,133 +178,22 @@ void MacroDetailGui::drawDetail(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 
     s32 keyY = listY + (ITEM_HEIGHT + keyDim.second) / 2;
     s32 valY = listY + (ITEM_HEIGHT + valDim.second) / 2;
     
-    r->drawString(keyText, false, x + 19, keyY, keyFont, r->a(keyColor));
+    r->drawString(keyText, false, x + 19, keyY, keyFont, r->a(tsl::defaultTextColor));
     r->drawString(valText, false, x + w - 15 - valDim.first, valY, valFont, r->a(tsl::onTextColor));
 }
 
-void MacroDetailGui::drawUploadSuccess(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h) {
-    s32 textX = x + 19;
-    s32 currentY = y + 35;
-    s32 fontSize = 18;
-    s32 lineHeight = 26;
-    
-    // 上传成功（标题，与 drawDetail 的脚本名称样式一致）
-    r->drawString("最后一步了~", false, textX, currentY, 28, r->a(tsl::onTextColor));
-    currentY += 50;
-    
-    // 脚本代码：
-    r->drawString("脚本代码:", false, textX, currentY, 20, r->a(tsl::defaultTextColor));
-    currentY += 28;
-    r->drawString((" • " + m_uploadResult.code).c_str(), false, textX, currentY, fontSize, r->a(tsl::onTextColor));
-    currentY += lineHeight + 20;
-    
-    // 填写信息：
-    r->drawString("填写信息:", false, textX, currentY, 20, r->a(tsl::defaultTextColor));
-    currentY += 28;
-    r->drawString(" • 扫描二维码，填写宏的相关信息", false, textX, currentY, fontSize, r->a(tsl::style::color::ColorDescription));
-    currentY += lineHeight;
-    r->drawString(" • 待审核通过自动上架商店", false, textX, currentY, fontSize, r->a(tsl::style::color::ColorDescription));
-    currentY += lineHeight + 20;
-
-    r->drawString("感谢您的热情分享！", false, textX, currentY, 20, r->a(tsl::defaultTextColor));
-    currentY += 40;
-    
-    // 绘制二维码（使用缓存的 m_qrModules）
-    int scale = 5;
-    int margin = 8;
-    int totalSize = m_qrSize * scale;
-    int qrX = x + (w - totalSize) / 2;
-    int qrY = currentY;
-    
-    // 绘制二维码背景
-    r->drawRect(qrX - margin, qrY - margin, totalSize + margin * 2, totalSize + margin * 2, tsl::Color(0xF, 0xF, 0xF, 0xF));
-    
-    // 绘制二维码
-    for (int qy = 0; qy < m_qrSize; qy++) {
-        for (int qx = 0; qx < m_qrSize; qx++) {
-            if (m_qrModules[qy][qx]) {
-                r->drawRect(qrX + qx * scale, qrY + qy * scale, scale, scale, tsl::Color(0x0, 0x0, 0x0, 0xF));
-            }
-        }
-    }
-}
-
-void MacroDetailGui::prepareSuccessData() {
-    // 生成二维码
-    char uploadUrl[96];
-    snprintf(uploadUrl, sizeof(uploadUrl), UPLOAD_URL, m_uploadResult.code.c_str(), m_langCode);
-    QrCode qr = QrCode::encodeSegments(QrSegment::makeSegments(uploadUrl), QrCode::Ecc::LOW, 5, 5);
-    m_qrSize = qr.getSize();
-    m_qrModules.resize(m_qrSize);
-    for (int qy = 0; qy < m_qrSize; qy++) {
-        m_qrModules[qy].resize(m_qrSize);
-        for (int qx = 0; qx < m_qrSize; qx++) {
-            m_qrModules[qy][qx] = qr.getModule(qx, qy);
-        }
-    }
-}
-
-void MacroDetailGui::update() {
-    if (m_state == UploadState::Uploading) {
-        m_frameCounter++;
-        if (m_frameCounter >= 12) {
-            m_frameCounter = 0;
-            m_frameIndex = (m_frameIndex + 1) % 8;
-        }
-        
-        // 独立线程执行完毕
-        if (Thd::isDone()) Thd::stop();
-        else return;
-
-        // 检查是否成功了
-        if (!m_uploadResult.success) {
-            m_state = UploadState::UploadFailed;
-            return;
-        }
-        // 获取二维码数据和解析json
-        prepareSuccessData();
-        m_state = UploadState::UploadSuccess;
-    }
-}
-
 bool MacroDetailGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) {
-    // Uploading 状态：按 B 取消上传
-    if (m_state == UploadState::Uploading) {
-        if (keysDown & HidNpadButton_B) {
-            ult::abortDownload = true;
-            Thd::stop();
-            m_state = UploadState::Cancelled;
-            return true;
-        }
-    }
     
-    // 其他状态：按 B 返回
-    if (keysDown & HidNpadButton_B) {
-        ult::abortDownload = true;
-        Thd::stop();
-        tsl::goBack();
+    if (keysDown & HidNpadButton_Plus) {
+        u64 tid = MacroUtil::getTitleIdFromPath(m_filePath.c_str());
+        char tidStr[17];
+        snprintf(tidStr, sizeof(tidStr), "%016lX", tid);
+        std::string fileName = ult::getFileName(m_filePath);
+        int langIndex = LanguageManager::getZhcnOrZhtwOrEnIndex();
+        char editUrl[128];
+        snprintf(editUrl, sizeof(editUrl), EDIT_URL, tidStr, fileName.c_str(), langParam[langIndex]);
+        tsl::changeTo<MacroInfoEditGui>(editUrl, m_meta.name, m_meta.author);
         return true;
-    }
-    
-    // None/UploadFailed/Cancelled 状态：按 + 触发上传
-    if (m_state == UploadState::None || m_state == UploadState::UploadFailed || m_state == UploadState::Cancelled) {
-        if (keysDown & HidNpadButton_Plus) {
-            m_state = UploadState::Uploading;
-            u64 titleId = MacroUtil::getTitleIdFromPath(m_filePath);
-            Thd::start([this, titleId]{ m_uploadResult = StoreData::uploadMacro(m_filePath, titleId, m_gameName); });
-            return true;
-        }
-
-        if (keysDown & HidNpadButton_Right) {
-            u64 tid = MacroUtil::getTitleIdFromPath(m_filePath);
-            char tidStr[17];
-            snprintf(tidStr, sizeof(tidStr), "%016lX", tid);
-            std::string fileName = ult::getFileName(m_filePath);
-            char editUrl[128];
-            snprintf(editUrl, sizeof(editUrl), EDIT_URL, tidStr, fileName.c_str(), m_langCode);
-            tsl::changeTo<MacroInfoEditGui>(editUrl, m_meta.name, m_meta.author);
-            return true;
-        }
     }
     
     return false;
