@@ -8,11 +8,10 @@ namespace {
     constexpr const char* CN_UPDATE_URL = "https://gitee.com/TOM-BadEN/KeyX/raw/main/update/update.json";
     constexpr const char* EN_UPDATE_URL = "https://raw.githubusercontent.com/TOM-BadEN/KeyX/main/update/update.json";
     constexpr const char* CN_DOWNLOAD_URL = "https://gitee.com/TOM-BadEN/KeyX/raw/main/update/KeyX-CN.zip";
-    constexpr const char* EN_DOWNLOAD_URL = "https://raw.githubusercontent.com/TOM-BadEN/KeyX/main/update/KeyX-EN.zip";
+    constexpr const char* EN_DOWNLOAD_URL = "https://github.com/TOM-BadEN/KeyX/releases/latest/download/KeyX-EN.zip";
     constexpr const char* UPDATE_JSON_PATH = "sdmc:/config/KeyX/update/update.json";
     constexpr const char* UPDATE_KEYX_PATH = "sdmc:/config/KeyX/update/KeyX.zip";
     constexpr const char* UPDATE_UNZIP_PATH = "sdmc:/";
-    // constexpr const char* CN_DOWNLOAD_URL = "https://download.nswiki.cn/hahappify/nro/JKSV.zip";
 }
 
 

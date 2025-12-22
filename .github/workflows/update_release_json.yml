@@ -1,0 +1,72 @@
+name: 自动更新 update.json
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  update-json:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Parse release and update JSON
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          RELEASE_BODY: ${{ github.event.release.body }}
+        run: |
+          set -e
+          
+          echo "Version: $RELEASE_TAG"
+          echo "Body:"
+          echo "$RELEASE_BODY"
+          echo "---"
+          
+          # Parse ZH changelog (between # ZH and # EN)
+          zh_lines=$(echo "$RELEASE_BODY" | sed -n '/^# *ZH/,/^# *EN/p' | grep '^- ' | sed 's/^- //' || true)
+          
+          # Parse EN changelog (after # EN)
+          en_lines=$(echo "$RELEASE_BODY" | sed -n '/^# *EN/,$p' | grep '^- ' | sed 's/^- //' || true)
+          
+          echo "ZH changelog:"
+          echo "$zh_lines"
+          echo "EN changelog:"
+          echo "$en_lines"
+          
+          # Convert to JSON arrays
+          zh_json=$(echo "$zh_lines" | jq -R -s 'split("\n") | map(select(length > 0))')
+          en_json=$(echo "$en_lines" | jq -R -s 'split("\n") | map(select(length > 0))')
+          
+          # Create update.json
+          jq -n \
+            --arg version "$RELEASE_TAG" \
+            --argjson cn "$zh_json" \
+            --argjson en "$en_json" \
+            '{
+              version: $version,
+              changelog: {
+                CN: $cn,
+                EN: $en
+              }
+            }' > update/update.json
+          
+          echo "Generated update.json:"
+          cat update/update.json
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add update/update.json
+          git diff-index --quiet HEAD || git commit -m "工作流：自动更新 update.json 至 ${{ github.event.release.tag_name }}"
+          
+          git fetch origin main
+          git rebase origin/main || echo "Rebase completed"
+          
+          git push origin main
