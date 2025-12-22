@@ -45,7 +45,8 @@ UpdateInfo UpdaterData::getUpdateInfo() {
 
     cJSON* root = reinterpret_cast<cJSON*>(json);
     cJSON* changelog = cJSON_GetObjectItem(root, "changelog");
-    cJSON* list = cJSON_GetObjectItem(changelog, m_isSimplifiedChinese ? "CN" : "EN");
+    int langIndex = LanguageManager::getZhcnOrZhtwOrEnIndex();
+    cJSON* list = cJSON_GetObjectItem(changelog, (langIndex < 2) ? "CN" : "EN");
     if (list && cJSON_IsArray(list)) {
         cJSON* item;
         cJSON_ArrayForEach(item, list) {
