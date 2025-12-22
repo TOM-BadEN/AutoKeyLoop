@@ -6,6 +6,8 @@
 #include <ultra.hpp>
 #include "game.hpp"
 #include "Tthread.hpp"
+#include "info_edit.hpp"
+#include "language.hpp"
 
 namespace {
     GameListResult s_gameList;
@@ -14,6 +16,8 @@ namespace {
     bool s_downloadSuccess = false;
     
     constexpr const char* s_refreshIcon[] = {"", "", "", "", "", "", "", ""};
+    constexpr const char* EDIT_URL = "https://macro.dokiss.cn/edit_prop.php?tid=%s&file=%s&lang=%s";
+    constexpr const char* langParam[] = {"zh", "zhh", "en"};
 }
 
 
@@ -312,7 +316,14 @@ StoreMacroViewGui::~StoreMacroViewGui() {
 }
 
 tsl::elm::Element* StoreMacroViewGui::createUI() {
-    auto frame = new tsl::elm::OverlayFrame("脚本商店", m_gameName);
+    auto frame = new tsl::elm::HeaderOverlayFrame(97);
+    frame->setHeader(new tsl::elm::CustomDrawer([this](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
+        renderer->drawString("脚本商店", false, 20, 50+2, 32, renderer->a(tsl::defaultOverlayColor));
+        renderer->drawString(m_gameName, false, 20, 50+23, 15, renderer->a(tsl::bannerVersionTextColor));
+        if (m_state == MacroViewState::Ready || m_state == MacroViewState::Error || m_state == MacroViewState::Cancelled) {
+            renderer->drawString("  编辑", false, 270, 693, 23, renderer->a(tsl::style::color::ColorText));
+        }
+    }));
     auto list = new tsl::elm::List();
     auto textArea = new tsl::elm::CustomDrawer([this](tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h) {
         drawContent(r, x, y, w, h);
@@ -343,6 +354,15 @@ bool StoreMacroViewGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchSt
                 s_downloadSuccess = StoreData().downloadMacro(gameId, fileName, localPath);
                 if (s_downloadSuccess) StoreData::saveMacroMetadataInfo(gameId, s_selectedMacro);
             });
+            return true;
+        }
+        if (keysDown & HidNpadButton_Right) {
+            char tidStr[17];
+            snprintf(tidStr, sizeof(tidStr), "%016lX", m_tid);
+            int langIndex = LanguageManager::getZhcnOrZhtwOrEnIndex();
+            char editUrl[128];
+            snprintf(editUrl, sizeof(editUrl), EDIT_URL, tidStr, s_selectedMacro.file.c_str(), langParam[langIndex]);
+            tsl::changeTo<MacroInfoEditGui>(editUrl, s_selectedMacro.name, s_selectedMacro.author);
             return true;
         }
     }

@@ -4,7 +4,7 @@
 using qrcodegen::QrCode;
 using qrcodegen::QrSegment;
 
-MacroInfoEditGui::MacroInfoEditGui(const char* editUrl, const std::string& macroName, const std::string& author)
+MacroInfoEditGui::MacroInfoEditGui(const std::string& editUrl, const std::string& macroName, const std::string& author)
  : m_editUrl(editUrl)
  , m_macroName(macroName)
  , m_author(author)
@@ -74,11 +74,11 @@ void MacroInfoEditGui::drawQrCode(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s3
     currentY += lineHeight + 20;
     
     r->drawString("感谢您的热情修改！", false, textX, currentY, 20, r->a(tsl::defaultTextColor));
-    currentY += 40;
+    currentY += 25;
     
     // 生成二维码（只执行一次）
     if (m_qrSize == 0) {
-        QrCode qr = QrCode::encodeSegments(QrSegment::makeSegments(m_editUrl), QrCode::Ecc::LOW, 5, 5);
+        QrCode qr = QrCode::encodeSegments(QrSegment::makeSegments(m_editUrl.c_str()), QrCode::Ecc::LOW, 5, 5);
         m_qrSize = qr.getSize();
         m_qrModules.resize(m_qrSize);
         for (int qy = 0; qy < m_qrSize; qy++) {

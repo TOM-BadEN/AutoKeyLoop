@@ -46,7 +46,9 @@ tsl::elm::Element* MacroDetailGui::createUI() {
     frame->setHeader(new tsl::elm::CustomDrawer([this](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
         renderer->drawString(m_gameName, false, 20, 50+2, 32, renderer->a(tsl::defaultOverlayColor));
         renderer->drawString("脚本的相关介绍与上传", false, 20, 50+23, 15, renderer->a(tsl::bannerVersionTextColor));
-        renderer->drawString("  编辑", false, 270, 693, 23, renderer->a(tsl::style::color::ColorText));
+        if (m_state == UploadState::None || m_state == UploadState::UploadFailed || m_state == UploadState::Cancelled) {
+            renderer->drawString("  编辑", false, 270, 693, 23, renderer->a(tsl::style::color::ColorText));
+        }
     }));
     auto list = new tsl::elm::List();
     auto drawer = new tsl::elm::CustomDrawer([this](tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h) {
