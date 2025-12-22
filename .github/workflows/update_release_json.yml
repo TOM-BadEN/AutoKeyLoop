@@ -51,11 +51,11 @@ jobs:
           echo "$RELEASE_BODY"
           echo "---"
           
-          # Parse ZH changelog (between # ZH and # EN)
-          zh_lines=$(echo "$RELEASE_BODY" | sed -n '/^# *ZH/,/^# *EN/p' | grep '^- ' | sed 's/^- //' || true)
+          # Parse EN changelog (between ## EN and ## ZH)
+          en_lines=$(echo "$RELEASE_BODY" | sed -n '/^##* *EN/,/^##* *ZH/p' | grep '^- ' | sed 's/^- //' || true)
           
-          # Parse EN changelog (after # EN)
-          en_lines=$(echo "$RELEASE_BODY" | sed -n '/^# *EN/,$p' | grep '^- ' | sed 's/^- //' || true)
+          # Parse ZH changelog (after ## ZH)
+          zh_lines=$(echo "$RELEASE_BODY" | sed -n '/^##* *ZH/,$p' | grep '^- ' | sed 's/^- //' || true)
           
           echo "ZH changelog:"
           echo "$zh_lines"
