@@ -216,25 +216,14 @@ void MacroDetailGui::drawUploadSuccess(tsl::gfx::Renderer* r, s32 x, s32 y, s32 
     s32 fontSize = 18;
     s32 lineHeight = 26;
     
-    // 解析 code
-    std::string code;
-    cJSON* root = cJSON_Parse(m_uploadResult.response.c_str());
-    if (root) {
-        cJSON* codeItem = cJSON_GetObjectItem(root, "code");
-        if (codeItem && cJSON_IsString(codeItem)) {
-            code = codeItem->valuestring;
-        }
-        cJSON_Delete(root);
-    }
-    
     // 上传成功（标题，与 drawDetail 的脚本名称样式一致）
     r->drawString("最后一步了~", false, textX, currentY, 28, r->a(tsl::onTextColor));
     currentY += 50;
     
-    // 脚本代码：
+    // 脚本代码：（使用缓存的 m_code）
     r->drawString("脚本代码:", false, textX, currentY, 20, r->a(tsl::defaultTextColor));
     currentY += 28;
-    r->drawString((" • " + code).c_str(), false, textX, currentY, fontSize, r->a(tsl::onTextColor));
+    r->drawString((" • " + m_code).c_str(), false, textX, currentY, fontSize, r->a(tsl::onTextColor));
     currentY += lineHeight + 20;
     
     // 填写信息：
@@ -248,15 +237,10 @@ void MacroDetailGui::drawUploadSuccess(tsl::gfx::Renderer* r, s32 x, s32 y, s32 
     r->drawString("感谢您的热情分享！", false, textX, currentY, 20, r->a(tsl::defaultTextColor));
     currentY += 40;
     
-    // 生成二维码（使用 Version 5 保证大小一致）
-    const char* langParam[] = {"zh", "zhh", "en"};
-    int langIndex = LanguageManager::getZhcnOrZhtwOrEnIndex();
-    std::string qrUrl = "https://macro.dokiss.cn/edit.php?code=" + code + "&lang=" + langParam[langIndex];
-    QrCode qr = QrCode::encodeSegments(QrSegment::makeSegments(qrUrl.c_str()), QrCode::Ecc::LOW, 5, 5);
+    // 绘制二维码（使用缓存的 m_qrModules）
     int scale = 5;
     int margin = 8;
-    int qrSize = qr.getSize();
-    int totalSize = qrSize * scale;
+    int totalSize = m_qrSize * scale;
     int qrX = x + (w - totalSize) / 2;
     int qrY = currentY;
     
@@ -264,11 +248,37 @@ void MacroDetailGui::drawUploadSuccess(tsl::gfx::Renderer* r, s32 x, s32 y, s32 
     r->drawRect(qrX - margin, qrY - margin, totalSize + margin * 2, totalSize + margin * 2, tsl::Color(0xF, 0xF, 0xF, 0xF));
     
     // 绘制二维码
-    for (int qy = 0; qy < qrSize; qy++) {
-        for (int qx = 0; qx < qrSize; qx++) {
-            if (qr.getModule(qx, qy)) {
+    for (int qy = 0; qy < m_qrSize; qy++) {
+        for (int qx = 0; qx < m_qrSize; qx++) {
+            if (m_qrModules[qy][qx]) {
                 r->drawRect(qrX + qx * scale, qrY + qy * scale, scale, scale, tsl::Color(0x0, 0x0, 0x0, 0xF));
             }
+        }
+    }
+}
+
+void MacroDetailGui::prepareSuccessData() {
+    // 解析 code
+    cJSON* root = cJSON_Parse(m_uploadResult.response.c_str());
+    if (root) {
+        cJSON* codeItem = cJSON_GetObjectItem(root, "code");
+        if (codeItem && cJSON_IsString(codeItem)) {
+            m_code = codeItem->valuestring;
+        }
+        cJSON_Delete(root);
+    }
+    
+    // 生成二维码
+    const char* langParam[] = {"zh", "zhh", "en"};
+    int langIndex = LanguageManager::getZhcnOrZhtwOrEnIndex();
+    std::string qrUrl = "https://macro.dokiss.cn/edit.php?code=" + m_code + "&lang=" + langParam[langIndex];
+    QrCode qr = QrCode::encodeSegments(QrSegment::makeSegments(qrUrl.c_str()), QrCode::Ecc::LOW, 5, 5);
+    m_qrSize = qr.getSize();
+    m_qrModules.resize(m_qrSize);
+    for (int qy = 0; qy < m_qrSize; qy++) {
+        m_qrModules[qy].resize(m_qrSize);
+        for (int qx = 0; qx < m_qrSize; qx++) {
+            m_qrModules[qy][qx] = qr.getModule(qx, qy);
         }
     }
 }
@@ -281,10 +291,18 @@ void MacroDetailGui::update() {
             m_frameIndex = (m_frameIndex + 1) % 8;
         }
         
-        if (Thd::isDone()) {
-            Thd::stop();
-            m_state = m_uploadResult.success ? UploadState::UploadSuccess : UploadState::UploadFailed;
+        // 独立线程执行完毕
+        if (Thd::isDone()) Thd::stop();
+        else return;
+
+        // 检查是否成功了
+        if (!m_uploadResult.success) {
+            m_state = UploadState::UploadFailed;
+            return;
         }
+        // 获取二维码数据和解析json
+        prepareSuccessData();
+        m_state = UploadState::UploadSuccess;
     }
 }
 

@@ -2,6 +2,7 @@
 #include <tesla.hpp>
 #include "macro_util.hpp"
 #include "store_data.hpp"
+#include <vector>
 
 enum class UploadState {
     None,           // 初始状态
@@ -22,6 +23,7 @@ public:
 private:
     void drawDetail(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h);
     void drawUploadSuccess(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h);
+    void prepareSuccessData();
 
     char m_gameName[64];
     char m_filePath[96];
@@ -32,4 +34,9 @@ private:
     int m_frameCounter = 0;
     std::string m_response;
     UploadResult m_uploadResult;
+    
+    // 上传成功后缓存（避免每帧重新生成）
+    std::string m_code;
+    std::vector<std::vector<bool>> m_qrModules;
+    int m_qrSize = 0;
 };
