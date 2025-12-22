@@ -87,12 +87,9 @@ tsl::elm::Element* AboutPlugin::createUI()
             renderer->drawString(aboutInfo[i], false, textX, textY, currentFontSize, textColor);
         }
         
-        // 捐赠二维码 - 使用固定 Version 5 (37x37) 保证大小一致
-        static QrCode qrWechat = QrCode::encodeSegments(QrSegment::makeSegments(WECHAT_PAY_URL), QrCode::Ecc::LOW, 5, 5);
-        static QrCode qrPaypal = QrCode::encodeSegments(QrSegment::makeSegments(PAYPAL_URL), QrCode::Ecc::LOW, 5, 5);
-        
-        bool isChinese = LanguageManager::isSimplifiedChinese();
-        const QrCode& qr = isChinese ? qrWechat : qrPaypal;
+        // 捐赠二维码 - 根据语言只生成需要的1个
+        static bool isChinese = LanguageManager::isSimplifiedChinese();
+        static QrCode qr = QrCode::encodeSegments(QrSegment::makeSegments(isChinese ? WECHAT_PAY_URL : PAYPAL_URL), QrCode::Ecc::LOW, 5, 5);
         const char* donateTitle = isChinese ? "微信捐赠" : "PayPal Donate";
         
         int scale = 3;
