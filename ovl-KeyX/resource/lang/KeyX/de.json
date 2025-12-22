@@ -171,7 +171,7 @@
     "欢迎向我提供各种脚本": "Willkommen zum Beitragen von Makros",
     "投稿方式": "Wie kann man Beitragen",
     " • 脚本详情界面点击上传按钮": " • In den Details auf Upload drücken",
-    " • 扫描二维码填写脚本信息": " • QR-Code scannen und Infos eingeben",
+    " • 扫描二维码填写脚本信息": " • QR-Code scannen, Infos eingeben",
     "特别感谢": "Besonderer Dank",
     " • 感谢提供服务器与制作网页": " • Dank für Server und Webseite",
     "脚本仓库": "Macro Repo",
@@ -239,8 +239,8 @@
     "按  上传": " Hochladen",
     "最后一步了~": "Letzter Schritt~",
     "脚本代码:": "Code:",
-    "填写信息:": "Info ausfüllen:",
-    " • 扫描二维码，填写宏的相关信息": " • QR-Code scannen, Makro-Info eingeben",
+    "填写信息:": "Makro-Infos ausfüllen:",
+    " • 扫描二维码，填写宏的相关信息": " • QR-Code scannen, Info eingeben",
     " • 待审核通过自动上架商店": " • Nach Freigabe automatisch online",
     "感谢您的热情分享！": "Vielen Dank fürs Teilen!"
 }
