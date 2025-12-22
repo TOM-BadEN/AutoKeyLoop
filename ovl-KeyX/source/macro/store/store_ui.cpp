@@ -56,6 +56,7 @@ tsl::elm::Element* StoreGetDataGui::createUI() {
             case LoadState::NetworkError:
                 icon = "";
                 text = s_gameList.error.empty() ? s_macroList.error : s_gameList.error;
+                text2 = "请检查时间同步";
                 break;
             case LoadState::GameListEmpty:
             case LoadState::MacroListEmpty:

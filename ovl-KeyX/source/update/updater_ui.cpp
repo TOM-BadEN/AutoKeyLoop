@@ -245,8 +245,9 @@ void UpdaterUI::drawNetworkError(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32
     
     auto iconDim = r->getTextDimensions("", false, iconFont);
     auto textDim = r->getTextDimensions(m_updateInfo.error, false, textFont);
+    auto hintDim = r->getTextDimensions("请检查时间同步", false, textFont);
     
-    s32 totalHeight = iconDim.second + gap + textDim.second;
+    s32 totalHeight = iconDim.second + gap + textDim.second + gap / 2 + hintDim.second;
     s32 blockTop = y + (h - totalHeight) / 2;
     
     s32 iconX = x + (w - iconDim.first) / 2;
@@ -255,8 +256,12 @@ void UpdaterUI::drawNetworkError(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32
     s32 textX = x + (w - textDim.first) / 2;
     s32 textY = iconY + gap + textDim.second;
     
+    s32 hintX = x + (w - hintDim.first) / 2;
+    s32 hintY = textY + gap / 2 + hintDim.second;
+    
     r->drawString("", false, iconX, iconY, iconFont, tsl::Color(0xF, 0xF, 0xF, 0xF));
     r->drawString(m_updateInfo.error, false, textX, textY, textFont, tsl::Color(0xF, 0xF, 0xF, 0xF));
+    r->drawString("请检查时间同步", false, hintX, hintY, textFont, tsl::Color(0xF, 0xF, 0xF, 0xF));
 }
 
 void UpdaterUI::drawNoUpdate(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h) {
