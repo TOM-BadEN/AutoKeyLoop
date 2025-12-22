@@ -1,13 +1,27 @@
 {
-    "version": "v1.5.4",
-    "changelog": {
-        "CN": [
-            "修复1.5.3版本下载的宏，宏列表里看不见的问题",
-            "更新后如果之前因为异常看不见的宏，现在看不到本地化名字，可以删掉重下"
-        ],
-        "EN": [
-            "Fixed the issue where macros downloaded in v1.5.3 were not visible in the macro list",
-            "After updating, previously invisible macros may not show localized names. You can delete and re-download them to fix this"
-        ]
-    }
+  "version": "v1.5.5",
+  "changelog": {
+    "CN": [
+      "增加上传功能，全球可用，上传位置位于宏的详情界面右下角",
+      "欢迎大家上传投稿，服务器仓库会定时同步至GITHUB",
+      "增加编辑宏商店描述信息的功能",
+      "优化ovl内存占用",
+      "更新界面的更新日志现在支持滚动查看",
+      "繁体用户的更新日志由显示英文改为简体中文",
+      "修复在宏详情界面的使用说明显示不完整的问题",
+      "修复录制的时候可能因为线程导致崩溃的问题",
+      "感谢@do-kiss （忘忧）提供的服务器与网页"
+    ],
+    "EN": [
+      "Added upload functionality, available globally. The upload button is located at the bottom right of the macro details page.",
+      "Welcome everyone to upload submissions. The server repository will be synced to GitHub Repo",
+      "Added the ability to edit macro store description information.",
+      "Optimized OVL memory usage.",
+      "Updated the changelog interface to support scrolling.",
+      "For Traditional Chinese users, the changelog display has been changed from English to Simplified Chinese.",
+      "Fixed the issue where usage instructions were not fully displayed on the macro details page.",
+      "Fixed a potential crash during recording caused by threading issues.",
+      "Thanks to @do-kiss (忘忧) for providing the server and webpage."
+    ]
+  }
 }
