@@ -5,10 +5,10 @@
 using qrcodegen::QrCode;
 using qrcodegen::QrSegment;
 
-static const char* GITHUB_URL = "https://github.com/do-kiss/KeyX-Macro-Repository";
-static const char* CN_Repo_URL = "https://macro.dokiss.cn/store.php?lang=zh";
-static const char* WECHAT_PAY_URL = "wxp://f2f0mMaZS-xnKyAZaTyn813TQRZHTRKPzI6UWxldiWDYemRIq8Stt_LPfd1sLyV4v1jR";
-static const char* PAYPAL_URL = "https://www.paypal.com/qrcodes/p2pqrc/7CQ7FTPN26AJ8";
+constexpr const char* GITHUB_URL = "https://github.com/do-kiss/KeyX-Macro-Repository";
+constexpr const char* CN_Repo_URL = "https://macro.dokiss.cn/store.php?lang=zh";
+constexpr const char* WECHAT_PAY_URL = "wxp://f2f0mMaZS-xnKyAZaTyn813TQRZHTRKPzI6UWxldiWDYemRIq8Stt_LPfd1sLyV4v1jR";
+constexpr const char* PAYPAL_URL = "https://www.paypal.com/qrcodes/p2pqrc/7CQ7FTPN26AJ8";
 
 ContributeGui::ContributeGui() {}
 

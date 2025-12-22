@@ -243,6 +243,15 @@
     "填写信息:": "Makro-Infos ausfüllen:",
     " • 扫描二维码，填写宏的相关信息": " • QR-Code scannen, Info eingeben",
     " • 待审核通过自动上架商店": " • Nach Freigabe automatisch online",
-    "感谢您的热情分享！": "Vielen Dank fürs Teilen!"
+    "感谢您的热情分享！": "Vielen Dank fürs Teilen!",
+    "仅支持下载的脚本": "Nur Makro vom Store",
+    "功能介绍:": "Funktionen:",
+    " • 用于修改脚本商店中脚本的信息": " • Makro-Infos im Store bearbeiten",
+    " • 如脚本名称，使用方法等等": " • Name, Nutzung usw.",
+    "编辑方法:": "Bearbeitung:",
+    " • 扫描二维码，填写相关信息": " • QR-Code scannen, Infos eingeben",
+    " • 待审核通过自动生效": " • Nach Freigabe automatisch aktiv",
+    "感谢您的热情修改！": "Vielen Dank fürs Bearbeiten!",
+    "  编辑": "  Bearb."
 }
 

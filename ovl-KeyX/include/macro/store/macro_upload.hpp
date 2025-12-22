@@ -27,6 +27,7 @@ private:
 
     char m_gameName[64];
     char m_filePath[128];
+    char m_langCode[4];
     MacroUtil::MacroMetadata m_meta;
     
     UploadState m_state = UploadState::None;

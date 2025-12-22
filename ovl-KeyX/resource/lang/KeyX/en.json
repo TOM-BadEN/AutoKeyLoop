@@ -239,5 +239,14 @@
     "填写信息:": "Fill in info:",
     " • 扫描二维码，填写宏的相关信息": " • Scan the QR code to enter macro info",
     " • 待审核通过自动上架商店": " • Auto-published after approval",
-    "感谢您的热情分享！": "Thank you for sharing!"
+    "感谢您的热情分享！": "Thank you for sharing!",
+    "仅支持下载的脚本": "Downloaded macros only",
+    "功能介绍:": "Features:",
+    " • 用于修改脚本商店中脚本的信息": " • Edit macro info in the store",
+    " • 如脚本名称，使用方法等等": " • Such as name, usage, etc.",
+    "编辑方法:": "How to Edit:",
+    " • 扫描二维码，填写相关信息": " • Scan QR code, enter the info",
+    " • 待审核通过自动生效": " • Auto-applied after approval",
+    "感谢您的热情修改！": "Thank you for editing!",
+    "  编辑": "  Edit"
 }

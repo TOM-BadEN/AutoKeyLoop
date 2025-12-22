@@ -4,6 +4,7 @@
 #include "Tthread.hpp"
 #include "qrcodegen.hpp"
 #include "language.hpp"
+#include "info_edit.hpp"
 
 using qrcodegen::QrCode;
 using qrcodegen::QrSegment;
@@ -23,6 +24,11 @@ namespace {
             static_cast<u8>(c2.g + (c1.g - c2.g) * progress),
             static_cast<u8>(c2.b + (c1.b - c2.b) * progress), 0xF);
     }
+
+    constexpr const char* UPLOAD_URL = "https://macro.dokiss.cn/edit.php?code=%s&lang=%s";
+    constexpr const char* EDIT_URL = "https://macro.dokiss.cn/edit_prop.php?tid=%s&file=%s&lang=%s";
+
+    constexpr const char* langParam[] = {"zh", "zhh", "en"};
 }
 
 // 脚本详情界面
@@ -31,10 +37,17 @@ MacroDetailGui::MacroDetailGui(const char* macroFilePath, const char* gameName) 
     m_gameName[sizeof(m_gameName) - 1] = '\0';
     strcpy(m_filePath, macroFilePath);
     m_meta = MacroUtil::getMetadata(macroFilePath);
+    int langIndex = LanguageManager::getZhcnOrZhtwOrEnIndex();
+    strcpy(m_langCode, langParam[langIndex]);
 }
 
 tsl::elm::Element* MacroDetailGui::createUI() {
-    auto frame = new tsl::elm::OverlayFrame(m_gameName, "脚本的相关介绍与上传");
+    auto frame = new tsl::elm::HeaderOverlayFrame(97);
+    frame->setHeader(new tsl::elm::CustomDrawer([this](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
+        renderer->drawString(m_gameName, false, 20, 50+2, 32, renderer->a(tsl::defaultOverlayColor));
+        renderer->drawString("脚本的相关介绍与上传", false, 20, 50+23, 15, renderer->a(tsl::bannerVersionTextColor));
+        renderer->drawString("  编辑", false, 270, 693, 23, renderer->a(tsl::style::color::ColorText));
+    }));
     auto list = new tsl::elm::List();
     auto drawer = new tsl::elm::CustomDrawer([this](tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h) {
         switch (m_state) {
@@ -259,10 +272,9 @@ void MacroDetailGui::drawUploadSuccess(tsl::gfx::Renderer* r, s32 x, s32 y, s32 
 
 void MacroDetailGui::prepareSuccessData() {
     // 生成二维码
-    const char* langParam[] = {"zh", "zhh", "en"};
-    int langIndex = LanguageManager::getZhcnOrZhtwOrEnIndex();
-    std::string qrUrl = "https://macro.dokiss.cn/edit.php?code=" + m_uploadResult.code + "&lang=" + langParam[langIndex];
-    QrCode qr = QrCode::encodeSegments(QrSegment::makeSegments(qrUrl.c_str()), QrCode::Ecc::LOW, 5, 5);
+    char uploadUrl[96];
+    snprintf(uploadUrl, sizeof(uploadUrl), UPLOAD_URL, m_uploadResult.code.c_str(), m_langCode);
+    QrCode qr = QrCode::encodeSegments(QrSegment::makeSegments(uploadUrl), QrCode::Ecc::LOW, 5, 5);
     m_qrSize = qr.getSize();
     m_qrModules.resize(m_qrSize);
     for (int qy = 0; qy < m_qrSize; qy++) {
@@ -321,6 +333,17 @@ bool MacroDetailGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState
             m_state = UploadState::Uploading;
             u64 titleId = MacroUtil::getTitleIdFromPath(m_filePath);
             Thd::start([this, titleId]{ m_uploadResult = StoreData::uploadMacro(m_filePath, titleId, m_gameName); });
+            return true;
+        }
+
+        if (keysDown & HidNpadButton_Right) {
+            u64 tid = MacroUtil::getTitleIdFromPath(m_filePath);
+            char tidStr[17];
+            snprintf(tidStr, sizeof(tidStr), "%016lX", tid);
+            std::string fileName = ult::getFileName(m_filePath);
+            char editUrl[128];
+            snprintf(editUrl, sizeof(editUrl), EDIT_URL, tidStr, fileName.c_str(), m_langCode);
+            tsl::changeTo<MacroInfoEditGui>(editUrl, m_meta.name, m_meta.author);
             return true;
         }
     }
