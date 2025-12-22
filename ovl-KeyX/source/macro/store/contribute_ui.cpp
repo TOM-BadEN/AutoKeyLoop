@@ -41,15 +41,10 @@ tsl::elm::Element* ContributeGui::createUI() {
         r->drawString(" • 感谢提供服务器与制作网页", false, textX, currentY, 20, textColor);
         currentY += 65;
         
-        // 两个二维码 - 使用固定 Version 5 (37x37) 保证大小一致
-        static QrCode qrCnRepo = QrCode::encodeSegments(QrSegment::makeSegments(CN_Repo_URL), QrCode::Ecc::LOW, 5, 5);
-        static QrCode qrGithub = QrCode::encodeSegments(QrSegment::makeSegments(GITHUB_URL), QrCode::Ecc::LOW, 5, 5);
-        static QrCode qrWechat = QrCode::encodeSegments(QrSegment::makeSegments(WECHAT_PAY_URL), QrCode::Ecc::LOW, 5, 5);
-        static QrCode qrPaypal = QrCode::encodeSegments(QrSegment::makeSegments(PAYPAL_URL), QrCode::Ecc::LOW, 5, 5);
-        
-        bool isChinese = LanguageManager::isSimplifiedChinese();
-        const QrCode& qrRepo = isChinese ? qrCnRepo : qrGithub;
-        const QrCode& qrDonate = isChinese ? qrWechat : qrPaypal;
+        // 两个二维码 - 根据语言只生成需要的2个
+        static bool isChinese = LanguageManager::isSimplifiedChinese();
+        static QrCode qrRepo = QrCode::encodeSegments(QrSegment::makeSegments(isChinese ? CN_Repo_URL : GITHUB_URL), QrCode::Ecc::LOW, 5, 5);
+        static QrCode qrDonate = QrCode::encodeSegments(QrSegment::makeSegments(isChinese ? WECHAT_PAY_URL : PAYPAL_URL), QrCode::Ecc::LOW, 5, 5);
         const char* donateTitle = isChinese ? "微信捐赠" : "PayPal Donate";
         
         int scale = 3;
