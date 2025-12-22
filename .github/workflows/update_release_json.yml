@@ -3,6 +3,12 @@ name: 自动更新 update.json
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: '只测试解析，不修改文件'
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -16,11 +22,28 @@ jobs:
         with:
           ref: main
 
+      - name: Fetch latest release (manual trigger only)
+        if: github.event_name == 'workflow_dispatch'
+        id: fetch_release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # 从 GitHub API 获取最新 Release
+          release=$(gh api repos/${{ github.repository }}/releases/latest)
+          echo "tag=$(echo "$release" | jq -r '.tag_name')" >> $GITHUB_OUTPUT
+          echo "$release" | jq -r '.body' > /tmp/release_body.txt
+
       - name: Parse release and update JSON
         env:
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
-          RELEASE_BODY: ${{ github.event.release.body }}
+          RELEASE_TAG: ${{ github.event.release.tag_name || steps.fetch_release.outputs.tag }}
+          IS_DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
         run: |
+          # 获取 body
+          if [ -f /tmp/release_body.txt ]; then
+            RELEASE_BODY=$(cat /tmp/release_body.txt)
+          else
+            RELEASE_BODY="${{ github.event.release.body }}"
+          fi
           set -e
           
           echo "Version: $RELEASE_TAG"
@@ -58,8 +81,16 @@ jobs:
           
           echo "Generated update.json:"
           cat update/update.json
+          
+          # Dry run 模式不保存文件
+          if [ "$IS_DRY_RUN" = "true" ]; then
+            echo ""
+            echo "=== DRY RUN MODE - 不修改文件 ==="
+            git checkout update/update.json
+          fi
 
       - name: Commit and push
+        if: github.event.inputs.dry_run != 'true'
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
