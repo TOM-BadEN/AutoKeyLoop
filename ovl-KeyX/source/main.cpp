@@ -13,9 +13,9 @@ namespace {
     // Socket 初始化配置（优化内存占用，避免 4MB ovlloader 崩溃）
     constexpr SocketInitConfig socketInitConfig = {
             // TCP 缓冲区
-            .tcp_tx_buf_size     = 16 * 1024,     // 发送缓冲区 16KB
+            .tcp_tx_buf_size     = 8 * 1024,     // 发送缓冲区 8KB
             .tcp_rx_buf_size     = 16 * 1024 * 2, // 接收缓冲区 32KB
-            .tcp_tx_buf_max_size = 64 * 1024,     // 最大发送缓冲区 64KB
+            .tcp_tx_buf_max_size = 32 * 1024,     // 最大发送缓冲区 32KB
             .tcp_rx_buf_max_size = 64 * 1024 * 2, // 最大接收缓冲区 128KB
             
             // UDP 缓冲区
