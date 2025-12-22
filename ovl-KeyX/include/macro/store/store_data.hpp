@@ -34,7 +34,7 @@ struct MacroListResult {
 
 struct UploadResult {
     bool success;
-    std::string response;
+    std::string code;  // 解析后的 code
 };
 
 class StoreData {

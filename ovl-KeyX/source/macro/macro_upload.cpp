@@ -3,7 +3,6 @@
 #include <cmath>
 #include "Tthread.hpp"
 #include "qrcodegen.hpp"
-#include <cJSON.h>
 #include "language.hpp"
 
 using qrcodegen::QrCode;
@@ -220,10 +219,10 @@ void MacroDetailGui::drawUploadSuccess(tsl::gfx::Renderer* r, s32 x, s32 y, s32 
     r->drawString("最后一步了~", false, textX, currentY, 28, r->a(tsl::onTextColor));
     currentY += 50;
     
-    // 脚本代码：（使用缓存的 m_code）
+    // 脚本代码：
     r->drawString("脚本代码:", false, textX, currentY, 20, r->a(tsl::defaultTextColor));
     currentY += 28;
-    r->drawString((" • " + m_code).c_str(), false, textX, currentY, fontSize, r->a(tsl::onTextColor));
+    r->drawString((" • " + m_uploadResult.code).c_str(), false, textX, currentY, fontSize, r->a(tsl::onTextColor));
     currentY += lineHeight + 20;
     
     // 填写信息：
@@ -258,20 +257,10 @@ void MacroDetailGui::drawUploadSuccess(tsl::gfx::Renderer* r, s32 x, s32 y, s32 
 }
 
 void MacroDetailGui::prepareSuccessData() {
-    // 解析 code
-    cJSON* root = cJSON_Parse(m_uploadResult.response.c_str());
-    if (root) {
-        cJSON* codeItem = cJSON_GetObjectItem(root, "code");
-        if (codeItem && cJSON_IsString(codeItem)) {
-            m_code = codeItem->valuestring;
-        }
-        cJSON_Delete(root);
-    }
-    
     // 生成二维码
     const char* langParam[] = {"zh", "zhh", "en"};
     int langIndex = LanguageManager::getZhcnOrZhtwOrEnIndex();
-    std::string qrUrl = "https://macro.dokiss.cn/edit.php?code=" + m_code + "&lang=" + langParam[langIndex];
+    std::string qrUrl = "https://macro.dokiss.cn/edit.php?code=" + m_uploadResult.code + "&lang=" + langParam[langIndex];
     QrCode qr = QrCode::encodeSegments(QrSegment::makeSegments(qrUrl.c_str()), QrCode::Ecc::LOW, 5, 5);
     m_qrSize = qr.getSize();
     m_qrModules.resize(m_qrSize);

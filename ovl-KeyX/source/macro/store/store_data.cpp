@@ -143,6 +143,7 @@ UploadResult StoreData::uploadMacro(const char* filePath, u64 titleId, const cha
 
     UploadResult result{false, ""};
     ult::abortDownload = false;
+    std::string response;
     
     // 检查文件是否存在
     if (!ult::isFile(filePath)) return result;
@@ -179,7 +180,7 @@ UploadResult StoreData::uploadMacro(const char* filePath, u64 titleId, const cha
     curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10L);
     curl_easy_setopt(curl, CURLOPT_UPLOAD_BUFFERSIZE, 16 * 1024L);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, +writeCallback);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &result.response);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
     curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
     curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, +progressCallback);
     
@@ -188,7 +189,18 @@ UploadResult StoreData::uploadMacro(const char* filePath, u64 titleId, const cha
     curl_mime_free(mime);
     curl_easy_cleanup(curl);
     
-    result.success = (res == CURLE_OK);
+    if (res != CURLE_OK) return result;
+    
+    // 解析 JSON 获取 code
+    cJSON* root = cJSON_Parse(response.c_str());
+    if (root) {
+        cJSON* codeItem = cJSON_GetObjectItem(root, "code");
+        if (codeItem && cJSON_IsString(codeItem)) {
+            result.code = codeItem->valuestring;
+            result.success = true;
+        }
+        cJSON_Delete(root);
+    }
     return result;
 }
 

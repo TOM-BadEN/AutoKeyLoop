@@ -36,7 +36,6 @@ private:
     UploadResult m_uploadResult;
     
     // 上传成功后缓存（避免每帧重新生成）
-    std::string m_code;
     std::vector<std::vector<bool>> m_qrModules;
     int m_qrSize = 0;
 };
