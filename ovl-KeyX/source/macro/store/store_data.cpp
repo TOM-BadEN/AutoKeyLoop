@@ -103,10 +103,14 @@ MacroListResult StoreData::getMacroList(const std::string& gameId) {
             
             if (name && cJSON_IsArray(name)) {
                 cJSON* nameItem = cJSON_GetArrayItem(name, langIndex);
+                if (langIndex < 2 && (!nameItem || !cJSON_IsString(nameItem) || !nameItem->valuestring[0]))
+                    nameItem = cJSON_GetArrayItem(name, 1 - langIndex);  // 简繁互相回滚
                 if (nameItem && cJSON_IsString(nameItem)) entry.name = nameItem->valuestring;
             }
             if (desc && cJSON_IsArray(desc)) {
                 cJSON* descItem = cJSON_GetArrayItem(desc, langIndex);
+                if (langIndex < 2 && (!descItem || !cJSON_IsString(descItem) || !descItem->valuestring[0]))
+                    descItem = cJSON_GetArrayItem(desc, 1 - langIndex);  // 简繁互相回滚
                 if (descItem && cJSON_IsString(descItem)) entry.desc = descItem->valuestring;
             }
             
