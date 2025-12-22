@@ -177,6 +177,7 @@ UploadResult StoreData::uploadMacro(const char* filePath, u64 titleId, const cha
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
     curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 5L);
     curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10L);
+    curl_easy_setopt(curl, CURLOPT_UPLOAD_BUFFERSIZE, 16 * 1024L);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, +writeCallback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &result.response);
     curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
