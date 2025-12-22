@@ -11,6 +11,13 @@ namespace {
     constexpr const char* refreshIcon[] = {"", "", "", "", "", "", "", ""};
     constexpr s32 ITEM_HEIGHT = 70;
     
+    // changelog 布局常量
+    constexpr s32 CHANGELOG_FONT_SIZE = 20;    // 字体大小
+    constexpr s32 CHANGELOG_LINE_HEIGHT = 32;  // 行高
+    constexpr s32 CHANGELOG_ITEM_GAP = 3;      // 条目间隙
+    constexpr s32 SCROLLBAR_WIDTH = 3;         // 滚动条宽度
+    constexpr s32 SCROLLBAR_GAP = 8;           // 文字到滚动条间隙
+    
     double calcBlinkProgress() {
         u64 ns = armTicksToNs(armGetSystemTick());
         return (std::cos(2.0 * 3.14159265358979323846 * std::fmod(ns * 0.000000001 - 0.25, 1.0)) + 1.0) * 0.5;
@@ -21,6 +28,73 @@ namespace {
             static_cast<u8>(c2.r + (c1.r - c2.r) * progress),
             static_cast<u8>(c2.g + (c1.g - c2.g) * progress),
             static_cast<u8>(c2.b + (c1.b - c2.b) * progress), 0xF);
+    }
+    
+    // 获取 UTF-8 字符边界
+    std::vector<size_t> getUtf8CharBounds(const std::string& text) {
+        std::vector<size_t> bounds = {0};
+        for (size_t i = 0; i < text.size(); ) {
+            unsigned char c = text[i];
+            if ((c & 0x80) == 0) i += 1;
+            else if ((c & 0xE0) == 0xC0) i += 2;
+            else if ((c & 0xF0) == 0xE0) i += 3;
+            else i += 4;
+            bounds.push_back(i);
+        }
+        return bounds;
+    }
+    
+    // 二分查找文本截断点
+    size_t findTextCutPoint(tsl::gfx::Renderer* r, const std::string& text, 
+                            const std::vector<size_t>& bounds, s32 maxWidth, s32 fontSize) {
+        if (bounds.size() <= 1) return text.size();
+        size_t lo = 1, hi = bounds.size() - 1, cutIdx = 1;
+        while (lo <= hi) {
+            size_t mid = (lo + hi) / 2;
+            auto [mw, mh] = r->getTextDimensions(text.substr(0, bounds[mid]), false, fontSize);
+            if (mw <= maxWidth) { cutIdx = mid; lo = mid + 1; }
+            else { hi = mid - 1; }
+        }
+        return bounds[cutIdx];
+    }
+    
+    // changelog 行数据
+    struct ChangelogLine {
+        std::string text;
+        bool hasPrefix;  // 是否显示 " • " 前缀
+    };
+    
+    // 预处理 changelog 为行数据
+    std::vector<ChangelogLine> preprocessChangelog(
+        tsl::gfx::Renderer* r, const std::vector<std::string>& changelog,
+        s32 maxWidth, s32 prefixW, s32& outTotalHeight) {
+        
+        std::vector<ChangelogLine> lines;
+        outTotalHeight = 0;
+        
+        for (const auto& item : changelog) {
+            std::string text = item;
+            bool isFirstLine = true;
+            while (!text.empty()) {
+                s32 lineMaxWidth = isFirstLine ? maxWidth : (maxWidth - prefixW);
+                auto [tw, th] = r->getTextDimensions(text, false, CHANGELOG_FONT_SIZE);
+                
+                if (tw <= lineMaxWidth) {
+                    lines.push_back({text, isFirstLine});
+                    outTotalHeight += CHANGELOG_LINE_HEIGHT;
+                    break;
+                }
+                
+                auto bounds = getUtf8CharBounds(text);
+                size_t cut = findTextCutPoint(r, text, bounds, lineMaxWidth, CHANGELOG_FONT_SIZE);
+                lines.push_back({text.substr(0, cut), isFirstLine});
+                outTotalHeight += CHANGELOG_LINE_HEIGHT;
+                text = text.substr(cut);
+                isFirstLine = false;
+            }
+            outTotalHeight += CHANGELOG_ITEM_GAP;
+        }
+        return lines;
     }
 }
 
@@ -108,6 +182,18 @@ void UpdaterUI::update() {
 
 bool UpdaterUI::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) {
     if (m_state == UpdateState::HasUpdate || m_state == UpdateState::CancelUpdate || m_state == UpdateState::UpdateError) {
+        // 上下键滚动 changelog
+        constexpr s32 scrollStep = 8;
+        if (keysHeld & HidNpadButton_AnyUp) {
+            m_scrollOffset -= scrollStep;
+            if (m_scrollOffset < 0) m_scrollOffset = 0;
+            return true;
+        }
+        if (keysHeld & HidNpadButton_AnyDown) {
+            m_scrollOffset += scrollStep;
+            if (m_scrollOffset > m_maxScrollOffset) m_scrollOffset = m_maxScrollOffset;
+            return true;
+        }
         if (keysDown & HidNpadButton_Plus) {
             m_state = UpdateState::Downloading;
             Thd::start([this]{ m_successDownload = m_updateData.downloadZip();});
@@ -206,93 +292,70 @@ void UpdaterUI::drawNoUpdate(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h) 
 }
 
 void UpdaterUI::drawHasUpdate(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h) {
+    // 布局参数
     s32 textX = x + 19;
     s32 currentY = y + 35;
+    s32 listY = y + h - 10 - ITEM_HEIGHT;
+    s32 maxWidth = w - 19 - 15 - SCROLLBAR_WIDTH - SCROLLBAR_GAP;
     
-    // 发现新版本 • v1.4.2 (青色，大字号)
+    // 绘制标题
     std::string versionText = i18n("发现新版本 ") + m_updateInfo.version;
     r->drawString(versionText, false, textX, currentY, 28, r->a(tsl::onTextColor));
     currentY += 50;
     
-    // 更新内容
     r->drawString("更新内容 :", false, textX, currentY, 23, r->a(tsl::defaultTextColor));
     currentY += 35;
     
-    // changelog 列表（自动换行）
-    s32 maxWidth = w - 19 - 15;
-    s32 fontSize = 20;
-    s32 lineHeight = 32;
-    s32 listY = y + h - 10 - ITEM_HEIGHT;
-    s32 maxY = listY - 20;
-    bool stopDrawing = false;
+    // 计算区域边界
+    s32 textMinY = currentY;
+    s32 maxY = listY - 22;
+    s32 visibleHeight = maxY - textMinY;
+    s32 scrollMinY = textMinY - CHANGELOG_LINE_HEIGHT + 5;
     
+    // 预处理 changelog
     std::string prefix = " • ";
-    auto [prefixW, prefixH] = r->getTextDimensions(prefix, false, fontSize);
+    auto [prefixW, prefixH] = r->getTextDimensions(prefix, false, CHANGELOG_FONT_SIZE);
+    s32 totalContentHeight = 0;
+    auto lines = preprocessChangelog(r, m_updateInfo.changelog, maxWidth, prefixW, totalContentHeight);
     
-    for (const auto& item : m_updateInfo.changelog) {
-        if (stopDrawing) break;
-        std::string text = item;
-        bool isFirstLine = true;
-        
-        while (!text.empty()) {
-            if (currentY > maxY) { stopDrawing = true; break; }
-            
-            s32 lineMaxWidth = isFirstLine ? maxWidth : (maxWidth - prefixW);
-            auto [tw, th] = r->getTextDimensions(text, false, fontSize);
-            
-            if (tw <= lineMaxWidth) {
-                if (isFirstLine) {
-                    r->drawString(prefix + text, false, textX, currentY, fontSize, r->a(tsl::style::color::ColorDescription));
-                } else {
-                    r->drawString(text, false, textX + prefixW, currentY, fontSize, r->a(tsl::style::color::ColorDescription));
-                }
-                currentY += lineHeight;
-                break;
-            }
-            
-            // 获取 UTF-8 字符边界
-            std::vector<size_t> charBounds = {0};
-            for (size_t i = 0; i < text.size(); ) {
-                unsigned char c = text[i];
-                if ((c & 0x80) == 0) i += 1;
-                else if ((c & 0xE0) == 0xC0) i += 2;
-                else if ((c & 0xF0) == 0xE0) i += 3;
-                else i += 4;
-                charBounds.push_back(i);
-            }
-            
-            // 二分查找截断点
-            size_t lo = 1, hi = charBounds.size() - 1, cutIdx = 1;
-            while (lo <= hi) {
-                size_t mid = (lo + hi) / 2;
-                auto [mw, mh] = r->getTextDimensions(text.substr(0, charBounds[mid]), false, fontSize);
-                if (mw <= lineMaxWidth) {
-                    cutIdx = mid;
-                    lo = mid + 1;
-                } else {
-                    hi = mid - 1;
-                }
-            }
-            
-            size_t cut = charBounds[cutIdx];
-            if (isFirstLine) {
-                r->drawString(prefix + text.substr(0, cut), false, textX, currentY, fontSize, r->a(tsl::style::color::ColorDescription));
-                isFirstLine = false;
+    // 更新滚动状态
+    m_maxScrollOffset = (totalContentHeight > visibleHeight) ? (totalContentHeight - visibleHeight) : 0;
+    if (m_scrollOffset > m_maxScrollOffset) m_scrollOffset = m_maxScrollOffset;
+    if (m_scrollOffset < 0) m_scrollOffset = 0;
+    
+    // 绘制 changelog
+    s32 maxLines = (visibleHeight + CHANGELOG_LINE_HEIGHT - 1) / CHANGELOG_LINE_HEIGHT;
+    s32 contentY = 0, drawY = textMinY, drawnLines = 0;
+    
+    for (const auto& line : lines) {
+        if (drawnLines >= maxLines) break;
+        if (contentY >= m_scrollOffset) {
+            if (line.hasPrefix) {
+                r->drawString(prefix + line.text, false, textX, drawY, CHANGELOG_FONT_SIZE, r->a(tsl::style::color::ColorDescription));
             } else {
-                r->drawString(text.substr(0, cut), false, textX + prefixW, currentY, fontSize, r->a(tsl::style::color::ColorDescription));
+                r->drawString(line.text, false, textX + prefixW, drawY, CHANGELOG_FONT_SIZE, r->a(tsl::style::color::ColorDescription));
             }
-            currentY += lineHeight;
-            text = text.substr(cut);
+            drawY += CHANGELOG_LINE_HEIGHT;
+            drawnLines++;
         }
-        currentY += 3;  // 条目间隙
+        contentY += CHANGELOG_LINE_HEIGHT;
     }
     
-    // 执行任务的时候绘制对应的进度条（在选中框内部）
-    s32 border = 5;
-    s32 innerX = x + border;
-    s32 innerY = listY;
-    s32 innerW = w + 4 - border * 2;
-    s32 innerH = ITEM_HEIGHT;
+    // 绘制滚动条
+    if (m_maxScrollOffset > 0) {
+        s32 scrollBarX = x + w - SCROLLBAR_WIDTH;
+        s32 scrollBarTotalH = maxY - scrollMinY;
+        s32 scrollBarHeight = scrollBarTotalH * visibleHeight / totalContentHeight;
+        if (scrollBarHeight < 20) scrollBarHeight = 20;
+        s32 scrollBarY = scrollMinY + (scrollBarTotalH - scrollBarHeight) * m_scrollOffset / m_maxScrollOffset;
+        s32 radius = SCROLLBAR_WIDTH / 2;
+        
+        r->drawRoundedRect(scrollBarX, scrollMinY, SCROLLBAR_WIDTH, scrollBarTotalH, radius, tsl::Color(0x3, 0x3, 0x3, 0xD));
+        r->drawRoundedRect(scrollBarX, scrollBarY, SCROLLBAR_WIDTH, scrollBarHeight, radius, tsl::Color(0x8, 0x8, 0x8, 0xF));
+    }
+    
+    // 绘制进度条（下载/解压时）
+    s32 innerX = x + 5, innerY = listY, innerW = w - 6, innerH = ITEM_HEIGHT;
     
     if (m_state == UpdateState::Downloading || m_state == UpdateState::Unzipping) {
         int percent = (m_state == UpdateState::Downloading) ? ult::downloadPercentage.load() : ult::unzipPercentage.load();
