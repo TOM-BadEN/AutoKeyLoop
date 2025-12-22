@@ -6,6 +6,7 @@ using qrcodegen::QrCode;
 using qrcodegen::QrSegment;
 
 static const char* GITHUB_URL = "https://github.com/do-kiss/KeyX-Macro-Repository";
+static const char* CN_Repo_URL = "https://macro.dokiss.cn/store.php?lang=zh";
 static const char* WECHAT_PAY_URL = "wxp://f2f0mMaZS-xnKyAZaTyn813TQRZHTRKPzI6UWxldiWDYemRIq8Stt_LPfd1sLyV4v1jR";
 static const char* PAYPAL_URL = "https://www.paypal.com/qrcodes/p2pqrc/7CQ7FTPN26AJ8";
 
@@ -41,40 +42,45 @@ tsl::elm::Element* ContributeGui::createUI() {
         currentY += 65;
         
         // 两个二维码 - 使用固定 Version 5 (37x37) 保证大小一致
+        static QrCode qrCnRepo = QrCode::encodeSegments(QrSegment::makeSegments(CN_Repo_URL), QrCode::Ecc::LOW, 5, 5);
         static QrCode qrGithub = QrCode::encodeSegments(QrSegment::makeSegments(GITHUB_URL), QrCode::Ecc::LOW, 5, 5);
         static QrCode qrWechat = QrCode::encodeSegments(QrSegment::makeSegments(WECHAT_PAY_URL), QrCode::Ecc::LOW, 5, 5);
         static QrCode qrPaypal = QrCode::encodeSegments(QrSegment::makeSegments(PAYPAL_URL), QrCode::Ecc::LOW, 5, 5);
         
         bool isChinese = LanguageManager::isSimplifiedChinese();
+        const QrCode& qrRepo = isChinese ? qrCnRepo : qrGithub;
         const QrCode& qrDonate = isChinese ? qrWechat : qrPaypal;
         const char* donateTitle = isChinese ? "微信捐赠" : "PayPal Donate";
         
         int scale = 3;
         int margin = 6;
-        int qrSizeGithub = qrGithub.getSize();
+        int qrSizeRepo = qrRepo.getSize();
         int qrSizeDonate = qrDonate.getSize();
-        int totalSizeGithub = qrSizeGithub * scale;
+        int totalSizeRepo = qrSizeRepo * scale;
         int totalSizeDonate = qrSizeDonate * scale;
-        int startXGithub = textX + 15;
+        int startXRepo = textX + 15;
         int startXDonate = x + w - 20 - totalSizeDonate - 15;
         
-        // 双标题：脚本仓库（左）  捐赠（右，绿色，居中于二维码）
-        r->drawString("脚本仓库", false, textX, currentY, 24, titleColor);
+         tsl::Color donateColor = {0x66, 0xFF, 0x66, 0xFF};  // 绿色
+        // 双标题：脚本仓库（左，居中于二维码）  捐赠（右，绿色，居中于二维码）
+        auto [repoW, repoH] = r->getTextDimensions("脚本仓库", false, 24);
+        s32 repoTitleX = startXRepo + (totalSizeRepo - repoW) / 2;
+        r->drawString("脚本仓库", false, repoTitleX, currentY, 24, donateColor);
         
         auto [donateW, donateH] = r->getTextDimensions(donateTitle, false, 24);
         s32 donateTitleX = startXDonate + (totalSizeDonate - donateW) / 2;
-        tsl::Color donateColor = {0x66, 0xFF, 0x66, 0xFF};  // 绿色
+       
         r->drawString(donateTitle, false, donateTitleX, currentY, 24, donateColor);
         currentY += 34;
         
-        // GitHub 二维码（左）
-        int startYGithub = currentY;
+        // 脚本仓库二维码（左）
+        int startYRepo = currentY;
         
-        r->drawRect(startXGithub - margin, startYGithub - margin, totalSizeGithub + margin * 2, totalSizeGithub + margin * 2, tsl::Color(0xF, 0xF, 0xF, 0xF));
-        for (int qy = 0; qy < qrSizeGithub; qy++) {
-            for (int qx = 0; qx < qrSizeGithub; qx++) {
-                if (qrGithub.getModule(qx, qy)) {
-                    r->drawRect(startXGithub + qx * scale, startYGithub + qy * scale, scale, scale, tsl::Color(0x0, 0x0, 0x0, 0xF));
+        r->drawRect(startXRepo - margin, startYRepo - margin, totalSizeRepo + margin * 2, totalSizeRepo + margin * 2, tsl::Color(0xF, 0xF, 0xF, 0xF));
+        for (int qy = 0; qy < qrSizeRepo; qy++) {
+            for (int qx = 0; qx < qrSizeRepo; qx++) {
+                if (qrRepo.getModule(qx, qy)) {
+                    r->drawRect(startXRepo + qx * scale, startYRepo + qy * scale, scale, scale, tsl::Color(0x0, 0x0, 0x0, 0xF));
                 }
             }
         }
