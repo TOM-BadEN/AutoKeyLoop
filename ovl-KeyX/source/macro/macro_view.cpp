@@ -38,7 +38,8 @@ MacroViewGui::MacroViewGui(const char* macroFilePath, const char* gameName, bool
  : m_isRecord(isRecord)
 {
     strcpy(m_macroFilePath, macroFilePath);
-    strcpy(m_gameName, gameName);
+    strncpy(m_gameName, gameName, sizeof(m_gameName) - 1);
+    m_gameName[sizeof(m_gameName) - 1] = '\0';
     MacroData::load(macroFilePath);
     getHotkey();
 }
@@ -59,7 +60,7 @@ tsl::elm::Element* MacroViewGui::createUI() {
     auto list = new tsl::elm::List();
     auto textArea = new tsl::elm::CustomDrawer([this](tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h) {
         const auto& info = MacroData::getBasicInfo();
-        char titleId[17], fileSize[16], fps[16], frames[32], fileName[80];
+        char titleId[17], fileSize[16], fps[16], frames[32], fileName[64];
         snprintf(titleId, sizeof(titleId), "%016lX", info.titleId);
         snprintf(fileName, sizeof(fileName), "%s", info.fileName);
         snprintf(fileSize, sizeof(fileSize), "%u KB (V%u)", (info.fileSize + 1023) / 1024, info.version);
@@ -72,7 +73,7 @@ tsl::elm::Element* MacroViewGui::createUI() {
         };
         const char* values[] = { titleId, fileName, "按  查看", fileSize, fps, frames };
         
-        char line[64];
+        char line[96];
         constexpr const u32 fontSize = 20;
         const s32 startX = x + 26;
         s32 lineHeight = r->getTextDimensions("你", false, fontSize).second + 15;

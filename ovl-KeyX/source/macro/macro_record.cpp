@@ -123,7 +123,7 @@ bool RecordingGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &
         MacroSampler::Stop();
         u64 titleId = GameMonitor::getCurrentTitleId();
         MacroSampler::Save(titleId, combo);
-        char filename[96];
+        char filename[128];
         strcpy(filename, MacroSampler::GetFilePath());
         char gameName[64];
         GameMonitor::getTitleIdGameName(titleId, gameName);

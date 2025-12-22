@@ -109,7 +109,8 @@ bool GameMonitor::getTitleIdGameName(u64 titleId, char* result) {
     // 优先使用系统语言
     entry = &control_data->nacp.lang[systemLanguageIndex];
     if (entry->name[0] != '\0'){
-        strcpy(result, entry->name);
+        strncpy(result, entry->name, 63);
+        result[63] = '\0';
         nsExit();            
         return true;
     }
@@ -119,7 +120,8 @@ bool GameMonitor::getTitleIdGameName(u64 titleId, char* result) {
         if (NameLanguageIndex[i] == systemLanguageIndex) continue; 
         entry = &control_data->nacp.lang[NameLanguageIndex[i]];
         if (entry->name[0] == '\0') continue;
-        strcpy(result, entry->name);
+        strncpy(result, entry->name, 63);
+        result[63] = '\0';
         nsExit();            
         return true;
     }

@@ -21,11 +21,11 @@ private:
     static bool s_threadCreated;
     static bool s_shouldExit;
     static bool s_sampling;
-    alignas(0x1000) static char s_threadStack[4 * 1024];
+    alignas(0x1000) static char s_threadStack[8 * 1024];
     
     // 采样数据
     static std::vector<MacroFrameV2> s_frames;
-    static char s_filePath[96];
+    static char s_filePath[128];
     static u32 s_totalSamples;  // 总采样次数
     static u64 s_startTick;     // 录制开始时间
     static u32 s_lastFrameMs;   // 上一帧时间(ms)

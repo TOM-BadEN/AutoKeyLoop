@@ -20,7 +20,7 @@ public:
 private:
 
     struct MacroEntry {
-        char MacroFilePath[96];    // 宏文件路径
+        char MacroFilePath[128];    // 宏文件路径
         u64 combo;                 // 快捷键组合
     };
 

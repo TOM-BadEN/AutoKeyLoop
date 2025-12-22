@@ -10,7 +10,7 @@ public:
     virtual bool handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) override;
 
 private:
-    char m_macroFilePath[96];
+    char m_macroFilePath[128];
     char m_gameName[64];
     bool m_isRecord;
     int m_row = 0;

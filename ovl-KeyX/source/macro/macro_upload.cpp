@@ -27,7 +27,8 @@ namespace {
 
 // 脚本详情界面
 MacroDetailGui::MacroDetailGui(const char* macroFilePath, const char* gameName) {
-    strcpy(m_gameName, gameName);
+    strncpy(m_gameName, gameName, sizeof(m_gameName) - 1);
+    m_gameName[sizeof(m_gameName) - 1] = '\0';
     strcpy(m_filePath, macroFilePath);
     m_meta = MacroUtil::getMetadata(macroFilePath);
 }

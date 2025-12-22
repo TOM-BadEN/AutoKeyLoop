@@ -14,7 +14,7 @@ public:
     
 private:
     char m_gameName[64];
-    char m_macroFilePath[96];
+    char m_macroFilePath[128];
     bool m_isRecord;
     u64 m_Hotkey = 0;
     tsl::elm::ListItem* m_deleteItem = nullptr;

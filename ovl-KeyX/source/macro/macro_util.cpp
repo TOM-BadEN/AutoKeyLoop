@@ -34,7 +34,7 @@ std::vector<MacroUtil::MacroEntry> MacroUtil::getMacroList(u64 titleId) {
     std::vector<MacroEntry> result;
     
     // 获取所有宏文件
-    char pattern[96];
+    char pattern[128];
     snprintf(pattern, sizeof(pattern), "%s/%016lX/*.macro", MACROS_DIR, titleId);
     std::vector<std::string> allFiles = ult::getFilesListByWildcards(pattern);
     

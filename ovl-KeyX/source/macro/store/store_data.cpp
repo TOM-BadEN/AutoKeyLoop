@@ -160,7 +160,7 @@ UploadResult StoreData::uploadMacro(const char* filePath, u64 titleId, const cha
     curl_mime_filedata(filePart, filePath);
     
     // 添加 titleId 字段
-    char tidStr[32];
+    char tidStr[17];
     snprintf(tidStr, sizeof(tidStr), "%016lX", titleId);
     curl_mimepart* tidPart = curl_mime_addpart(mime);
     curl_mime_name(tidPart, "titleid");

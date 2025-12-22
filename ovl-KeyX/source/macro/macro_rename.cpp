@@ -31,7 +31,8 @@ MacroRenameGui::MacroRenameGui(const char* macroFilePath, const char* gameName, 
  : m_isRecord(isRecord)
 {
     strcpy(m_macroFilePath, macroFilePath);
-    strcpy(m_gameName, gameName);
+    strncpy(m_gameName, gameName, sizeof(m_gameName) - 1);
+    m_gameName[sizeof(m_gameName) - 1] = '\0';
     std::string fileName = ult::getFileName(macroFilePath);
     auto dot = fileName.rfind('.');
     if (dot != std::string::npos) fileName = fileName.substr(0, dot); 
@@ -234,7 +235,7 @@ void MacroRenameGui::MacroRename(){
     size_t dirLen = lastSlash - m_macroFilePath + 1; 
 
     // 获取新路径：sdmc:/config/KeyX/macros/TID/ + m_input + .macro
-    char newMacroFilePath[96];
+    char newMacroFilePath[128];
     memcpy(newMacroFilePath, m_macroFilePath, dirLen);
     snprintf(newMacroFilePath + dirLen, sizeof(newMacroFilePath) - dirLen, "%s.macro", m_input);
     
@@ -261,7 +262,7 @@ void MacroRenameGui::checkDuplicate() {
     if (!lastSlash) { m_isDuplicate = false; return; }
     size_t dirLen = lastSlash - m_macroFilePath + 1;
     
-    char newPath[96];
+    char newPath[128];
     memcpy(newPath, m_macroFilePath, dirLen);
     snprintf(newPath + dirLen, sizeof(newPath) - dirLen, "%s.macro", m_input);
     

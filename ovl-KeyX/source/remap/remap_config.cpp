@@ -31,7 +31,7 @@ namespace {
     // 当前配置上下文（全局变量）
     bool s_isGlobal = true;
     u64 s_titleId = 0;
-    char s_configPath[256] = "";
+    char s_configPath[64] = "";
 }
 
 SettingRemapConfig::SettingRemapConfig(bool isGlobal, u64 currentTitleId)

@@ -26,7 +26,7 @@ private:
     void prepareSuccessData();
 
     char m_gameName[64];
-    char m_filePath[96];
+    char m_filePath[128];
     MacroUtil::MacroMetadata m_meta;
     
     UploadState m_state = UploadState::None;
