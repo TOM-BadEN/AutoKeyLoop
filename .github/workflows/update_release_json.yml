@@ -52,10 +52,10 @@ jobs:
           echo "---"
           
           # Parse EN changelog (between ## EN and ## ZH)
-          en_lines=$(echo "$RELEASE_BODY" | sed -n '/^##* *EN/,/^##* *ZH/p' | grep '^- ' | sed 's/^- //' || true)
+          en_lines=$(echo "$RELEASE_BODY" | tr -d '\r' | sed -n '/^##* *EN/,/^##* *ZH/p' | grep '^- ' | sed 's/^- //' || true)
           
           # Parse ZH changelog (after ## ZH)
-          zh_lines=$(echo "$RELEASE_BODY" | sed -n '/^##* *ZH/,$p' | grep '^- ' | sed 's/^- //' || true)
+          zh_lines=$(echo "$RELEASE_BODY" | tr -d '\r' | sed -n '/^##* *ZH/,$p' | grep '^- ' | sed 's/^- //' || true)
           
           echo "ZH changelog:"
           echo "$zh_lines"
