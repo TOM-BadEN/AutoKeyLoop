@@ -424,6 +424,7 @@ StoreMacroViewGui::StoreMacroViewGui(u64 tid, const std::string& gameName)
     std::string fileName = s_selectedMacro.file;
     std::string baseName = fileName.substr(0, fileName.size() - 6);
     m_localPath = dirPath + fileName;
+    m_isInstalled = ult::isFile(m_localPath);
     int suffix = 1;
     while (ult::isFile(m_localPath)) {
         m_localPath = dirPath + baseName + "-" + std::to_string(suffix++) + ".macro";
@@ -530,74 +531,16 @@ void StoreMacroViewGui::drawContent(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, 
     r->drawString(byText, false, textX + nameDim.first, currentY, byFontSize, r->a(tsl::onTextColor));
     currentY += 50;
     
-    // 通用换行绘制函数
+    // 通用绘制参数
     s32 maxWidth = w - 19 - 15;
     s32 fontSize = 18;
     s32 lineHeight = 26;
-    s32 listY = y + h - 10 - ITEM_HEIGHT;
-    s32 maxY = listY - 20;
     
-    auto drawWrappedText = [&](const std::string& content, const std::string& prefix) {
-        std::string text = content;
-        auto [prefixW, prefixH] = r->getTextDimensions(prefix, false, fontSize);
-        s32 drawX = textX;
-        bool isFirstLine = true;
-        
-        while (!text.empty() && currentY <= maxY) {
-            s32 lineMaxWidth = isFirstLine ? maxWidth : (maxWidth - prefixW);
-            auto [tw, th] = r->getTextDimensions(text, false, fontSize);
-            
-            if (tw <= lineMaxWidth) {
-                if (isFirstLine) {
-                    r->drawString(prefix + text, false, drawX, currentY, fontSize, r->a(tsl::style::color::ColorDescription));
-                } else {
-                    r->drawString(text, false, drawX + prefixW, currentY, fontSize, r->a(tsl::style::color::ColorDescription));
-                }
-                currentY += lineHeight;
-                break;
-            }
-            
-            // 获取 UTF-8 字符边界
-            std::vector<size_t> charBounds = {0};
-            for (size_t i = 0; i < text.size(); ) {
-                unsigned char c = text[i];
-                if ((c & 0x80) == 0) i += 1;
-                else if ((c & 0xE0) == 0xC0) i += 2;
-                else if ((c & 0xF0) == 0xE0) i += 3;
-                else i += 4;
-                charBounds.push_back(i);
-            }
-            
-            // 二分查找截断点
-            size_t lo = 1, hi = charBounds.size() - 1, cutIdx = 1;
-            while (lo <= hi) {
-                size_t mid = (lo + hi) / 2;
-                auto [mw, mh] = r->getTextDimensions(text.substr(0, charBounds[mid]), false, fontSize);
-                if (mw <= lineMaxWidth) {
-                    cutIdx = mid;
-                    lo = mid + 1;
-                } else {
-                    hi = mid - 1;
-                }
-            }
-            
-            size_t cut = charBounds[cutIdx];
-            if (isFirstLine) {
-                r->drawString(prefix + text.substr(0, cut), false, drawX, currentY, fontSize, r->a(tsl::style::color::ColorDescription));
-                isFirstLine = false;
-            } else {
-                r->drawString(text.substr(0, cut), false, drawX + prefixW, currentY, fontSize, r->a(tsl::style::color::ColorDescription));
-            }
-            currentY += lineHeight;
-            text = text.substr(cut);
-        }
-    };
-    
-    // 下载路径
-    r->drawString("下载路径:", false, textX, currentY, 20, r->a(tsl::defaultTextColor));
+    // 下载次数
+    r->drawString("下载次数:", false, textX, currentY, 20, r->a(tsl::defaultTextColor));
     currentY += 28;
-    drawWrappedText(m_localPath, " • ");
-    currentY += 20;
+    r->drawString(" • " + std::to_string(s_selectedMacro.downloads), false, textX, currentY, fontSize, r->a(tsl::style::color::ColorDescription));
+    currentY += lineHeight + 20;
     
     // ========== 使用说明（可滚动区域）==========
     r->drawString("使用说明:", false, textX, currentY, 20, r->a(tsl::defaultTextColor));
@@ -686,9 +629,9 @@ void StoreMacroViewGui::drawContent(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, 
     
     switch (m_state) {
         case MacroViewState::Ready:
-            keyText = "下载脚本";
-            valText = "按  下载";
-            keyColor = tsl::defaultTextColor;
+            keyText = m_isInstalled ? "已安装" : "下载脚本";
+            valText = m_isInstalled ? "按  更新" : "按  下载";
+            keyColor = m_isInstalled ? tsl::Color(0xF, 0xF, 0x0, 0xF) : tsl::defaultTextColor;
             break;
         case MacroViewState::Downloading:
             keyText = "正在下载";

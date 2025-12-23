@@ -90,6 +90,7 @@ private:
     u64 m_tid;
     std::string m_gameName;
     std::string m_localPath;  // 下载路径
+    bool m_isInstalled = false;  // 是否已安装
     MacroViewState m_state = MacroViewState::Ready;
     
     s32 m_scrollOffset = 0;

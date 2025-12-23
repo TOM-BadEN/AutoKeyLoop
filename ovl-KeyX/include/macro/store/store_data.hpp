@@ -22,6 +22,7 @@ struct StoreMacroEntry {
     std::string name;    // 显示名（已根据语言选择）
     std::string desc;    // 说明（已根据语言选择）
     std::string author;  // 作者
+    int downloads = 0;   // 下载次数
 };
 
 // 宏列表结果

@@ -179,7 +179,6 @@
     "已安装的游戏列表": "Installed Games",
     " 选择对应游戏": " Select game",
     " 点击查看脚本详情": " Click to View Details",
-    "下载路径:": "Download Path:",
     "使用说明:": "Instructions:",
     "下载脚本": "Macro",
     "按  下载": "Press  Download",
@@ -257,5 +256,7 @@
     " • 扫描二维码，可直接访问网页端": " • Scan QR code, visit the website",
     " • 网页商店功能正在逐步完善": " • WebShop features gradually improving",
     "祝您游戏愉快！": "Enjoy your game!",
-    "特别感谢:": "Special Thanks:"
+    "特别感谢:": "Special Thanks:",
+    "已安装": "Installed",
+    "下载次数:": "Downloads:" 
 }

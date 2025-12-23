@@ -98,6 +98,7 @@ MacroListResult StoreData::getMacroList(const std::string& gameId) {
             cJSON* name = cJSON_GetObjectItem(item, "name");
             cJSON* desc = cJSON_GetObjectItem(item, "desc");
             cJSON* author = cJSON_GetObjectItem(item, "author");
+            cJSON* downloads = cJSON_GetObjectItem(item, "downloads");
             
             if (file && cJSON_IsString(file)) entry.file = file->valuestring;
             if (author && cJSON_IsString(author)) entry.author = author->valuestring;
@@ -114,6 +115,8 @@ MacroListResult StoreData::getMacroList(const std::string& gameId) {
                     descItem = cJSON_GetArrayItem(desc, 1 - langIndex);  // 简繁互相回滚
                 if (descItem && cJSON_IsString(descItem)) entry.desc = descItem->valuestring;
             }
+
+            if (downloads && cJSON_IsNumber(downloads)) entry.downloads = downloads->valueint;
             
             result.macros.push_back(entry);
         }
