@@ -30,6 +30,7 @@ public:
     MacroListGuiGame(u64 titleId);
     virtual tsl::elm::Element* createUI() override;
     virtual void update() override;
+    virtual bool handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) override;
 
 private:
     std::vector<MacroUtil::MacroEntry> m_macro{};

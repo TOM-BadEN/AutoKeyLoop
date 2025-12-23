@@ -8,10 +8,16 @@
 #include "refresh.hpp"
 #include "macro_util.hpp"
 
+namespace {
+    bool s_isBack = false;  
+}
+
 // 脚本清单所有游戏列表类
 MacroListGui::MacroListGui() 
  : m_macroDirs()
 {
+    // 正向进入消耗掉这个标志，但是什么都不做
+    Refresh::RefrConsume(Refresh::MacroList);
     // 获取有脚本的所有游戏目录(目录名是titleId)
     auto dirs = MacroUtil::getGameDirs();
     m_macroDirs.reserve(dirs.size());
@@ -67,6 +73,16 @@ tsl::elm::Element* MacroListGui::createUI() {
 
 // 异步更新游戏名字
 void MacroListGui::update() {
+
+    // 如果是返回来的重新刷新
+    if (s_isBack) {
+        s_isBack = false;
+        if (m_macroDirs.empty()) {
+            tsl::goBack();
+            return;
+        }
+    }
+
     if (m_nextIndex >= m_macroDirs.size()) return;
     auto& entry = m_macroDirs[m_nextIndex];
     if (!entry.item) {
@@ -140,8 +156,25 @@ void MacroListGuiGame::update() {
     if (Refresh::RefrConsume(Refresh::MacroGameList)) {
         u64 tid = m_titleId;
         tsl::swapTo<MacroListGuiGame>(SwapDepth(1), tid);
+        return;
     }
 }
+
+bool MacroListGuiGame::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) {
+    if (keysDown & HidNpadButton_B) {
+        if (Refresh::RefrConsume(Refresh::MacroList)) {
+            s_isBack = true;
+            tsl::swapTo<MacroListGui>(SwapDepth(2));
+            return true;
+        } else {
+            tsl::goBack();
+            return true;
+        }
+    }
+
+    return false;
+}
+
 
 
 

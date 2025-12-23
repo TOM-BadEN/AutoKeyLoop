@@ -166,6 +166,7 @@ bool MacroViewGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &
         u64 titleId = MacroData::getBasicInfo().titleId;
         if (MacroUtil::deleteMacro(titleId, m_macroFilePath)) g_ipcManager.sendReloadMacroCommand();
         Refresh::RefrRequest(Refresh::MacroGameList);
+        Refresh::RefrRequest(Refresh::MacroList);
         MacroData::allCleanup();
         tsl::goBack();
         return true;
