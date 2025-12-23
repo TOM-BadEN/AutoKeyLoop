@@ -150,7 +150,7 @@ tsl::elm::Element* SettingMacro::createUI() {
     });
     list->addItem(listItemRecord);
 
-    auto listItemView = new tsl::elm::ListItem("查看脚本", ">");
+    auto listItemView = new tsl::elm::ListItem("本地脚本", ">");
     listItemView->setClickListener([this](u64 keys) {
         if (keys & HidNpadButton_A) {
             u64 tid = GameMonitor::getCurrentTitleId();
