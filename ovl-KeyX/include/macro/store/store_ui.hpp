@@ -91,5 +91,8 @@ private:
     std::string m_localPath;  // 下载路径
     MacroViewState m_state = MacroViewState::Ready;
     
+    s32 m_scrollOffset = 0;
+    s32 m_maxScrollOffset = 0;
+    
     void drawContent(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h);
 };

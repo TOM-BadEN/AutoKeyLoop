@@ -15,4 +15,7 @@ private:
     std::string m_filePath;
     std::string m_gameName;
     MacroUtil::MacroMetadata m_meta;
+    
+    s32 m_scrollOffset = 0;
+    s32 m_maxScrollOffset = 0;
 };
