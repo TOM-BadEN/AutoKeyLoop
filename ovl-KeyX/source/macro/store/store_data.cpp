@@ -9,7 +9,8 @@
 #include <unordered_set>
 
 namespace {
-    constexpr const char* CN_BASE_URL = "https://macro.dokiss.cn/data/";
+    constexpr const char* BASE_JSON_URL = "https://macro.dokiss.cn/data/";
+    constexpr const char* DOWNLOAD_URL = "https://macro.dokiss.cn/download.php?titleid=%s&file=%s";
     constexpr const char* GAMELIST_JSON = "gamelist.json";
     constexpr const char* MACROLIST_JSON = "macrolist.json";
     constexpr const char* TEMP_GAMELIST_PATH = "sdmc:/config/KeyX/store/gamelist.json";
@@ -27,7 +28,7 @@ StoreData::~StoreData() {
 GameListResult StoreData::getGameList() {
     GameListResult result{};
     
-    std::string url = std::string(CN_BASE_URL) + GAMELIST_JSON;
+    std::string url = std::string(BASE_JSON_URL) + GAMELIST_JSON;
     
     if (!ult::downloadFile(url, TEMP_GAMELIST_PATH, false)) {
         result.error = "请检查网络连接";
@@ -71,7 +72,7 @@ GameListResult StoreData::getGameList() {
 MacroListResult StoreData::getMacroList(const std::string& gameId) {
     MacroListResult result{};
     
-    std::string url = std::string(CN_BASE_URL) + "games/" + gameId + "/" + MACROLIST_JSON;
+    std::string url = std::string(BASE_JSON_URL) + "games/" + gameId + "/" + MACROLIST_JSON;
     
     if (!ult::downloadFile(url, TEMP_MACROLIST_PATH, false)) {
         result.error = "请检查网络连接";
@@ -129,7 +130,9 @@ MacroListResult StoreData::getMacroList(const std::string& gameId) {
 }
 
 bool StoreData::downloadMacro(const std::string& gameId, const std::string& fileName, const std::string& localPath) {
-    std::string url = std::string(CN_BASE_URL) + "games/" + gameId + "/" + fileName;
+    char urlBuf[128];
+    snprintf(urlBuf, sizeof(urlBuf), DOWNLOAD_URL, gameId.c_str(), fileName.c_str());
+    std::string url = urlBuf;
     bool success = ult::downloadFile(url, localPath, false);
     if (!success) ult::deleteFileOrDirectory(localPath);
     return success;
