@@ -369,11 +369,11 @@ tsl::elm::Element* MainMenu::createUI()
     mainList->addItem(m_AutoMacroEnableItem);
 
     // 创建切换配置列表项
-    auto ConfigSwitchItem = new tsl::elm::ListItem("切换配置", m_KeyXinfo.isGlobalConfig ? "全局档" : "独立档");
+    auto ConfigSwitchItem = new tsl::elm::ListItem("切换配置", m_KeyXinfo.isGlobalConfig ? "全局配置" : "独立配置");
     ConfigSwitchItem->setClickListener([this, ConfigSwitchItem](u64 keys) {
         if (keys & HidNpadButton_A) {
             ConfigToggle();
-            ConfigSwitchItem->setValue(m_KeyXinfo.isGlobalConfig ? "全局档" : "独立档");
+            ConfigSwitchItem->setValue(m_KeyXinfo.isGlobalConfig ? "全局配置" : "独立配置");
             return true;
         }
         return false;
