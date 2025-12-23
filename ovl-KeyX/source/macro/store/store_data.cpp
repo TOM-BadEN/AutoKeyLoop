@@ -25,27 +25,42 @@ StoreData::StoreData() {
 StoreData::~StoreData() {
 }
 
+namespace {
+    void debugLog(const char* msg) {
+        FILE* f = fopen("sdmc:/config/KeyX/debug.log", "a");
+        if (f) { fprintf(f, "%s\n", msg); fclose(f); }
+    }
+}
+
 GameListResult StoreData::getGameList() {
+    debugLog("1:getGameList start");
     GameListResult result{};
     
     std::string url = std::string(BASE_JSON_URL) + GAMELIST_JSON;
     
+    debugLog("2:before downloadFile");
     if (!ult::downloadFile(url, TEMP_GAMELIST_PATH, false)) {
+        debugLog("3:downloadFile failed");
         result.error = "请检查网络连接";
         return result;
     }
+    debugLog("4:downloadFile success");
     
     auto json = ult::readJsonFromFile(TEMP_GAMELIST_PATH);
     if (!json) {
+        debugLog("5:json parse failed");
         result.error = "JSON 解析失败";
         ult::deleteFileOrDirectory(TEMP_GAMELIST_PATH);
         return result;
     }
+    debugLog("6:json parse success");
     
     cJSON* root = reinterpret_cast<cJSON*>(json);
     cJSON* games = cJSON_GetObjectItem(root, "games");
     
+    debugLog("7:before getInstalledAppAndGameIds");
     std::unordered_set<u64> installedIds = GameMonitor::getInstalledAppAndGameIds();
+    debugLog("8:after getInstalledAppAndGameIds");
     
     if (games && cJSON_IsArray(games)) {
         cJSON* item;
@@ -63,8 +78,10 @@ GameListResult StoreData::getGameList() {
         }
     }
     
+    debugLog("9:before cJSON_Delete");
     cJSON_Delete(root);
     ult::deleteFileOrDirectory(TEMP_GAMELIST_PATH);
+    debugLog("10:getGameList done");
     result.success = true;
     return result;
 }
