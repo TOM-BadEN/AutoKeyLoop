@@ -31,18 +31,14 @@ u64 GameMonitor::getCurrentTitleId() {
 bool GameMonitor::getTitleIdGameName(u64 titleId, char* result) {
     
     strcpy(result, "UNKNOWN");
-
-    Result rc = nsInitialize();
-    if (R_FAILED(rc)) return false;
     
-    // 创建控制数据的智能指针
+    // 创建控制数据的智能指针（ns 服务已在 main.cpp 全局初始化）
     auto control_data = std::make_unique<NsApplicationControlData>();
     u64 jpeg_size{};
     
     // 获取应用程序控制数据
-    rc = nsGetApplicationControlData(NsApplicationControlSource_Storage, titleId, control_data.get(), sizeof(NsApplicationControlData), &jpeg_size);
+    Result rc = nsGetApplicationControlData(NsApplicationControlSource_Storage, titleId, control_data.get(), sizeof(NsApplicationControlData), &jpeg_size);
     if (R_FAILED(rc)) {
-        nsExit();            
         return false;
     }
     
@@ -111,7 +107,6 @@ bool GameMonitor::getTitleIdGameName(u64 titleId, char* result) {
     if (entry->name[0] != '\0'){
         strncpy(result, entry->name, 63);
         result[63] = '\0';
-        nsExit();            
         return true;
     }
     
@@ -122,11 +117,9 @@ bool GameMonitor::getTitleIdGameName(u64 titleId, char* result) {
         if (entry->name[0] == '\0') continue;
         strncpy(result, entry->name, 63);
         result[63] = '\0';
-        nsExit();            
         return true;
     }
 
-    nsExit();
     return false;
 }
 
