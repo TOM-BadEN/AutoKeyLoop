@@ -21,15 +21,19 @@ Result SysModuleManager::startModule() {
         return 0;
     }
     
+    pmshellInitialize();
+
     // 构建程序位置信息
     NcmProgramLocation programLocation = {
         .program_id = MODULE_ID,
         .storageID = NcmStorageId_None
     };
     
-    // 使用 pmshell 启动程序
+    
     u64 pid = 0;
     Result rc = pmshellLaunchProgram(0, &programLocation, &pid);
+    
+    pmshellExit();
     
     return rc;
 }

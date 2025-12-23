@@ -47,7 +47,6 @@ public:
     virtual void initServices() override 
     {                                     // 挂载SD卡
         pmdmntInitialize();                                           // 进程管理服务
-        pmshellInitialize();                                          // 进程Shell服务（用于启动/停止系统模块）
         setInitialize();                                              // 初始化set服务（获取系统语言）
         nsInitialize();                                               // 初始化ns服务
         LanguageManager::initialize();                                // 初始化语言系统
@@ -75,7 +74,6 @@ public:
         socketExit();               // 退出 socket 服务
         nsExit();                   // 退出 ns 服务
         pdmqryExit();               // 退出 pdmqry 服务
-        pmshellExit();              // 退出进程Shell服务
         pmdmntExit();               // 退出进程管理服务
     }
 
