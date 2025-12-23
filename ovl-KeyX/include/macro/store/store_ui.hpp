@@ -61,6 +61,7 @@ public:
     StoreMacroListGui(u64 tid, const std::string& gameName);
     ~StoreMacroListGui();
     virtual tsl::elm::Element* createUI() override;
+    virtual bool handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) override;
 
 private:
     u64 m_tid;
@@ -95,4 +96,20 @@ private:
     s32 m_maxScrollOffset = 0;
     
     void drawContent(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h);
+};
+
+// 网页商店界面
+class WebStoreGui : public tsl::Gui {
+public:
+    WebStoreGui(u64 tid, const std::string& gameName);
+    virtual tsl::elm::Element* createUI() override;
+    virtual bool handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) override;
+
+private:
+    void drawContent(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h);
+    
+    u64 m_tid;
+    std::string m_gameName;
+    std::vector<std::vector<bool>> m_qrModules;
+    int m_qrSize = 0;
 };

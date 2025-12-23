@@ -8,6 +8,10 @@
 #include "Tthread.hpp"
 #include "info_edit.hpp"
 #include "language.hpp"
+#include "qrcodegen.hpp"
+
+using qrcodegen::QrCode;
+using qrcodegen::QrSegment;
 
 namespace {
     GameListResult s_gameList;
@@ -18,6 +22,7 @@ namespace {
     constexpr const char* s_refreshIcon[] = {"", "", "", "", "", "", "", ""};
     constexpr const char* EDIT_URL = "https://macro.dokiss.cn/edit_prop.php?tid=%s&file=%s&lang=%s";
     constexpr const char* langParam[] = {"zh", "zhh", "en"};
+    constexpr const char* STORE_URL = "https://macro.dokiss.cn/store.php?tid=%s&lang=%s";
     
     // 使用说明布局常量（参考 updater_ui.cpp）
     constexpr s32 DESC_FONT_SIZE = 18;
@@ -371,7 +376,12 @@ StoreMacroListGui::~StoreMacroListGui() {
 }
 
 tsl::elm::Element* StoreMacroListGui::createUI() {
-    auto frame = new tsl::elm::OverlayFrame("脚本商店", m_gameName);
+    auto frame = new tsl::elm::HeaderOverlayFrame(97);
+    frame->setHeader(new tsl::elm::CustomDrawer([this](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
+        renderer->drawString("脚本商店", false, 20, 50+2, 32, renderer->a(tsl::defaultOverlayColor));
+        renderer->drawString(m_gameName, false, 20, 50+23, 15, renderer->a(tsl::bannerVersionTextColor));
+        renderer->drawString("  网页商店", false, 270, 693, 23, renderer->a(tsl::style::color::ColorText));
+    }));
     
     auto list = new tsl::elm::List();
     list->addItem(new tsl::elm::CategoryHeader(" 点击查看脚本详情"));
@@ -393,6 +403,15 @@ tsl::elm::Element* StoreMacroListGui::createUI() {
     frame->setContent(list);
     return frame;
 }
+
+bool StoreMacroListGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) {
+    if (keysDown & HidNpadButton_Right) {
+        tsl::changeTo<WebStoreGui>(m_tid, m_gameName);
+        return true;
+    }
+    return false;
+}
+
 
 // ==================== StoreMacroViewGui ====================
 
@@ -702,4 +721,106 @@ void StoreMacroViewGui::drawContent(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, 
     
     r->drawString(keyText, false, x + 19, keyY, keyFont, r->a(keyColor));
     r->drawString(valText, false, x + w - 15 - valDim.first, valY, valFont, r->a(valColor));
+}
+
+
+// ==================== WebStoreGui ====================
+
+WebStoreGui::WebStoreGui(u64 tid, const std::string& gameName)
+ : m_tid(tid)
+ , m_gameName(gameName)
+ {
+    // 生成二维码 URL
+    char tidStr[17];
+    snprintf(tidStr, sizeof(tidStr), "%016lX", m_tid);
+    int langIndex = LanguageManager::getZhcnOrZhtwOrEnIndex();
+    char storeUrl[128];
+    snprintf(storeUrl, sizeof(storeUrl), STORE_URL, tidStr, langParam[langIndex]);
+    
+    // 生成二维码
+    QrCode qr = QrCode::encodeSegments(QrSegment::makeSegments(storeUrl), QrCode::Ecc::LOW, 5, 5);
+    m_qrSize = qr.getSize();
+    m_qrModules.resize(m_qrSize);
+    for (int qy = 0; qy < m_qrSize; qy++) {
+        m_qrModules[qy].resize(m_qrSize);
+        for (int qx = 0; qx < m_qrSize; qx++) {
+            m_qrModules[qy][qx] = qr.getModule(qx, qy);
+        }
+    }
+}
+
+tsl::elm::Element* WebStoreGui::createUI() {
+    auto frame = new tsl::elm::OverlayFrame("网页商店", "网页已适配手机和电脑端");
+    
+    auto list = new tsl::elm::List();
+    auto drawer = new tsl::elm::CustomDrawer([this](tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h) {
+        drawContent(r, x, y, w, h);
+    });
+    list->addItem(drawer, 520);
+    
+    frame->setContent(list);
+    return frame;
+}
+
+void WebStoreGui::drawContent(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h) {
+    s32 textX = x + 19;
+    s32 currentY = y + 35;
+    s32 fontSize = 18;
+    s32 lineHeight = 26;
+    
+    // 大标题：游戏名（自动缩小）
+    s32 nameFontSize = 28;
+    auto nameDim = r->getTextDimensions(m_gameName, false, nameFontSize);
+    while (nameDim.first > w - 19 - 15) {
+        nameFontSize = nameFontSize * 9 / 10;
+        nameDim = r->getTextDimensions(m_gameName, false, nameFontSize);
+    }
+    r->drawString(m_gameName, false, textX, currentY, nameFontSize, r->a(tsl::onTextColor));
+    currentY += 45;
+    
+    // 功能介绍
+    r->drawString("功能介绍:", false, textX, currentY, 20, r->a(tsl::defaultTextColor));
+    currentY += 28;
+    r->drawString(" • 扫描二维码，可直接访问网页端", false, textX, currentY, fontSize, r->a(tsl::style::color::ColorDescription));
+    currentY += lineHeight;
+    r->drawString(" • 网页商店功能正在逐步完善", false, textX, currentY, fontSize, r->a(tsl::style::color::ColorDescription));
+    currentY += lineHeight + 20;
+    
+    // 编辑方法
+    r->drawString("特别感谢:", false, textX, currentY, 20, r->a(tsl::defaultTextColor));
+    currentY += 28;
+    r->drawString(" • 忘忧 (dokiss.cn)", false, textX, currentY, fontSize, r->a(tsl::style::color::ColorDescription));
+    currentY += lineHeight;
+    r->drawString(" • 感谢提供服务器与制作网页", false, textX, currentY, fontSize, r->a(tsl::style::color::ColorDescription));
+    currentY += lineHeight + 20;
+    
+    r->drawString("祝您游戏愉快！", false, textX, currentY, 20, r->a(tsl::defaultTextColor));
+    currentY += 37;
+    
+    // 绘制二维码
+    int scale = 5;
+    int margin = 8;
+    int totalSize = m_qrSize * scale;
+    int qrX = x + (w - totalSize) / 2;
+    int qrY = currentY;
+    
+    // 绘制二维码背景
+    r->drawRect(qrX - margin, qrY - margin, totalSize + margin * 2, totalSize + margin * 2, tsl::Color(0xF, 0xF, 0xF, 0xF));
+    
+    // 绘制二维码
+    for (int qy = 0; qy < m_qrSize; qy++) {
+        for (int qx = 0; qx < m_qrSize; qx++) {
+            if (m_qrModules[qy][qx]) {
+                r->drawRect(qrX + qx * scale, qrY + qy * scale, scale, scale, tsl::Color(0x0, 0x0, 0x0, 0xF));
+            }
+        }
+    }
+}
+
+bool WebStoreGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) {
+    if (keysDown & HidNpadButton_Left) {
+        tsl::goBack();
+        return true;
+    }
+    return false;
 }
