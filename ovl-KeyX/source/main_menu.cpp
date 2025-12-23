@@ -16,7 +16,7 @@
 #define SPACING 20  // 间距常量
 
 // 全局配置文件路径
-constexpr const char* CONFIG_PATH = "/config/KeyX/config.ini";
+static constexpr const char* CONFIG_PATH = "/config/KeyX/config.ini";
 
 // 按键映射初始化结构体
 static MappingDef::ButtonMapping s_buttonMappings[MappingDef::BUTTON_COUNT] = {
@@ -38,6 +38,9 @@ static MappingDef::ButtonMapping s_buttonMappings[MappingDef::BUTTON_COUNT] = {
     {"Select", "Select"}
 };
 
+static constexpr const char* s_switchText[] = {"已关闭", "已开启"};
+static const tsl::Color s_switchColor[] = {tsl::Color(0xF, 0x7, 0x7, 0xF), tsl::onTextColor};
+
 void MainMenu::RefreshData() {
     u64 currentTitleId = GameMonitor::getCurrentTitleId();
     m_KeyXinfo.isInGame = (currentTitleId != 0) && SysModuleManager::isRunning();
@@ -55,9 +58,18 @@ void MainMenu::RefreshData() {
         m_KeyXinfo.isAutoMacroEnabled = false;
     }
     // 更新功能开关
-    if (m_AutoFireEnableItem != nullptr) m_AutoFireEnableItem->setValue(m_KeyXinfo.isAutoFireEnabled ? "已开启" : "已关闭");
-    if (m_AutoRemapEnableItem != nullptr) m_AutoRemapEnableItem->setValue(m_KeyXinfo.isAutoRemapEnabled ? "已开启" : "已关闭");
-    if (m_AutoMacroEnableItem != nullptr) m_AutoMacroEnableItem->setValue(m_KeyXinfo.isAutoMacroEnabled ? "已开启" : "已关闭");
+    if (m_AutoFireEnableItem != nullptr) {
+        m_AutoFireEnableItem->setValue(s_switchText[m_KeyXinfo.isAutoFireEnabled]);
+        m_AutoFireEnableItem->setValueColor(s_switchColor[m_KeyXinfo.isAutoFireEnabled]);
+    }
+    if (m_AutoRemapEnableItem != nullptr) {
+        m_AutoRemapEnableItem->setValue(s_switchText[m_KeyXinfo.isAutoRemapEnabled]);
+        m_AutoRemapEnableItem->setValueColor(s_switchColor[m_KeyXinfo.isAutoRemapEnabled]);
+    }
+    if (m_AutoMacroEnableItem != nullptr) {
+        m_AutoMacroEnableItem->setValue(s_switchText[m_KeyXinfo.isAutoMacroEnabled]);
+        m_AutoMacroEnableItem->setValueColor(s_switchColor[m_KeyXinfo.isAutoMacroEnabled]);
+    }
 
     // 读取按钮掩码值用于绘制按钮图标
     std::string ConfigPath = m_KeyXinfo.isGlobalConfig ? CONFIG_PATH : m_KeyXinfo.GameConfigPath;
@@ -90,7 +102,8 @@ void MainMenu::AutoKeyToggle() {
     if (R_FAILED(rc)) return;
     // 切换状态，开变关-关变开
     m_KeyXinfo.isAutoFireEnabled = !m_KeyXinfo.isAutoFireEnabled;
-    m_AutoFireEnableItem->setValue(m_KeyXinfo.isAutoFireEnabled ? "已开启" : "已关闭");
+    m_AutoFireEnableItem->setValue(s_switchText[m_KeyXinfo.isAutoFireEnabled]);
+    m_AutoFireEnableItem->setValueColor(s_switchColor[m_KeyXinfo.isAutoFireEnabled]);
     IniHelper::setBool("AUTOFIRE", "globconfig", m_KeyXinfo.isGlobalConfig, m_KeyXinfo.GameConfigPath);
     IniHelper::setBool("AUTOFIRE", "autoenable", m_KeyXinfo.isAutoFireEnabled, m_KeyXinfo.GameConfigPath);
     IniHelper::setBool("AUTOFIRE", "autoenable", m_KeyXinfo.isAutoFireEnabled, CONFIG_PATH);
@@ -104,7 +117,8 @@ void MainMenu::AutoRemapToggle() {
     if (R_FAILED(rc)) return;
     // 切换状态，开变关-关变开
     m_KeyXinfo.isAutoRemapEnabled = !m_KeyXinfo.isAutoRemapEnabled;
-    m_AutoRemapEnableItem->setValue(m_KeyXinfo.isAutoRemapEnabled ? "已开启" : "已关闭");
+    m_AutoRemapEnableItem->setValue(s_switchText[m_KeyXinfo.isAutoRemapEnabled]);
+    m_AutoRemapEnableItem->setValueColor(s_switchColor[m_KeyXinfo.isAutoRemapEnabled]);
     IniHelper::setBool("AUTOFIRE", "globconfig", m_KeyXinfo.isGlobalConfig, m_KeyXinfo.GameConfigPath);
     IniHelper::setBool("MAPPING", "autoenable", m_KeyXinfo.isAutoRemapEnabled, m_KeyXinfo.GameConfigPath);
     IniHelper::setBool("MAPPING", "autoenable", m_KeyXinfo.isAutoRemapEnabled, CONFIG_PATH);
@@ -118,7 +132,8 @@ void MainMenu::AutoMacroToggle() {
     if (R_FAILED(rc)) return;
     // 切换状态，开变关-关变开
     m_KeyXinfo.isAutoMacroEnabled = !m_KeyXinfo.isAutoMacroEnabled;
-    m_AutoMacroEnableItem->setValue(m_KeyXinfo.isAutoMacroEnabled ? "已开启" : "已关闭");
+    m_AutoMacroEnableItem->setValue(s_switchText[m_KeyXinfo.isAutoMacroEnabled]);
+    m_AutoMacroEnableItem->setValueColor(s_switchColor[m_KeyXinfo.isAutoMacroEnabled]);
     IniHelper::setBool("MACRO", "autoenable", m_KeyXinfo.isAutoMacroEnabled, m_KeyXinfo.GameConfigPath);
 }
 
@@ -319,7 +334,8 @@ tsl::elm::Element* MainMenu::createUI()
 
     // ============= 下半部分：列表区域 =============
     // 创建开启连发列表项
-    m_AutoFireEnableItem = new tsl::elm::ListItem("按键连发", m_KeyXinfo.isAutoFireEnabled ? "已开启" : "已关闭");
+    m_AutoFireEnableItem = new tsl::elm::ListItem("按键连发", s_switchText[m_KeyXinfo.isAutoFireEnabled]);
+    m_AutoFireEnableItem->setValueColor(s_switchColor[m_KeyXinfo.isAutoFireEnabled]);
     m_AutoFireEnableItem->setClickListener([this](u64 keys) {
         if (keys & HidNpadButton_A) {
             AutoKeyToggle();
@@ -329,7 +345,8 @@ tsl::elm::Element* MainMenu::createUI()
     });
     mainList->addItem(m_AutoFireEnableItem);
 
-    m_AutoRemapEnableItem = new tsl::elm::ListItem("按键映射", m_KeyXinfo.isAutoRemapEnabled ? "已开启" : "已关闭");
+    m_AutoRemapEnableItem = new tsl::elm::ListItem("按键映射", s_switchText[m_KeyXinfo.isAutoRemapEnabled]);
+    m_AutoRemapEnableItem->setValueColor(s_switchColor[m_KeyXinfo.isAutoRemapEnabled]);
     m_AutoRemapEnableItem->setClickListener([this](u64 keys) {
         if (keys & HidNpadButton_A) {
             AutoRemapToggle();
@@ -340,7 +357,8 @@ tsl::elm::Element* MainMenu::createUI()
     mainList->addItem(m_AutoRemapEnableItem);
 
     // 创建设置列表项
-    m_AutoMacroEnableItem = new tsl::elm::ListItem("按键脚本", m_KeyXinfo.isAutoMacroEnabled ? "已开启" : "已关闭");
+    m_AutoMacroEnableItem = new tsl::elm::ListItem("按键脚本", s_switchText[m_KeyXinfo.isAutoMacroEnabled]);
+    m_AutoMacroEnableItem->setValueColor(s_switchColor[m_KeyXinfo.isAutoMacroEnabled]);
     m_AutoMacroEnableItem->setClickListener([this](u64 keys) {
         if (keys & HidNpadButton_A) {
             AutoMacroToggle();
@@ -351,10 +369,11 @@ tsl::elm::Element* MainMenu::createUI()
     mainList->addItem(m_AutoMacroEnableItem);
 
     // 创建切换配置列表项
-    auto ConfigSwitchItem = new tsl::elm::ListItem("切换配置",">");
-    ConfigSwitchItem->setClickListener([this](u64 keys) {
+    auto ConfigSwitchItem = new tsl::elm::ListItem("切换配置", m_KeyXinfo.isGlobalConfig ? "全局档" : "独立档");
+    ConfigSwitchItem->setClickListener([this, ConfigSwitchItem](u64 keys) {
         if (keys & HidNpadButton_A) {
             ConfigToggle();
+            ConfigSwitchItem->setValue(m_KeyXinfo.isGlobalConfig ? "全局档" : "独立档");
             return true;
         }
         return false;
