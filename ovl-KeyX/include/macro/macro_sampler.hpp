@@ -1,6 +1,7 @@
 #pragma once
 #include <tesla.hpp>
 #include <vector>
+#include <atomic>
 #include "macro_data.hpp"
 
 class MacroSampler {
@@ -19,8 +20,8 @@ private:
     // 线程相关
     static Thread s_thread;
     static bool s_threadCreated;
-    static bool s_shouldExit;
-    static bool s_sampling;
+    static std::atomic<bool> s_shouldExit;
+    static std::atomic<bool> s_sampling;
     alignas(0x1000) static char s_threadStack[8 * 1024];
     
     // 采样数据

@@ -19,8 +19,8 @@ namespace {
 // 静态成员定义
 Thread MacroSampler::s_thread;
 bool MacroSampler::s_threadCreated = false;
-bool MacroSampler::s_shouldExit = false;
-bool MacroSampler::s_sampling = false;
+std::atomic<bool> MacroSampler::s_shouldExit{false};
+std::atomic<bool> MacroSampler::s_sampling{false};
 alignas(0x1000) char MacroSampler::s_threadStack[8 * 1024];
 std::vector<MacroFrameV2> MacroSampler::s_frames;
 char MacroSampler::s_filePath[128] = {};

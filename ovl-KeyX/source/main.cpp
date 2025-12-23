@@ -45,8 +45,7 @@ private:
 public:
     // 初始化系统服务
     virtual void initServices() override 
-    {
-        fsdevMountSdmc();                                             // 挂载SD卡
+    {                                     // 挂载SD卡
         pmdmntInitialize();                                           // 进程管理服务
         pmshellInitialize();                                          // 进程Shell服务（用于启动/停止系统模块）
         setInitialize();                                              // 初始化set服务（获取系统语言）
@@ -65,7 +64,6 @@ public:
         }
         GameMonitor::loadWhitelist();                                 // 加载白名单
         socketInitialize(&socketInitConfig);                          // 初始化网络服务
-        nifmInitialize(NifmServiceType_User);                         // 初始化网络服务
         Thd::start(checkUpdate);                                      // 启动更新检查线程
     }
     
@@ -74,13 +72,11 @@ public:
     {
         Thd::stop();                // 清理线程
         curl_global_cleanup();      // 清理 cURL
-        nifmExit();                 // 退出 nifm 服务
         socketExit();               // 退出 socket 服务
         nsExit();                   // 退出 ns 服务
         pdmqryExit();               // 退出 pdmqry 服务
         pmshellExit();              // 退出进程Shell服务
         pmdmntExit();               // 退出进程管理服务
-        fsdevUnmountAll();          // 卸载所有文件系统
     }
 
     // 覆盖层显示时调用，用于更新游戏信息
