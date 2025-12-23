@@ -14,6 +14,7 @@ enum class UploadState {
 class MacroUploadGui : public tsl::Gui {
 public:
     MacroUploadGui(const std::string& macroFilePath, const std::string& gameName);
+    ~MacroUploadGui();
     virtual tsl::elm::Element* createUI() override;
     virtual void update() override;
     virtual bool handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) override;

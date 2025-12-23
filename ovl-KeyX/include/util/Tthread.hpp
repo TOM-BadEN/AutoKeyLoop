@@ -6,7 +6,7 @@
 
 namespace Thd {
 
-    alignas(0x1000) inline char s_stack[32 * 1024];
+    constexpr size_t STACK_SIZE = 32 * 1024;  // 32KB 栈空间
     inline Thread s_thread;
     inline std::function<void()> s_task;
     inline std::atomic<bool> s_done{true};
@@ -23,6 +23,7 @@ namespace Thd {
             threadClose(&s_thread);
             s_created = false;
         }
+        s_task = nullptr;  // 清理 lambda，释放捕获的变量
     }
     
     inline void start(std::function<void()> task) {
@@ -30,7 +31,7 @@ namespace Thd {
         s_task = task;
         s_done = false;
         memset(&s_thread, 0, sizeof(Thread));
-        if (R_SUCCEEDED(threadCreate(&s_thread, threadFunc, nullptr, s_stack, sizeof(s_stack), 0x2C, -2))) {
+        if (R_SUCCEEDED(threadCreate(&s_thread, threadFunc, nullptr, nullptr, STACK_SIZE, 0x2C, -2))) {
             s_created = true;
             threadStart(&s_thread);
         }

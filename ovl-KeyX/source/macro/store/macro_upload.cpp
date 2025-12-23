@@ -27,6 +27,11 @@ MacroUploadGui::MacroUploadGui(const std::string& macroFilePath, const std::stri
     Thd::start([this, titleId, filePath]{ m_uploadResult = StoreData::uploadMacro(filePath, titleId, m_gameName); });
 }
 
+MacroUploadGui::~MacroUploadGui() {
+    ult::abortDownload = true;
+    Thd::stop();
+}
+
 tsl::elm::Element* MacroUploadGui::createUI() {
     auto frame = new tsl::elm::HeaderOverlayFrame(97);
     frame->setHeader(new tsl::elm::CustomDrawer([this](tsl::gfx::Renderer* renderer, s32 x, s32 y, s32 w, s32 h) {
