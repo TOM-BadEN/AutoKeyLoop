@@ -425,10 +425,6 @@ StoreMacroViewGui::StoreMacroViewGui(u64 tid, const std::string& gameName)
     std::string baseName = fileName.substr(0, fileName.size() - 6);
     m_localPath = dirPath + fileName;
     m_isInstalled = ult::isFile(m_localPath);
-    int suffix = 1;
-    while (ult::isFile(m_localPath)) {
-        m_localPath = dirPath + baseName + "-" + std::to_string(suffix++) + ".macro";
-    }
 }
 
 StoreMacroViewGui::~StoreMacroViewGui() {
