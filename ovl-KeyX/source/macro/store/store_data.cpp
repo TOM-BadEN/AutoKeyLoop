@@ -57,6 +57,7 @@ GameListResult StoreData::getGameList() {
             entry.id = tid;
             cJSON* count = cJSON_GetObjectItem(item, "count");
             if (count && cJSON_IsNumber(count)) entry.count = count->valueint;
+            if (entry.count == 0) continue;
             result.games.push_back(entry);
         }
     }
