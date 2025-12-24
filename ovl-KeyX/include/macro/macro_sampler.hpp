@@ -22,7 +22,6 @@ private:
     static bool s_threadCreated;
     static std::atomic<bool> s_shouldExit;
     static std::atomic<bool> s_sampling;
-    alignas(0x1000) static char s_threadStack[8 * 1024];
     
     // 采样数据
     static std::vector<MacroFrameV2> s_frames;

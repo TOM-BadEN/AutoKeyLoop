@@ -21,7 +21,6 @@ Thread MacroSampler::s_thread;
 bool MacroSampler::s_threadCreated = false;
 std::atomic<bool> MacroSampler::s_shouldExit{false};
 std::atomic<bool> MacroSampler::s_sampling{false};
-alignas(0x1000) char MacroSampler::s_threadStack[8 * 1024];
 std::vector<MacroFrameV2> MacroSampler::s_frames;
 char MacroSampler::s_filePath[128] = {};
 u32 MacroSampler::s_totalSamples = 0;
@@ -79,7 +78,7 @@ void MacroSampler::ThreadFunc(void* arg) {
 
 // 准备（倒计时开始时调用）
 void MacroSampler::Prepare() {
-    // 清理旧数据
+    // 清理旧数据并预分配（避免多次扩容导致内存碎片化）
     s_frames.clear();
     s_filePath[0] = '\0';
     s_totalSamples = 0;
@@ -96,7 +95,7 @@ void MacroSampler::Prepare() {
     
     // 创建线程
     memset(&s_thread, 0, sizeof(Thread));
-    Result rc = threadCreate(&s_thread, ThreadFunc, nullptr, s_threadStack, sizeof(s_threadStack), 44, -2);
+    Result rc = threadCreate(&s_thread, ThreadFunc, nullptr, nullptr, 4 * 1024, 44, -2);
     if (R_SUCCEEDED(rc)) {
         s_threadCreated = true;
         threadStart(&s_thread);
@@ -124,6 +123,7 @@ void MacroSampler::Stop() {
 void MacroSampler::Cancel() {
     Stop();
     s_frames.clear();
+    s_frames.shrink_to_fit(); 
 }
 
 // 保存到文件
@@ -168,6 +168,8 @@ bool MacroSampler::Save(u64 titleId, u64 comboMask) {
     fwrite(&header, sizeof(header), 1, fp);
     fwrite(s_frames.data(), sizeof(MacroFrameV2), s_frames.size(), fp);
     fclose(fp);
+    s_frames.clear(); 
+    s_frames.shrink_to_fit();
     return true;
 }
 

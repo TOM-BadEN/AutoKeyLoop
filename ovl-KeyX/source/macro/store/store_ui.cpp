@@ -130,6 +130,10 @@ namespace {
 
 
 StoreGetDataGui::StoreGetDataGui(u64 tid) : m_tid(tid) {
+
+    s_gameList = {};
+    s_macroList = {};
+    
     if (tid == 0) {
         Thd::start([]{ s_gameList = StoreData().getGameList(); });
     } else {
