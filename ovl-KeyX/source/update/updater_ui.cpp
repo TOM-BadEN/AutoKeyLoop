@@ -154,6 +154,7 @@ void UpdaterUI::update() {
             } else {
                 bool hasNew = m_updateData.hasNewVersion(m_updateInfo.version, APP_VERSION_STRING);
                 m_state = hasNew ? UpdateState::HasUpdate : UpdateState::NoUpdate;
+                // m_state = UpdateState::HasUpdate;
             }
         }
         

@@ -83,12 +83,13 @@ CFLAGS += -DINITIALIZE_IN_GUI_DIRECTIVE=$(INITIALIZE_IN_GUI_DIRECTIVE)
 NO_FSTREAM_DIRECTIVE := 1
 CFLAGS += -DNO_FSTREAM_DIRECTIVE=$(NO_FSTREAM_DIRECTIVE)
 
-CXXFLAGS	:= $(CFLAGS) -fno-exceptions -std=c++20
+CXXFLAGS	:= $(CFLAGS) -fno-exceptions -std=c++20 \
+			-fno-rtti -fno-unwind-tables -fno-asynchronous-unwind-tables -ffast-math
 
 ASFLAGS	:=	$(ARCH)
-LDFLAGS	=	-specs=$(DEVKITPRO)/libnx/switch.specs $(ARCH) -flto=auto -Wl,--gc-sections -Wl,-Map,$(notdir $*.map)
+LDFLAGS	=	-specs=$(DEVKITPRO)/libnx/switch.specs $(ARCH) -flto=auto -Wl,--gc-sections -Wl,--as-needed -Wl,-Map,$(notdir $*.map)
 
-LIBS	:= -lcurl -lz -lzzip -lminizip -lmbedtls -lmbedx509 -lmbedcrypto -ljansson -lnx
+LIBS	:= -lcurl -lz -lzzip -lminizip -lmbedtls -lmbedx509 -lmbedcrypto -lnx
 
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing
