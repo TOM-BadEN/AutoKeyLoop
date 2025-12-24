@@ -131,8 +131,9 @@ namespace {
 
 StoreGetDataGui::StoreGetDataGui(u64 tid) : m_tid(tid) {
 
-    s_gameList = {};
-    s_macroList = {};
+    s_gameList.games.clear();
+    s_macroList.macros.clear();
+    s_selectedMacro = {};
     
     if (tid == 0) {
         Thd::start([]{ s_gameList = StoreData().getGameList(); });
@@ -234,7 +235,7 @@ void StoreGetDataGui::update() {
             else if (s_macroList.macros.empty()) m_state = LoadState::MacroListEmpty;
             else {
                 m_state = LoadState::Success;
-                tsl::swapTo<StoreMacroListGui>(m_tid, gameName);
+                tsl::swapTo<StoreMacroListGui>(m_tid, gameName, true);
             }
         }
     }
@@ -244,8 +245,11 @@ bool StoreGetDataGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchStat
     if (keysDown & HidNpadButton_B) {
         ult::abortDownload = true;
         Thd::stop();
-        s_gameList = {};
-        s_macroList = {};
+        s_gameList.games.clear();
+        s_gameList.games.shrink_to_fit();
+        s_macroList.macros.clear();
+        s_macroList.macros.shrink_to_fit();
+        s_selectedMacro = {};
         tsl::goBack();
         return true;
     }
@@ -359,8 +363,11 @@ bool StoreGameListGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchSta
     if (keysDown & HidNpadButton_B) {
         ult::abortDownload = true;
         Thd::stop();
-        s_gameList = {};
-        s_macroList = {};
+        s_gameList.games.clear();
+        s_gameList.games.shrink_to_fit();
+        s_macroList.macros.clear();
+        s_macroList.macros.shrink_to_fit();
+        s_selectedMacro = {};
         tsl::goBack();
         return true;
     }
@@ -371,8 +378,8 @@ bool StoreGameListGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchSta
 
 // ==================== StoreMacroListGui ====================
 
-StoreMacroListGui::StoreMacroListGui(u64 tid, const std::string& gameName)
-    : m_tid(tid), m_gameName(gameName) {
+StoreMacroListGui::StoreMacroListGui(u64 tid, const std::string& gameName, bool fromGame)
+    : m_tid(tid), m_gameName(gameName), m_fromGame(fromGame) {
 }
 
 StoreMacroListGui::~StoreMacroListGui() {
@@ -411,6 +418,17 @@ tsl::elm::Element* StoreMacroListGui::createUI() {
 bool StoreMacroListGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) {
     if (keysDown & HidNpadButton_Right) {
         tsl::changeTo<WebStoreGui>(m_tid, m_gameName);
+        return true;
+    }
+    if (keysDown & HidNpadButton_B) {
+        if (m_fromGame) {
+            s_gameList.games.clear();
+            s_gameList.games.shrink_to_fit();
+            s_macroList.macros.clear();
+            s_macroList.macros.shrink_to_fit();
+            s_selectedMacro = {};
+        }
+        tsl::goBack();
         return true;
     }
     return false;

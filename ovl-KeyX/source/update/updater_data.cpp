@@ -28,7 +28,7 @@ UpdaterData::~UpdaterData() {
 UpdateInfo UpdaterData::getUpdateInfo() {
 
     UpdateInfo info{};
-    if (!Network::download(m_isSimplifiedChinese ? CN_UPDATE_URL : EN_UPDATE_URL, UPDATE_JSON_PATH)) {
+    if (!Network::download2(m_isSimplifiedChinese ? CN_UPDATE_URL : EN_UPDATE_URL, UPDATE_JSON_PATH)) {
         info.error = "请检查网络连接";
         return info;
     }
@@ -76,7 +76,7 @@ bool UpdaterData::hasNewVersion(const std::string& remote, const std::string& lo
 }
 
 bool UpdaterData::downloadZip() {
-    bool success = Network::download(m_isSimplifiedChinese ? CN_DOWNLOAD_URL : EN_DOWNLOAD_URL, UPDATE_KEYX_PATH);
+    bool success = Network::download2(m_isSimplifiedChinese ? CN_DOWNLOAD_URL : EN_DOWNLOAD_URL, UPDATE_KEYX_PATH);
     if (!success) ult::deleteFileOrDirectory(UPDATE_KEYX_PATH);
     return success;
 }

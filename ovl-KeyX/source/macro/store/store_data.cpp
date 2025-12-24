@@ -30,7 +30,7 @@ GameListResult StoreData::getGameList() {
     
     std::string url = std::string(BASE_JSON_URL) + GAMELIST_JSON;
     
-    if (!Network::download(url, TEMP_GAMELIST_PATH)) {
+    if (!Network::download2(url, TEMP_GAMELIST_PATH)) {
         result.error = "请检查网络连接";
         return result;
     }
@@ -74,7 +74,7 @@ MacroListResult StoreData::getMacroList(const std::string& gameId) {
     
     std::string url = std::string(BASE_JSON_URL) + "games/" + gameId + "/" + MACROLIST_JSON;
     
-    if (!Network::download(url, TEMP_MACROLIST_PATH)) {
+    if (!Network::download2(url, TEMP_MACROLIST_PATH)) {
         result.error = "请检查网络连接";
         return result;
     }
@@ -133,7 +133,7 @@ bool StoreData::downloadMacro(const std::string& gameId, const std::string& file
     char urlBuf[128];
     snprintf(urlBuf, sizeof(urlBuf), DOWNLOAD_URL, gameId.c_str(), fileName.c_str());
     std::string url = urlBuf;
-    bool success = Network::download(url, localPath);
+    bool success = Network::download2(url, localPath);
     if (!success) ult::deleteFileOrDirectory(localPath);
     return success;
 }

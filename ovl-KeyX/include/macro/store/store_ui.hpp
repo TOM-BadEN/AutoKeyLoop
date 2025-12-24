@@ -58,7 +58,7 @@ private:
 // 商店宏列表界面
 class StoreMacroListGui : public tsl::Gui {
 public:
-    StoreMacroListGui(u64 tid, const std::string& gameName);
+    StoreMacroListGui(u64 tid, const std::string& gameName, bool fromGame = false);
     ~StoreMacroListGui();
     virtual tsl::elm::Element* createUI() override;
     virtual bool handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) override;
@@ -66,6 +66,7 @@ public:
 private:
     u64 m_tid;
     std::string m_gameName;
+    bool m_fromGame;
 };
 
 // 宏详情状态
