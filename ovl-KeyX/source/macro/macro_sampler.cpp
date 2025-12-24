@@ -80,6 +80,7 @@ void MacroSampler::ThreadFunc(void* arg) {
 void MacroSampler::Prepare() {
     // 清理旧数据并预分配（避免多次扩容导致内存碎片化）
     s_frames.clear();
+    s_frames.reserve(1024);  // 预分配 ~32KB
     s_filePath[0] = '\0';
     s_totalSamples = 0;
     s_startTick = 0;
