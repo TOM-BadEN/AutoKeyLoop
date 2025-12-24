@@ -772,6 +772,7 @@ void MacroData::allCleanup() {
     s_actions.clear();
     s_actions.shrink_to_fit();
     s_basicInfo = {};
+    undoCleanup();
 }
 
 // 清理撤销快照内存
