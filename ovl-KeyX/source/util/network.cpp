@@ -4,10 +4,10 @@
 
 namespace {
     constexpr SocketInitConfig socketConfig = {
-        .tcp_tx_buf_size     = 4 * 1024,
+        .tcp_tx_buf_size     = 8 * 1024,
         .tcp_rx_buf_size     = 16 * 1024,
-        .tcp_tx_buf_max_size = 16 * 1024,
-        .tcp_rx_buf_max_size = 32 * 1024,
+        .tcp_tx_buf_max_size = 32 * 1024,
+        .tcp_rx_buf_max_size = 64 * 1024,
         .udp_tx_buf_size     = 512,
         .udp_rx_buf_size     = 512,
         .sb_efficiency       = 1,
