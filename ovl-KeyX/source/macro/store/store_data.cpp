@@ -2,10 +2,10 @@
 #include "language.hpp"
 #include "game.hpp"
 #include "ini_helper.hpp"
+#include "network.hpp"
 #include <download_funcs.hpp>
 #include <json_funcs.hpp>
 #include <cJSON.h>
-// #include <curl/curl.h>
 #include <unordered_set>
 
 namespace {
@@ -30,7 +30,7 @@ GameListResult StoreData::getGameList() {
     
     std::string url = std::string(BASE_JSON_URL) + GAMELIST_JSON;
     
-    if (!ult::downloadFile(url, TEMP_GAMELIST_PATH, false)) {
+    if (!Network::download(url, TEMP_GAMELIST_PATH)) {
         result.error = "请检查网络连接";
         return result;
     }
@@ -74,7 +74,7 @@ MacroListResult StoreData::getMacroList(const std::string& gameId) {
     
     std::string url = std::string(BASE_JSON_URL) + "games/" + gameId + "/" + MACROLIST_JSON;
     
-    if (!ult::downloadFile(url, TEMP_MACROLIST_PATH, false)) {
+    if (!Network::download(url, TEMP_MACROLIST_PATH)) {
         result.error = "请检查网络连接";
         return result;
     }
@@ -133,85 +133,14 @@ bool StoreData::downloadMacro(const std::string& gameId, const std::string& file
     char urlBuf[128];
     snprintf(urlBuf, sizeof(urlBuf), DOWNLOAD_URL, gameId.c_str(), fileName.c_str());
     std::string url = urlBuf;
-    bool success = ult::downloadFile(url, localPath, false);
+    bool success = Network::download(url, localPath);
     if (!success) ult::deleteFileOrDirectory(localPath);
     return success;
 }
 
 UploadResult StoreData::uploadMacro(const std::string& filePath, u64 titleId, const std::string& gameName) {
-    
-    // 进度回调（用于支持中断）
-    auto progressCallback = [](void*, curl_off_t, curl_off_t, curl_off_t, curl_off_t) -> int {
-        return ult::abortDownload.load() ? 1 : 0;
-    };
-
-    // 响应写入回调
-    auto writeCallback = [](char* ptr, size_t size, size_t nmemb, void* userdata) -> size_t {
-        auto* resp = static_cast<std::string*>(userdata);
-        resp->append(ptr, size * nmemb);
-        return size * nmemb;
-    };
-
     UploadResult result{false, ""};
-    ult::abortDownload = false;
-    std::string response;
-    
-    // 检查文件是否存在
-    if (!ult::isFile(filePath)) return result;
-    
-    CURL* curl = curl_easy_init();
-    if (!curl) return result;
-    
-    // 构建 multipart form
-    curl_mime* mime = curl_mime_init(curl);
-    
-    // 添加文件字段
-    curl_mimepart* filePart = curl_mime_addpart(mime);
-    curl_mime_name(filePart, "macro");
-    curl_mime_filedata(filePart, filePath.c_str());
-    
-    // 添加 titleId 字段
-    char tidStr[17];
-    snprintf(tidStr, sizeof(tidStr), "%016lX", titleId);
-    curl_mimepart* tidPart = curl_mime_addpart(mime);
-    curl_mime_name(tidPart, "titleid");
-    curl_mime_data(tidPart, tidStr, CURL_ZERO_TERMINATED);
-    
-    // 添加 gamename 字段
-    curl_mimepart* namePart = curl_mime_addpart(mime);
-    curl_mime_name(namePart, "gamename");
-    curl_mime_data(namePart, gameName.c_str(), CURL_ZERO_TERMINATED);
-    
-    // 设置请求
-    curl_easy_setopt(curl, CURLOPT_URL, "https://macro.dokiss.cn/upload.php");
-    curl_easy_setopt(curl, CURLOPT_MIMEPOST, mime);
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
-    curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 5L);
-    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10L);
-    curl_easy_setopt(curl, CURLOPT_UPLOAD_BUFFERSIZE, 16 * 1024L);
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, +writeCallback);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
-    curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
-    curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, +progressCallback);
-    
-    CURLcode res = curl_easy_perform(curl);
-    
-    curl_mime_free(mime);
-    curl_easy_cleanup(curl);
-    
-    if (res != CURLE_OK) return result;
-    
-    // 解析 JSON 获取 code
-    cJSON* root = cJSON_Parse(response.c_str());
-    if (root) {
-        cJSON* codeItem = cJSON_GetObjectItem(root, "code");
-        if (codeItem && cJSON_IsString(codeItem)) {
-            result.code = codeItem->valuestring;
-            result.success = true;
-        }
-        cJSON_Delete(root);
-    }
+    result.success = Network::upload(filePath, titleId, gameName, result.code);
     return result;
 }
 

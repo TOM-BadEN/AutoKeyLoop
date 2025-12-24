@@ -10,23 +10,6 @@
 
 namespace {
 
-    // Socket 初始化配置（优化内存占用，避免 4MB ovlloader 崩溃）
-    constexpr SocketInitConfig socketInitConfig = {
-            // TCP 缓冲区
-            .tcp_tx_buf_size     = 8 * 1024,     // 发送缓冲区 8KB
-            .tcp_rx_buf_size     = 16 * 1024 * 2, // 接收缓冲区 32KB
-            .tcp_tx_buf_max_size = 32 * 1024,     // 最大发送缓冲区 32KB
-            .tcp_rx_buf_max_size = 64 * 1024 * 2, // 最大接收缓冲区 128KB
-            
-            // UDP 缓冲区
-            .udp_tx_buf_size     = 512,           // 发送缓冲区 512B
-            .udp_rx_buf_size     = 512,           // 接收缓冲区 512B
-        
-            // 内存效率优先
-            .sb_efficiency       = 1,             // 1 = 优先内存效率
-            .bsd_service_type    = BsdServiceType_Auto  // 自动选择服务类型
-        };
-
     // 设置更新检查标志
     void checkUpdate() {
         UpdaterData data;
@@ -62,7 +45,6 @@ public:
             memcpy(pdmqrySrv, &pdmqryClone, sizeof(Service));
         }
         GameMonitor::loadWhitelist();                                 // 加载白名单
-        socketInitialize(&socketInitConfig);                          // 初始化网络服务
         Thd::start(checkUpdate);                                      // 启动更新检查线程
     }
     
@@ -70,8 +52,6 @@ public:
     virtual void exitServices() override 
     {
         Thd::stop();                // 清理线程
-        curl_global_cleanup();      // 清理 cURL
-        socketExit();               // 退出 socket 服务
         nsExit();                   // 退出 ns 服务
         pdmqryExit();               // 退出 pdmqry 服务
         pmdmntExit();               // 退出进程管理服务
