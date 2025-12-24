@@ -1,13 +1,20 @@
 #pragma once
 #include <malloc.h>
 #include <cstdio>
+#include <cstdarg>
 
 class MemMonitor {
 public:
     static constexpr size_t TOTAL_HEAP = 4 * 1024 * 1024;  // 4MB 总堆
     static constexpr size_t NRO_SIZE = 1500 * 1024;        // ~1.46MB NRO
     
-    static void log(const char* tag) {
+    static void log(const char* fmt, ...) {
+        char tag[128];
+        va_list args;
+        va_start(args, fmt);
+        vsnprintf(tag, sizeof(tag), fmt, args);
+        va_end(args);
+        
         struct mallinfo mi = mallinfo();
         size_t available = TOTAL_HEAP - NRO_SIZE;  // 可用堆
         size_t remaining = (mi.arena < available) ? (available - mi.arena) : 0;
