@@ -10,6 +10,17 @@
 
 namespace {
 
+    constexpr SocketInitConfig socketConfig = {
+        .tcp_tx_buf_size     = 8 * 1024,
+        .tcp_rx_buf_size     = 16 * 1024,
+        .tcp_tx_buf_max_size = 32 * 1024,
+        .tcp_rx_buf_max_size = 64 * 1024,
+        .udp_tx_buf_size     = 512,
+        .udp_rx_buf_size     = 512,
+        .sb_efficiency       = 1,
+        .bsd_service_type    = BsdServiceType_Auto
+    };
+    
     // 设置更新检查标志
     void checkUpdate() {
         UpdaterData data;
@@ -45,6 +56,8 @@ public:
             memcpy(pdmqrySrv, &pdmqryClone, sizeof(Service));
         }
         GameMonitor::loadWhitelist();                                 // 加载白名单
+        socketInitialize(&socketConfig);
+        curl_global_init(CURL_GLOBAL_DEFAULT);
         Thd::start(checkUpdate);                                      // 启动更新检查线程
     }
     
@@ -52,6 +65,8 @@ public:
     virtual void exitServices() override 
     {
         Thd::stop();                // 清理线程
+        curl_global_cleanup();
+        socketExit();
         nsExit();                   // 退出 ns 服务
         pdmqryExit();               // 退出 pdmqry 服务
         pmdmntExit();               // 退出进程管理服务
