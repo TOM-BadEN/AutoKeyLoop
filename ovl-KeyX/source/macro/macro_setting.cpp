@@ -9,7 +9,7 @@
 #include "macro_sampler.hpp"
 #include "contribute_ui.hpp"
 #include "store_ui.hpp"
-// #include "store_data.hpp"
+#include "memory.hpp"
 
 // 录制消息全局变量
 std::string g_recordMessage = "";
@@ -59,6 +59,7 @@ void CountdownFrame::draw(tsl::gfx::Renderer* renderer) {
     auto textDim = renderer->getTextDimensions(m_countdown2, false, 300);
     s32 squareSize = (textDim.first > textDim.second ? textDim.first : textDim.second) + 60;
     // 正方形位置（屏幕中央）
+    // s32 squareSize = 360;
     s32 squareX = (tsl::cfg::FramebufferWidth - squareSize) / 2;
     s32 squareY = (tsl::cfg::FramebufferHeight - squareSize) / 2;
     renderer->drawRoundedRect(squareX, squareY, squareSize, squareSize, 20, tsl::Color(0x0, 0x0, 0x0, 0x5));
@@ -109,7 +110,10 @@ void CountdownGui::update() {
     m_frame->setCountdown(m_countdown);
 
     // 倒计时结束，跳转到录制界面
-    if (elapsed_ms >= 3100) tsl::swapTo<RecordingGui>();
+    if (elapsed_ms >= 3100) {
+        tsl::clearGlyphCacheNow.store(true);
+        tsl::swapTo<RecordingGui>();
+    }
 }
 
 bool CountdownGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos,
