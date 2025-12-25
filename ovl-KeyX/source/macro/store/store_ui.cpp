@@ -9,7 +9,7 @@
 #include "info_edit.hpp"
 #include "language.hpp"
 #include "qrcodegen.hpp"
-#include "memory.hpp"
+
 
 using qrcodegen::QrCode;
 using qrcodegen::QrSegment;
@@ -382,7 +382,7 @@ bool StoreGameListGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchSta
 StoreMacroListGui::StoreMacroListGui(u64 tid, const std::string& gameName, bool fromGame)
     : m_tid(tid), m_gameName(gameName), m_fromGame(fromGame) {
         
-    MemMonitor::log("获取完成，跳转到宏列表");
+    
 }
 
 StoreMacroListGui::~StoreMacroListGui() {
@@ -431,7 +431,7 @@ bool StoreMacroListGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchSt
             s_macroList.macros.shrink_to_fit();
             s_selectedMacro = {};
         }
-        MemMonitor::log("退出商店");
+        
         tsl::goBack();
         return true;
     }
@@ -444,7 +444,7 @@ bool StoreMacroListGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchSt
 StoreMacroViewGui::StoreMacroViewGui(u64 tid, const std::string& gameName)
     : m_tid(tid), m_gameName(gameName) {
         
-    MemMonitor::log("跳转到宏详情");
+    
     // 计算下载路径
     char tidStr[17];
     snprintf(tidStr, sizeof(tidStr), "%016lX", tid);
@@ -481,7 +481,7 @@ void StoreMacroViewGui::update() {
     if (m_state == MacroViewState::Downloading && Thd::isDone()) {
         Thd::stop();
         m_state = s_downloadSuccess ? MacroViewState::Success : MacroViewState::Error;
-        MemMonitor::log("下载完成");
+        
     }
 }
 
@@ -502,7 +502,7 @@ bool StoreMacroViewGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchSt
     if (m_state == MacroViewState::Ready || m_state == MacroViewState::Error || m_state == MacroViewState::Cancelled) {
         if (keysDown & HidNpadButton_Plus) {
             m_state = MacroViewState::Downloading;
-            MemMonitor::log("开始下载宏");
+            
             char tidStr[17];
             snprintf(tidStr, sizeof(tidStr), "%016lX", m_tid);
             std::string gameId = tidStr;

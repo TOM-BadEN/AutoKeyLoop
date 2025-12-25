@@ -1,7 +1,7 @@
 #include "contribute_ui.hpp"
 #include "qrcodegen.hpp"
 #include "language.hpp"
-#include "memory.hpp"
+
 
 using qrcodegen::QrCode;
 using qrcodegen::QrSegment;

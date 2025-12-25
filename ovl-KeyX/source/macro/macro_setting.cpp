@@ -9,7 +9,7 @@
 #include "macro_sampler.hpp"
 #include "contribute_ui.hpp"
 #include "store_ui.hpp"
-#include "memory.hpp"
+
 
 // 录制消息全局变量
 std::string g_recordMessage = "";
@@ -148,7 +148,7 @@ tsl::elm::Element* SettingMacro::createUI() {
     auto listItemRecord = new tsl::elm::ListItem("录制脚本", "");
     listItemRecord->setClickListener([this](u64 keys) {
         if (keys & HidNpadButton_A) {
-            MemMonitor::setBaseline("开始录制");
+            
             return HandleRecordClick();
         }
         return false;
@@ -190,7 +190,7 @@ tsl::elm::Element* SettingMacro::createUI() {
     listItemStore->setClickListener([this](u64 keys) {
         if (keys & HidNpadButton_A) {
             u64 tid = GameMonitor::getCurrentTitleId();
-            MemMonitor::setBaseline("进入商店");
+            
             tsl::changeTo<StoreGetDataGui>(tid);
             return true;
         }

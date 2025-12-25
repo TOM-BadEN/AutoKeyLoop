@@ -6,7 +6,7 @@
 #include "game.hpp"
 #include "Tthread.hpp"
 #include "updater_data.hpp"
-#include "memory.hpp"
+
 
 
 namespace {
@@ -41,7 +41,7 @@ public:
     // 初始化系统服务
     virtual void initServices() override 
     {            
-        MemMonitor::clear();                         
+                                 
         pmdmntInitialize();                                           // 进程管理服务
         setInitialize();                                              // 初始化set服务（获取系统语言）
         nsInitialize();                                               // 初始化ns服务
@@ -58,11 +58,8 @@ public:
             memcpy(pdmqrySrv, &pdmqryClone, sizeof(Service));
         }
         GameMonitor::loadWhitelist();                                 // 加载白名单
-        MemMonitor::setBaseline("服务-初始化前");
         socketInitialize(&socketConfig);
-        MemMonitor::log("服务-socket初始化后");
         curl_global_init(CURL_GLOBAL_DEFAULT);
-        MemMonitor::log("服务-curl初始化后");
         Thd::start(checkUpdate);                                      // 启动更新检查线程
     }
     

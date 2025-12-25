@@ -5,7 +5,7 @@
 #include <cstring>
 #include <algorithm>
 #include <ultra.hpp>
-#include "memory.hpp"
+
 
 // 静态成员定义
 char MacroData::s_filePath[128];
@@ -744,7 +744,7 @@ void MacroData::setActionButtons(s32 actionIndex, u64 buttons) {
 void MacroData::saveSnapshot() {
     if (s_undoStack.size() >= 3) s_undoStack.erase(s_undoStack.begin());
     s_undoStack.push_back({s_frames, s_framesV2, s_actions});
-    MemMonitor::log("Edit-保存快照");
+    
 }
 
 // 查询能否撤销
