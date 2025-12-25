@@ -70,6 +70,14 @@ private:
     u64 m_AccumulatedMs = 0;                // V2 播放累加时间
     bool m_MacroHasStick = false;           // 当前宏是否包含摇杆操作
 
+    // 摇杆污染检测
+    HidAnalogStickState m_LastStickL = {};
+    HidAnalogStickState m_LastStickR = {};
+    u64 m_LeftStartTick = 0;
+    u64 m_RightStartTick = 0;
+    bool m_LeftLocked = false;
+    bool m_RightLocked = false;
+
     FeatureEvent DetermineEvent(u64 buttons);         // 判定事件
     FeatureEvent HandlePlayingState(u64 buttons);     // 处理播放中状态
     FeatureEvent HandleStopCooldown(u64 buttons);     // 处理停止后冷静期
@@ -79,5 +87,6 @@ private:
     void MacroStarting();                             // 宏启动
     void LoadMacroFile(const char* filePath);         // 加载宏文件
     void MacroExecuting(ProcessResult& result);       // 宏执行
+    void FilterStick(HidAnalogStickState& stick, HidAnalogStickState& last, u64& startTick, bool& locked);  // 摇杆污染过滤
     
 };

@@ -3,8 +3,9 @@
 #include <cstdio>
 
 // 常量定义
-static constexpr u64 STOP_COOLDOWN_NS = 250000000ULL;        // 250ms 停止后延迟
-static constexpr u64 LONG_PRESS_THRESHOLD_NS = 500000000ULL; // 500ms 长按阈值
+constexpr u64 STOP_COOLDOWN_NS = 250000000ULL;        // 250ms 停止后延迟
+constexpr u64 LONG_PRESS_THRESHOLD_NS = 500000000ULL; // 500ms 长按阈值
+constexpr u64 THRESHOLD_NS = 358000000ULL;  // 358ms
 
 // 构造函数
 Macro::Macro(const char* macroCfgPath) {
@@ -242,10 +243,9 @@ void Macro::MacroExecuting(ProcessResult& result) {
         return;
     } 
 
-    if (leftX != 0) result.analog_stick_l.x = leftX;
-    if (leftY != 0) result.analog_stick_l.y = leftY;
-    if (rightX != 0) result.analog_stick_r.x = rightX;
-    if (rightY != 0) result.analog_stick_r.y = rightY;
+    FilterStick(result.analog_stick_l, m_LastStickL, m_LeftStartTick, m_LeftLocked);
+    FilterStick(result.analog_stick_r, m_LastStickR, m_RightStartTick, m_RightLocked);
+
 }
 
 void Macro::MacroFinishing() {
@@ -261,5 +261,44 @@ void Macro::MacroFinishing() {
     m_LastFinishTime = armGetSystemTick();
     m_JustStopped = true;  // 标记刚停止，需要等待冷静期
     m_MacroHasStick = false;
+    // 重置摇杆污染检测状态
+    m_LastStickL = {};
+    m_LastStickR = {};
+    m_LeftStartTick = 0;
+    m_RightStartTick = 0;
+    m_LeftLocked = false;
+    m_RightLocked = false;
+}
+
+// 摇杆污染过滤
+void Macro::FilterStick(HidAnalogStickState& stick, HidAnalogStickState& last, u64& startTick, bool& locked) {
+    bool same = (stick.x == last.x && stick.y == last.y);
+    
+    // 锁定状态持续归0
+    if (locked) {
+        if (!same) {
+            locked = false;
+            startTick = armGetSystemTick();
+            last = stick;
+            return;
+        }
+        stick.x = 0;
+        stick.y = 0;
+        return;
+    }
+    
+    // 检测到相同，归0并锁定
+    if (same) {
+        if (armTicksToNs(armGetSystemTick() - startTick) > THRESHOLD_NS) {
+            locked = true;
+            stick.x = 0;
+            stick.y = 0;
+        }
+        return;
+    }
+    
+    // 未污染，重置计时器
+    last = stick;
+    startTick = armGetSystemTick();
 }
 
