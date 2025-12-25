@@ -97,6 +97,11 @@ private:
     s32 m_scrollOffset = 0;
     s32 m_maxScrollOffset = 0;
     
+    // 预处理缓存
+    std::vector<std::pair<std::string, bool>> m_descLines;  // {文本, 是否有前缀}
+    s32 m_descTotalHeight = 0;
+    bool m_descReady = false;
+    
     void drawContent(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h);
 };
 

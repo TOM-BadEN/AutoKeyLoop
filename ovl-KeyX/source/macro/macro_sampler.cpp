@@ -124,7 +124,7 @@ void MacroSampler::Stop() {
 void MacroSampler::Cancel() {
     Stop();
     s_frames.clear();
-    s_frames.shrink_to_fit(); 
+    s_frames.shrink_to_fit();
 }
 
 // 保存到文件

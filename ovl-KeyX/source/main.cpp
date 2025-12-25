@@ -6,6 +6,7 @@
 #include "game.hpp"
 #include "Tthread.hpp"
 #include "updater_data.hpp"
+#include "memory.hpp"
 
 
 namespace {
@@ -56,8 +57,11 @@ public:
             memcpy(pdmqrySrv, &pdmqryClone, sizeof(Service));
         }
         GameMonitor::loadWhitelist();                                 // 加载白名单
+        MemMonitor::setBaseline("服务-初始化前");
         socketInitialize(&socketConfig);
+        MemMonitor::log("服务-socket初始化后");
         curl_global_init(CURL_GLOBAL_DEFAULT);
+        MemMonitor::log("服务-curl初始化后");
         Thd::start(checkUpdate);                                      // 启动更新检查线程
     }
     

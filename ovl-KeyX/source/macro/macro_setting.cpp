@@ -189,6 +189,7 @@ tsl::elm::Element* SettingMacro::createUI() {
     listItemStore->setClickListener([this](u64 keys) {
         if (keys & HidNpadButton_A) {
             u64 tid = GameMonitor::getCurrentTitleId();
+            MemMonitor::setBaseline("进入商店");
             tsl::changeTo<StoreGetDataGui>(tid);
             return true;
         }
@@ -225,6 +226,7 @@ bool SettingMacro::HandleRecordClick() {
         g_recordMessage = "请在游戏中录制";
         return true;
     }
+
     // 跳转到倒计时界面
     // 启动录制线程做好录制准备
     MacroSampler::Prepare();

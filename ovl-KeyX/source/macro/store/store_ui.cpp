@@ -9,6 +9,7 @@
 #include "info_edit.hpp"
 #include "language.hpp"
 #include "qrcodegen.hpp"
+#include "memory.hpp"
 
 using qrcodegen::QrCode;
 using qrcodegen::QrSegment;
@@ -380,6 +381,8 @@ bool StoreGameListGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchSta
 
 StoreMacroListGui::StoreMacroListGui(u64 tid, const std::string& gameName, bool fromGame)
     : m_tid(tid), m_gameName(gameName), m_fromGame(fromGame) {
+        
+    MemMonitor::log("获取完成，跳转到宏列表");
 }
 
 StoreMacroListGui::~StoreMacroListGui() {
@@ -428,6 +431,7 @@ bool StoreMacroListGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchSt
             s_macroList.macros.shrink_to_fit();
             s_selectedMacro = {};
         }
+        MemMonitor::log("退出商店");
         tsl::goBack();
         return true;
     }
@@ -439,6 +443,8 @@ bool StoreMacroListGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchSt
 
 StoreMacroViewGui::StoreMacroViewGui(u64 tid, const std::string& gameName)
     : m_tid(tid), m_gameName(gameName) {
+        
+    MemMonitor::log("跳转到宏详情");
     // 计算下载路径
     char tidStr[17];
     snprintf(tidStr, sizeof(tidStr), "%016lX", tid);
@@ -475,6 +481,7 @@ void StoreMacroViewGui::update() {
     if (m_state == MacroViewState::Downloading && Thd::isDone()) {
         Thd::stop();
         m_state = s_downloadSuccess ? MacroViewState::Success : MacroViewState::Error;
+        MemMonitor::log("下载完成");
     }
 }
 
@@ -495,6 +502,7 @@ bool StoreMacroViewGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchSt
     if (m_state == MacroViewState::Ready || m_state == MacroViewState::Error || m_state == MacroViewState::Cancelled) {
         if (keysDown & HidNpadButton_Plus) {
             m_state = MacroViewState::Downloading;
+            MemMonitor::log("开始下载宏");
             char tidStr[17];
             snprintf(tidStr, sizeof(tidStr), "%016lX", m_tid);
             std::string gameId = tidStr;
@@ -576,11 +584,18 @@ void StoreMacroViewGui::drawContent(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, 
     auto [prefixW, prefixH] = r->getTextDimensions(prefix, false, DESC_FONT_SIZE);
     s32 descMaxWidth = maxWidth - SCROLLBAR_WIDTH - SCROLLBAR_GAP;
     
-    s32 totalContentHeight = 0;
-    auto lines = preprocessDesc(r, s_selectedMacro.desc, descMaxWidth, prefixW, totalContentHeight);
+    // 懒加载：只在首帧计算
+    if (!m_descReady) {
+        auto lines = preprocessDesc(r, s_selectedMacro.desc, descMaxWidth, prefixW, m_descTotalHeight);
+        m_descLines.reserve(lines.size());
+        for (const auto& line : lines) {
+            m_descLines.emplace_back(line.text, line.hasPrefix);
+        }
+        m_descReady = true;
+    }
     
     // 更新滚动状态
-    m_maxScrollOffset = (totalContentHeight > visibleHeight) ? (totalContentHeight - visibleHeight) : 0;
+    m_maxScrollOffset = (m_descTotalHeight > visibleHeight) ? (m_descTotalHeight - visibleHeight) : 0;
     if (m_scrollOffset > m_maxScrollOffset) m_scrollOffset = m_maxScrollOffset;
     if (m_scrollOffset < 0) m_scrollOffset = 0;
     
@@ -588,13 +603,13 @@ void StoreMacroViewGui::drawContent(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, 
     s32 maxLines = (visibleHeight + DESC_LINE_HEIGHT - 1) / DESC_LINE_HEIGHT;
     s32 contentY = 0, drawY = textMinY, drawnLines = 0;
     
-    for (const auto& line : lines) {
+    for (const auto& [text, hasPrefix] : m_descLines) {
         if (drawnLines >= maxLines) break;
         if (contentY >= m_scrollOffset) {
-            if (line.hasPrefix) {
-                r->drawString(prefix + line.text, false, textX, drawY, DESC_FONT_SIZE, r->a(tsl::style::color::ColorDescription));
+            if (hasPrefix) {
+                r->drawString(prefix + text, false, textX, drawY, DESC_FONT_SIZE, r->a(tsl::style::color::ColorDescription));
             } else {
-                r->drawString(line.text, false, textX + prefixW, drawY, DESC_FONT_SIZE, r->a(tsl::style::color::ColorDescription));
+                r->drawString(text, false, textX + prefixW, drawY, DESC_FONT_SIZE, r->a(tsl::style::color::ColorDescription));
             }
             drawY += DESC_LINE_HEIGHT;
             drawnLines++;
@@ -606,7 +621,7 @@ void StoreMacroViewGui::drawContent(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, 
     if (m_maxScrollOffset > 0) {
         s32 scrollBarX = x + w - SCROLLBAR_WIDTH;
         s32 scrollBarTotalH = descMaxY - scrollMinY;
-        s32 scrollBarHeight = scrollBarTotalH * visibleHeight / totalContentHeight;
+        s32 scrollBarHeight = scrollBarTotalH * visibleHeight / m_descTotalHeight;
         if (scrollBarHeight < 20) scrollBarHeight = 20;
         s32 scrollBarY = scrollMinY + (scrollBarTotalH - scrollBarHeight) * m_scrollOffset / m_maxScrollOffset;
         s32 radius = SCROLLBAR_WIDTH / 2;

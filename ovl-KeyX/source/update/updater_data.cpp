@@ -3,6 +3,7 @@
 #include <download_funcs.hpp>
 #include <json_funcs.hpp>
 #include <cJSON.h>
+#include "memory.hpp"
 
 namespace {
     constexpr const char* CN_UPDATE_URL = "https://gitee.com/TOM-BadEN/KeyX/raw/main/update/update.json";
@@ -26,6 +27,7 @@ UpdaterData::~UpdaterData() {
 
 UpdateInfo UpdaterData::getUpdateInfo() {
 
+    MemMonitor::setBaseline("检查更新功能开始");
     UpdateInfo info{};
     if (!ult::downloadFile(m_isSimplifiedChinese ? CN_UPDATE_URL : EN_UPDATE_URL, UPDATE_JSON_PATH, false)) {
         info.error = "请检查网络连接";
@@ -71,6 +73,7 @@ bool UpdaterData::hasNewVersion(const std::string& remote, const std::string& lo
     
     if (r1 != l1) return r1 > l1;
     if (r2 != l2) return r2 > l2;
+    MemMonitor::log("检查更新功能结束");
     return r3 > l3;
 }
 
