@@ -6,6 +6,7 @@
 #include <ultra.hpp>
 #include <time.h>
 #include "macro_sampler.hpp"
+#include "memory.hpp"
 
 extern std::string g_recordMessage;
 
@@ -123,6 +124,7 @@ bool RecordingGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &
         MacroSampler::Stop();
         u64 titleId = GameMonitor::getCurrentTitleId();
         MacroSampler::Save(titleId, combo);
+        MemMonitor::log("录制结束");
         char filename[128];
         strcpy(filename, MacroSampler::GetFilePath());
         char gameName[64];

@@ -148,6 +148,7 @@ tsl::elm::Element* SettingMacro::createUI() {
     auto listItemRecord = new tsl::elm::ListItem("录制脚本", "");
     listItemRecord->setClickListener([this](u64 keys) {
         if (keys & HidNpadButton_A) {
+            MemMonitor::setBaseline("开始录制");
             return HandleRecordClick();
         }
         return false;

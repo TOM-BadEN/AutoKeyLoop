@@ -12,6 +12,7 @@
 #include "i18n.hpp"
 #include "macro_upload.hpp"
 #include "macro_detail.hpp"
+#include "memory.hpp"
 
 namespace {
     constexpr const u64 buttons[] = {
@@ -38,6 +39,7 @@ namespace {
 MacroViewGui::MacroViewGui(const char* macroFilePath, const char* gameName, bool isRecord) 
  : m_isRecord(isRecord)
 {
+    MemMonitor::setBaseline("View-进入");
     strcpy(m_macroFilePath, macroFilePath);
     strncpy(m_gameName, gameName, sizeof(m_gameName) - 1);
     m_gameName[sizeof(m_gameName) - 1] = '\0';
@@ -48,6 +50,7 @@ MacroViewGui::MacroViewGui(const char* macroFilePath, const char* gameName, bool
 MacroViewGui::~MacroViewGui()
 {
     tsl::clearGlyphCacheNow.store(true);
+    MemMonitor::log("View-退出");
 }
 
 void MacroViewGui::getHotkey() {
@@ -172,6 +175,7 @@ bool MacroViewGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &
         if (MacroUtil::deleteMacro(titleId, m_macroFilePath)) g_ipcManager.sendReloadMacroCommand();
         Refresh::RefrRequest(Refresh::MacroGameList);
         Refresh::RefrRequest(Refresh::MacroList);
+        MemMonitor::log("View-删除退出");
         MacroData::allCleanup();
         tsl::goBack();
         return true;

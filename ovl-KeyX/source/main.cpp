@@ -40,7 +40,8 @@ private:
 public:
     // 初始化系统服务
     virtual void initServices() override 
-    {                                     // 挂载SD卡
+    {            
+        MemMonitor::clear();                         
         pmdmntInitialize();                                           // 进程管理服务
         setInitialize();                                              // 初始化set服务（获取系统语言）
         nsInitialize();                                               // 初始化ns服务

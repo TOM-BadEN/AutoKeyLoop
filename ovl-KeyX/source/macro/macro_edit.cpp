@@ -6,6 +6,7 @@
 #include "macro_view.hpp"
 #include "i18n.hpp"
 #include <ultra.hpp>
+#include "memory.hpp"
 
 namespace {
     static constexpr s32 TIMELINE_HEIGHT = 100;       // 时间轴区域高度
@@ -118,6 +119,7 @@ MacroEditGui::MacroEditGui(const char* gameName, bool isRecord)
  : m_gameName(gameName)
  , m_isRecord(isRecord)
 {
+    MemMonitor::log("Edit-进入");
     MacroData::loadFrameAndBasicInfo();
     MacroData::parseActions();
     char bakPath[128];
@@ -127,6 +129,7 @@ MacroEditGui::MacroEditGui(const char* gameName, bool isRecord)
 
 MacroEditGui::~MacroEditGui() {
     MacroData::undoCleanup();
+    MemMonitor::log("Edit-析构");
 }
 
 tsl::elm::Element* MacroEditGui::createUI() {
@@ -759,6 +762,7 @@ bool MacroEditGui::handleNormalInput(u64 keysDown, u64 keysHeld) {
     }
     if (keysDown & HidNpadButton_Plus) {
         if (!m_selectMode) {
+            MemMonitor::log("Edit-保存退出");
             MacroData::saveForEdit();
             Refresh::RefrRequest(Refresh::MacroGameList); 
             g_ipcManager.sendReloadMacroCommand();
