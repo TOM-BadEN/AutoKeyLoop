@@ -162,7 +162,8 @@ void MacroListGuiGame::update() {
 
 bool MacroListGuiGame::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) {
     if (keysDown & HidNpadButton_B) {
-        if (Refresh::RefrConsume(Refresh::MacroList)) {
+        u64 true_Tid = GameMonitor::getCurrentTitleId();
+        if (Refresh::RefrConsume(Refresh::MacroList) && true_Tid == 0) {
             s_isBack = true;
             tsl::swapTo<MacroListGui>(SwapDepth(2));
             return true;
