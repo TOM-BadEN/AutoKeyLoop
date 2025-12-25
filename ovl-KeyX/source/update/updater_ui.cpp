@@ -105,6 +105,7 @@ UpdaterUI::UpdaterUI() {
 }
 
 UpdaterUI::~UpdaterUI() {
+    tsl::clearGlyphCacheNow.store(true);
     ult::abortDownload = true;    // 通知 curl 取消下载
     ult::abortUnzip = true;       // 通知 unzip 取消解压
     Thd::stop();

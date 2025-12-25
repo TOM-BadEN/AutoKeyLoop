@@ -8,6 +8,7 @@
 class MacroViewGui : public tsl::Gui {
 public:
     MacroViewGui(const char* macroFilePath, const char* gameName, bool isRecord = false);
+    ~MacroViewGui();
     virtual tsl::elm::Element* createUI() override;
     virtual void update() override;
     virtual bool handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) override;

@@ -14,6 +14,12 @@ AboutPlugin::AboutPlugin()
     
 }
 
+// 析构函数
+AboutPlugin::~AboutPlugin()
+{
+    tsl::clearGlyphCacheNow.store(true);
+}
+
 // 创建关于插件界面UI
 tsl::elm::Element* AboutPlugin::createUI()
 {

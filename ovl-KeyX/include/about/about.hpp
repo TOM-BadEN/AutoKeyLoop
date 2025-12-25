@@ -8,6 +8,9 @@ public:
     // 构造函数
     AboutPlugin();
     
+    // 析构函数
+    ~AboutPlugin();
+    
     // 创建UI界面
     virtual tsl::elm::Element* createUI() override;
 };

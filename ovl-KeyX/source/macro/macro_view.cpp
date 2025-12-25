@@ -45,6 +45,11 @@ MacroViewGui::MacroViewGui(const char* macroFilePath, const char* gameName, bool
     getHotkey();
 }
 
+MacroViewGui::~MacroViewGui()
+{
+    tsl::clearGlyphCacheNow.store(true);
+}
+
 void MacroViewGui::getHotkey() {
     u64 titleId = MacroData::getBasicInfo().titleId;
     m_Hotkey = MacroUtil::getHotkey(titleId, m_macroFilePath);
