@@ -533,6 +533,14 @@ bool StoreMacroViewGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchSt
         }
         return true;
     }
+
+    if (keysDown & HidNpadButton_B) {
+        tsl::clearGlyphCacheNow.store(true);
+        ult::abortDownload = true;
+        Thd::stop();
+        tsl::goBack();
+        return true;
+    }
     return false;
 }
 
@@ -794,7 +802,8 @@ void WebStoreGui::drawContent(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h)
 }
 
 bool WebStoreGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) {
-    if (keysDown & HidNpadButton_Left) {
+    if (keysDown & (HidNpadButton_Left | HidNpadButton_B)) {
+        tsl::clearGlyphCacheNow.store(true);
         tsl::goBack();
         return true;
     }
