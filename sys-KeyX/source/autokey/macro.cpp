@@ -5,7 +5,7 @@
 // 常量定义
 constexpr u64 STOP_COOLDOWN_NS = 250000000ULL;        // 250ms 停止后延迟
 constexpr u64 LONG_PRESS_THRESHOLD_NS = 500000000ULL; // 500ms 长按阈值
-constexpr u64 THRESHOLD_NS = 158000000ULL;  // 358ms
+constexpr u64 THRESHOLD_NS = 158000000ULL;            // 158ms (实测最大会有292ms的相同帧，但是经过实测发现改成158并不会造成问题，所以就这样不管了)
 
 // 构造函数
 Macro::Macro(const char* macroCfgPath) {
