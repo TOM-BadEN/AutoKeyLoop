@@ -5,7 +5,7 @@
 // 常量定义
 constexpr u64 STOP_COOLDOWN_NS = 250000000ULL;        // 250ms 停止后延迟
 constexpr u64 LONG_PRESS_THRESHOLD_NS = 500000000ULL; // 500ms 长按阈值
-constexpr u64 THRESHOLD_NS = 358000000ULL;  // 358ms
+constexpr u64 THRESHOLD_NS = 158000000ULL;  // 358ms
 
 // 构造函数
 Macro::Macro(const char* macroCfgPath) {
