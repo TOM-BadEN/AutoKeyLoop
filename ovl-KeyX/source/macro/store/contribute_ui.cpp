@@ -1,6 +1,7 @@
 #include "contribute_ui.hpp"
 #include "qrcodegen.hpp"
 #include "language.hpp"
+#include "memory.hpp"
 
 using qrcodegen::QrCode;
 using qrcodegen::QrSegment;
@@ -11,6 +12,10 @@ constexpr const char* WECHAT_PAY_URL = "wxp://f2f0mMaZS-xnKyAZaTyn813TQRZHTRKPzI
 constexpr const char* PAYPAL_URL = "https://www.paypal.com/qrcodes/p2pqrc/7CQ7FTPN26AJ8";
 
 ContributeGui::ContributeGui() {}
+
+ContributeGui::~ContributeGui() {
+    tsl::clearGlyphCacheNow.store(true);
+}
 
 tsl::elm::Element* ContributeGui::createUI() {
     auto frame = new tsl::elm::OverlayFrame("我要投稿", "欢迎向我提供各种脚本");

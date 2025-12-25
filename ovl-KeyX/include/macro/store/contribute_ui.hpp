@@ -7,5 +7,6 @@
 class ContributeGui : public tsl::Gui {
 public:
     ContributeGui();
+    ~ContributeGui();
     virtual tsl::elm::Element* createUI() override;
 };
