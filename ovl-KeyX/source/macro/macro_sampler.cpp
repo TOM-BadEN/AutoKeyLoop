@@ -158,9 +158,9 @@ bool MacroSampler::Save(u64 titleId, u64 comboMask) {
     time_t now = time(nullptr);
     struct tm tmNow;
     localtime_r(&now, &tmNow);
-    sprintf(s_filePath, "%s/m_%02d%02d%02d.macro", dirPath, tmNow.tm_hour, tmNow.tm_min, tmNow.tm_sec);
+    sprintf(s_filePath, "%s/%02d%02d_%02d_%02d_%02d.macro", dirPath, tmNow.tm_mon + 1, tmNow.tm_mday, tmNow.tm_hour, tmNow.tm_min, tmNow.tm_sec);
     while (ult::isFile(s_filePath)) {
-        sprintf(s_filePath, "%s/m_%02d%02d%02d-%d.macro", dirPath, tmNow.tm_hour, tmNow.tm_min, tmNow.tm_sec, suffix++);
+        sprintf(s_filePath, "%s/%02d%02d_%02d_%02d_%02d_%d.macro", dirPath, tmNow.tm_mon + 1, tmNow.tm_mday, tmNow.tm_hour, tmNow.tm_min, tmNow.tm_sec, suffix++);
     }
     
     // 写入文件
