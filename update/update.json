@@ -1,27 +1,37 @@
 {
-  "version": "v1.5.5",
+  "version": "v1.5.6",
   "changelog": {
     "CN": [
-      "增加上传功能，全球可用，上传位置位于宏的详情界面右下角",
-      "欢迎大家上传投稿，服务器仓库会定时同步至GITHUB",
-      "增加编辑宏商店描述信息的功能",
-      "优化ovl内存占用",
-      "更新界面的更新日志现在支持滚动查看",
-      "繁体用户的更新日志由显示英文改为简体中文",
-      "修复在宏详情界面的使用说明显示不完整的问题",
-      "修复录制的时候可能因为线程导致崩溃的问题",
-      "感谢@do-kiss （忘忧）提供的服务器与网页"
+      "宏商店的服务器下载链接，为提高安全性，进行了更换",
+      "1.55版本的用户请尽快更新至1.56，旧版本将无法下载",
+      "优化ovl内存管理，现在不会再因为ovlloader为4MB而导致崩溃",
+      "解决了播放宏时（无摇杆数据的宏），若用户手动输入摇杆而导致无法自动回中的问题",
+      "系统模块的内存占用临时提高到550KB，下版本会重写录制与播放算法，支持更长时间的宏，并将内存占用降回300KB左右",
+      "本地录制的宏默认命名格式修改为 “日期_时_分_秒”",
+      "宏的管理界面UI重新设计",
+      "宏的详情介绍区域现在支持滚动效果",
+      "删除某个宏文件后，回退到游戏列表界面时，现在会正常刷新游戏的宏数量",
+      "ovl的主界面的切换配置选项，现在右边会直接显示当前使用的配置",
+      "宏商店的宏列表界面右下角新增一个网页商店选项",
+      "宏商店宏的详情界面删除文件路径文本，现在显示为已下载次数",
+      "宏商店宏的详情界面会检测并提示当前宏是否已安装",
+      "宏商店现在会屏蔽服务器有记录，但是宏数量为0的游戏"
     ],
     "EN": [
-      "Added upload functionality, available globally. The upload button is located at the bottom right of the macro details page.",
-      "Welcome everyone to upload submissions. The server repository will be synced to GitHub Repo",
-      "Added the ability to edit macro store description information.",
-      "Optimized OVL memory usage.",
-      "Updated the changelog interface to support scrolling.",
-      "For Traditional Chinese users, the changelog display has been changed from English to Simplified Chinese.",
-      "Fixed the issue where usage instructions were not fully displayed on the macro details page.",
-      "Fixed a potential crash during recording caused by threading issues.",
-      "Thanks to @do-kiss (忘忧) for providing the server and webpage."
+      "The macro store server download link has been changed to improve security",
+      "Users on version 1.55 are advised to update to 1.56 as soon as possible, older versions will no longer be able to download",
+      "Optimized OVL memory management, crashes caused by ovlloader being set to 4MB will no longer occur",
+      "Fixed an issue where, when playing a macro (without joystick data), manual joystick input by the user would prevent automatic centering",
+      "The system module memory usage has been temporarily increased to 550KB, the next version will rewrite the recording and playback algorithms to support longer macros and reduce memory usage back to around 300KB",
+      "The default naming format for locally recorded macros has been changed to “date_hour_minute_second”",
+      "The macro management UI has been redesigned",
+      "The macro detail description area now supports scrolling",
+      "After deleting a macro file, returning to the game list screen will now correctly refresh the macro count for that game",
+      "In the OVL main interface, the configuration switch option now directly displays the currently active configuration on the right side",
+      "A new web store option has been added to the bottom-right corner of the macro store macro list screen",
+      "In the macro store macro detail screen, the file path text has been removed and is now replaced with the download count",
+      "The macro store macro detail screen now detects and indicates whether the current macro is already installed",
+      "The macro store now hides games that have server records but a macro count of 0"
     ]
   }
 }
