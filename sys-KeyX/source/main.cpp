@@ -11,10 +11,10 @@ extern "C" {
 // #define INNER_HEAP_SIZE 0x3000
 
 // 内部堆的大小（根据需要调整）62KB
-#define INNER_HEAP_SIZE 0xF800
+// #define INNER_HEAP_SIZE 0xF800
 
-// 内部堆的大小（根据需要调整）128KB
-// #define INNER_HEAP_SIZE 0x40000
+// 内部堆的大小（根据需要调整）256KB
+#define INNER_HEAP_SIZE 0x40000
 
 // 系统模块不应使用applet相关功能
 u32 __nx_applet_type = AppletType_None;
