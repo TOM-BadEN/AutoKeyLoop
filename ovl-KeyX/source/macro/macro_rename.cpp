@@ -6,6 +6,7 @@
 #include <cstdio>
 #include "refresh.hpp"
 #include "ipc.hpp"
+#include "macro_setting.hpp"
 
 namespace {
     constexpr const char* KeyboardRowsUpper[] = {
@@ -26,6 +27,8 @@ namespace {
     constexpr const u8 kMaxInputLen = 20;     // 最大输入长度
     constexpr const u8 kRepeatFrames = 8;     // 重复帧数(用来控制按键的重复触发)
 }
+
+extern std::string g_recordMessage;
 
 MacroRenameGui::MacroRenameGui(const char* macroFilePath, const char* gameName, bool isRecord)
  : m_isRecord(isRecord)
@@ -194,9 +197,11 @@ bool MacroRenameGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState
     // 功能按键
     if (keysDown & HidNpadButton_Minus) {           // - 返回
         if (m_isRecord) ult::deleteFileOrDirectory(m_macroFilePath);
+        g_recordMessage = "已取消保存录制脚本";
         tsl::goBack();
         return true;
     } else if (keysDown & HidNpadButton_Plus) {     // + 保存
+        g_recordMessage = "使用特斯拉快捷键结束录制";
         MacroRename();
         return true;
     } else if (keysDown & HidNpadButton_A) {        // 插件文字
