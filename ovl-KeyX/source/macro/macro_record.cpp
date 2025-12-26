@@ -124,7 +124,6 @@ bool RecordingGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &
         MacroSampler::Stop();
         u64 titleId = GameMonitor::getCurrentTitleId();
         MacroSampler::Save(titleId, combo);
-        
         char filename[128];
         strcpy(filename, MacroSampler::GetFilePath());
         char gameName[64];
@@ -132,7 +131,6 @@ bool RecordingGui::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &
         tsl::disableHiding = false;                                     // 恢复特斯拉区域触摸和快捷键hide的功能
         tsl::gfx::Renderer::get().setLayerPos(0, 0);                    // 恢复特斯拉区默认位置
         tsl::hlp::requestForeground(true);                              // 恢复特斯拉的输入焦点
-        g_recordMessage = "";                                           // 清空录制消息
         tsl::swapTo<MacroRenameGui>(SwapDepth(1), filename, gameName, true); // 录制成功，跳转到保存与命名界面
         return true;
     }
